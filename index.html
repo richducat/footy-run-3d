@@ -17,6 +17,51 @@
         color: #fff;
       }
 
+      #touchControls {
+        position: fixed;
+        inset: auto 0 1.5rem 0;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.65rem;
+        width: min(520px, 90vw);
+        margin: 0 auto;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(180deg, rgba(3, 7, 18, 0) 0%, rgba(3, 7, 18, 0.75) 30%);
+        backdrop-filter: blur(8px);
+        z-index: 12;
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        pointer-events: none;
+      }
+
+      #touchControls.visible {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      #touchControls .control {
+        padding: 1rem;
+        border-radius: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(14, 165, 233, 0.28);
+        color: #fff;
+        font-size: 1.3rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        cursor: pointer;
+        transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+      }
+
+      #touchControls .control:active {
+        transform: translateY(2px);
+        background: rgba(14, 165, 233, 0.4);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+      }
+
       #score {
         position: absolute;
         top: 16px;
@@ -105,6 +150,10 @@
         #overlay .panel {
           padding: 2rem 1.5rem;
         }
+
+        #touchControls {
+          display: grid;
+        }
       }
     </style>
   </head>
@@ -124,6 +173,11 @@
         </p>
       </div>
     </div>
+    <div id="touchControls" aria-label="Touch controls">
+      <button class="control" data-action="left" aria-label="Move left">◀</button>
+      <button class="control" data-action="jump" aria-label="Jump">⤒</button>
+      <button class="control" data-action="right" aria-label="Move right">▶</button>
+    </div>
     <script type="module">
       import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js';
 
@@ -132,6 +186,8 @@
       const startBtn = document.getElementById('startBtn');
       const overlayMessage = document.getElementById('overlayMessage');
       const scoreEl = document.getElementById('score');
+      const touchControls = document.getElementById('touchControls');
+      const controlButtons = Array.from(touchControls.querySelectorAll('.control'));
 
       const obstacles = [];
       const laneMarkers = [];
@@ -159,6 +215,7 @@
       let highScore = 0;
       let spawnTimer = 0;
       let spawnInterval = 1;
+      let cameraBobTime = 0;
 
       function init() {
         scene = new THREE.Scene();
@@ -178,6 +235,10 @@
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
+
+        if (isTouch()) {
+          touchControls.classList.add('visible');
+        }
 
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
         dirLight.position.set(5, 10, 5);
@@ -204,6 +265,10 @@
         player.position.set(laneX[currentLane], 0.5, PLAYER_Z);
         player.castShadow = true;
         scene.add(player);
+
+        highScore = loadHighScore();
+        updateScoreboard();
+        setIntroMessage();
 
         window.addEventListener('resize', () => {
           camera.aspect = window.innerWidth / window.innerHeight;
@@ -270,6 +335,10 @@
         scene.add(spotLightRight);
       }
 
+      function isTouch() {
+        return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      }
+
       function createLaneMarkers() {
         const markerGeo = new THREE.PlaneGeometry(0.4, 1.5);
         const markerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -318,6 +387,7 @@
         obstacle.laneIndex = idx;
         obstacle.castShadow = true;
         obstacle.userData.speedFactor = 1 + Math.random() * 0.35;
+        obstacle.userData.spin = (Math.random() * 0.4 + 0.2) * (Math.random() > 0.5 ? 1 : -1);
         obstacles.push(obstacle);
         scene.add(obstacle);
       }
@@ -327,6 +397,7 @@
           const obstacle = obstacles[i];
           const travel = speed * obstacle.userData.speedFactor * deltaSeconds * 1.8;
           obstacle.position.z += travel;
+          obstacle.rotation.y += deltaSeconds * obstacle.userData.spin;
           if (obstacle.position.z > 5) {
             scene.remove(obstacle);
             obstacles.splice(i, 1);
@@ -378,6 +449,10 @@
           updateScoreboard();
         }
 
+        cameraBobTime += deltaSeconds * speed * 0.08;
+        camera.position.y = 4 + Math.sin(cameraBobTime) * 0.2;
+        camera.position.z = 8 + Math.sin(cameraBobTime * 0.5) * 0.4;
+
         renderer.render(scene, camera);
       }
 
@@ -401,8 +476,7 @@
         distanceTravelled = 0;
         updateScoreboard();
         overlay.style.display = 'none';
-        overlayMessage.innerHTML =
-          'Dodge training cones, leap over tackle dummies, and stay on your lane as the tempo rises. How long can you keep the drill alive?';
+        setIntroMessage();
 
         if (!animationRunning) {
           animationRunning = true;
@@ -414,6 +488,7 @@
         gameRunning = false;
         gameOver = true;
         highScore = Math.max(highScore, score);
+        persistHighScore(highScore);
         updateScoreboard();
         overlayMessage.innerHTML = message;
         overlay.style.display = 'flex';
@@ -422,6 +497,25 @@
 
       function updateScoreboard() {
         scoreEl.textContent = `Score: ${score} | Best: ${highScore}`;
+      }
+
+      function setIntroMessage() {
+        const bestCopy = highScore > 0 ? `Your best drill so far: <strong>${highScore}</strong>.` : '';
+        overlayMessage.innerHTML = `Dodge training cones, leap over tackle dummies, and stay on your lane as the tempo rises. How long can you keep the drill alive? ${bestCopy}`;
+      }
+
+      function loadHighScore() {
+        const stored = localStorage.getItem('footyHighScore');
+        const parsed = Number(stored);
+        return Number.isFinite(parsed) ? parsed : 0;
+      }
+
+      function persistHighScore(value) {
+        try {
+          localStorage.setItem('footyHighScore', value);
+        } catch (error) {
+          console.warn('Could not persist score', error);
+        }
       }
 
       function moveLeft() {
@@ -448,6 +542,20 @@
         }
       }
 
+      function handleAction(action) {
+        switch (action) {
+          case 'left':
+            moveLeft();
+            break;
+          case 'right':
+            moveRight();
+            break;
+          case 'jump':
+            jump();
+            break;
+        }
+      }
+
       startBtn.addEventListener('click', startGame);
 
       window.addEventListener('keydown', (event) => {
@@ -459,6 +567,10 @@
         } else if (event.key === 'ArrowUp' || event.key === ' ') {
           jump();
         }
+      });
+
+      controlButtons.forEach((button) => {
+        button.addEventListener('click', () => handleAction(button.dataset.action));
       });
 
       let touchStartX;
