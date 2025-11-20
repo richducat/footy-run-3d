@@ -11,12 +11,14 @@ python -m http.server 8000
 
 ## Deploy to your own URL
 
-Because the project is a single static page you can push it to any static host. Here is an example workflow using GitHub Pages with a custom domain:
+### One-click GitHub Pages
 
-1. Create a GitHub repository and push this project.
-2. In the repository settings, enable **Pages** and set the source to the `main` branch.
+The repository includes a GitHub Actions workflow (`.github/workflows/pages.yml`) that publishes the contents of the `main` branch to GitHub Pages automatically. After pushing to your own GitHub repository:
+
+1. Open **Settings → Pages** and select **GitHub Actions** as the source.
+2. The `Deploy to GitHub Pages` workflow will run on every push to `main` and update the live site at `https://<username>.github.io/<repo-name>/`.
 3. (Optional) Add a `CNAME` file at the repo root that contains only your custom domain name, e.g. `play.myfootydemo.com`.
-4. In your domain registrar's DNS, create a CNAME record pointing your domain (or subdomain) to `username.github.io`.
-5. Once DNS propagates, visiting your domain will load the latest commit from this repository.
 
-Any other static host (Netlify, Vercel, Cloudflare Pages, S3+CloudFront, etc.) works the same—upload `index.html` (and any future assets) and point your domain's DNS records at the host's endpoint.
+### Other static hosts
+
+Because the project is a single static page you can push it to any static host (Netlify, Vercel, Cloudflare Pages, S3+CloudFront, etc.). Upload `index.html` (and any future assets) and point your domain's DNS records at the host's endpoint.
