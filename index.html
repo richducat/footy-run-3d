@@ -505,9 +505,14 @@
       }
 
       function loadHighScore() {
-        const stored = localStorage.getItem('footyHighScore');
-        const parsed = Number(stored);
-        return Number.isFinite(parsed) ? parsed : 0;
+        try {
+          const stored = localStorage.getItem('footyHighScore');
+          const parsed = Number(stored);
+          return Number.isFinite(parsed) ? parsed : 0;
+        } catch (error) {
+          console.warn('Could not read score', error);
+          return 0;
+        }
       }
 
       function persistHighScore(value) {
