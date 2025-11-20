@@ -16,9 +16,8 @@ python -m http.server 8000
 The repository includes a GitHub Actions workflow (`.github/workflows/pages.yml`) that publishes the contents of the `main` branch to GitHub Pages automatically. After pushing to your own GitHub repository:
 
 1. Open **Settings → Pages** and select **GitHub Actions** as the source.
-2. Push to `main` and confirm the `Deploy to GitHub Pages` workflow succeeds in the **Actions** tab (if it fails, re-run after enabling Pages).
-3. The live site will be available at `https://<username>.github.io/<repo-name>/` once the deployment job completes.
-4. (Optional) Add a `CNAME` file at the repo root that contains only your custom domain name, e.g. `play.myfootydemo.com`.
+2. The `Deploy to GitHub Pages` workflow will run on every push to `main` and update the live site at `https://<username>.github.io/<repo-name>/`.
+3. (Optional) Add a `CNAME` file at the repo root that contains only your custom domain name, e.g. `play.myfootydemo.com`.
 
 ### Other static hosts
 
