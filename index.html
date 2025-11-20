@@ -179,8 +179,13 @@
       <button class="control" data-action="right" aria-label="Move right">▶</button>
     </div>
     <script type="module">
-      import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js';
+      const ENGINE_SOURCES = [
+        'https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js',
+        'https://unpkg.com/three@0.162.0/build/three.module.js',
+      ];
 
+      /** @type {typeof import('three')} */
+      let THREE;
       let scene, camera, renderer, player;
       const overlay = document.getElementById('overlay');
       const startBtn = document.getElementById('startBtn');
@@ -216,8 +221,53 @@
       let spawnTimer = 0;
       let spawnInterval = 1;
       let cameraBobTime = 0;
+      let engineReady = false;
+
+      function requireEngine() {
+        if (engineReady) return true;
+        overlayMessage.innerHTML = 'Loading the 3D engine. Please try again in a moment.';
+        return false;
+      }
+
+      async function loadEngine() {
+        for (const source of ENGINE_SOURCES) {
+          try {
+            const module = await import(source);
+            console.info(`Loaded 3D engine from ${source}`);
+            return module;
+          } catch (error) {
+            console.warn(`Could not load 3D engine from ${source}`, error);
+          }
+        }
+        throw new Error('Unable to load the 3D engine from any source.');
+      }
+
+      function showFatalError(message) {
+        overlayMessage.innerHTML = message;
+        startBtn.textContent = 'Unavailable';
+        startBtn.disabled = true;
+      }
+
+      async function bootstrap() {
+        startBtn.disabled = true;
+        overlayMessage.textContent = 'Loading the field...';
+        try {
+          THREE = await loadEngine();
+          init();
+          engineReady = true;
+          startBtn.disabled = false;
+        } catch (error) {
+          console.error('Game initialization failed', error);
+          showFatalError(
+            'We could not start the 3D field. Please check your connection, disable any content blockers, and ensure WebGL is enabled.'
+          );
+        }
+      }
 
       function init() {
+        if (!THREE) {
+          throw new Error('3D engine not available.');
+        }
         scene = new THREE.Scene();
         scene.fog = new THREE.Fog(0x0b1121, 8, 55);
 
@@ -457,6 +507,7 @@
       }
 
       function startGame() {
+        if (!requireEngine()) return;
         while (obstacles.length) {
           const obstacle = obstacles.pop();
           scene.remove(obstacle);
@@ -603,7 +654,7 @@
         }
       });
 
-      init();
+      bootstrap();
     </script>
   </body>
 </html>
