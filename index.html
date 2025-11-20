@@ -179,7 +179,12 @@
       <button class="control" data-action="right" aria-label="Move right">▶</button>
     </div>
     <script type="module">
-      const ENGINE_SOURCES = [
+      const ENGINE_SCRIPT_SOURCES = [
+        'https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js',
+        'https://unpkg.com/three@0.162.0/build/three.min.js',
+      ];
+
+      const ENGINE_MODULE_SOURCES = [
         'https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js',
         'https://unpkg.com/three@0.162.0/build/three.module.js',
       ];
@@ -193,6 +198,14 @@
       const scoreEl = document.getElementById('score');
       const touchControls = document.getElementById('touchControls');
       const controlButtons = Array.from(touchControls.querySelectorAll('.control'));
+
+      let useFallback = false;
+      let fallbackCanvas;
+      let fallbackCtx;
+      let fallbackAnimating = false;
+      let fallbackLastTime = 0;
+      const fallbackLaneMarkers = [];
+      const fallbackObstacles = [];
 
       const obstacles = [];
       const laneMarkers = [];
@@ -225,18 +238,43 @@
 
       function requireEngine() {
         if (engineReady) return true;
-        overlayMessage.innerHTML = 'Loading the 3D engine. Please try again in a moment.';
+        overlayMessage.innerHTML = 'Loading the field. Please try again in a moment.';
         return false;
       }
 
+      function loadScript(source) {
+        return new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = source;
+          script.crossOrigin = 'anonymous';
+          script.defer = true;
+          script.onload = () =>
+            window.THREE
+              ? resolve(window.THREE)
+              : reject(new Error('3D engine script loaded without THREE present.'));
+          script.onerror = () => reject(new Error(`Failed to load script ${source}`));
+          document.head.appendChild(script);
+        });
+      }
+
       async function loadEngine() {
-        for (const source of ENGINE_SOURCES) {
+        for (const source of ENGINE_SCRIPT_SOURCES) {
+          try {
+            const engine = await loadScript(source);
+            console.info(`Loaded 3D engine (script) from ${source}`);
+            return engine;
+          } catch (error) {
+            console.warn(`Could not load 3D engine script from ${source}`, error);
+          }
+        }
+
+        for (const source of ENGINE_MODULE_SOURCES) {
           try {
             const module = await import(source);
-            console.info(`Loaded 3D engine from ${source}`);
+            console.info(`Loaded 3D engine (module) from ${source}`);
             return module;
           } catch (error) {
-            console.warn(`Could not load 3D engine from ${source}`, error);
+            console.warn(`Could not load 3D engine module from ${source}`, error);
           }
         }
         throw new Error('Unable to load the 3D engine from any source.');
@@ -258,10 +296,18 @@
           startBtn.disabled = false;
         } catch (error) {
           console.error('Game initialization failed', error);
-          showFatalError(
-            'We could not start the 3D field. Please check your connection, disable any content blockers, and ensure WebGL is enabled.'
-          );
+          enableFallback();
         }
+      }
+
+      function enableFallback() {
+        useFallback = true;
+        engineReady = true;
+        startBtn.disabled = false;
+        startBtn.textContent = 'Start Run (2D fallback)';
+        overlayMessage.textContent =
+          'We could not start the 3D view, so we loaded a simplified field. You can still play—press Start Run to begin!';
+        initFallback();
       }
 
       function init() {
@@ -383,6 +429,27 @@
         spotLightRight.target = rightTarget;
         scene.add(rightTarget);
         scene.add(spotLightRight);
+      }
+
+      function initFallback() {
+        fallbackCanvas = document.createElement('canvas');
+        fallbackCanvas.style.display = 'block';
+        fallbackCanvas.style.position = 'fixed';
+        fallbackCanvas.style.inset = '0';
+        fallbackCanvas.style.zIndex = '0';
+        fallbackCtx = fallbackCanvas.getContext('2d');
+        document.body.appendChild(fallbackCanvas);
+
+        const resize = () => {
+          fallbackCanvas.width = window.innerWidth;
+          fallbackCanvas.height = window.innerHeight;
+        };
+        resize();
+        window.addEventListener('resize', resize);
+
+        highScore = loadHighScore();
+        updateScoreboard();
+        setIntroMessage();
       }
 
       function isTouch() {
@@ -508,6 +575,10 @@
 
       function startGame() {
         if (!requireEngine()) return;
+        if (useFallback) {
+          startFallbackGame();
+          return;
+        }
         while (obstacles.length) {
           const obstacle = obstacles.pop();
           scene.remove(obstacle);
@@ -532,6 +603,200 @@
         if (!animationRunning) {
           animationRunning = true;
           requestAnimationFrame(animate);
+        }
+      }
+
+      function startFallbackGame() {
+        fallbackObstacles.length = 0;
+        fallbackLaneMarkers.length = 0;
+        for (let i = 0; i < LANE_MARKER_COUNT; i++) {
+          fallbackLaneMarkers.push(-i * LANE_MARKER_SPACING);
+        }
+        score = 0;
+        gameOver = false;
+        gameRunning = true;
+        currentLane = 1;
+        jumpVelocity = 0;
+        isJumping = false;
+        player = { position: { x: laneX[currentLane], y: 0.5, z: PLAYER_Z } };
+        lastTime = 0;
+        speed = BASE_SPEED;
+        spawnTimer = 0;
+        spawnInterval = 1;
+        distanceTravelled = 0;
+        updateScoreboard();
+        overlay.style.display = 'none';
+        setIntroMessage();
+
+        if (!fallbackAnimating) {
+          fallbackAnimating = true;
+          requestAnimationFrame(fallbackAnimate);
+        }
+      }
+
+      function fallbackAnimate(timestamp) {
+        requestAnimationFrame(fallbackAnimate);
+        const deltaSeconds = fallbackLastTime ? (timestamp - fallbackLastTime) / 1000 : 0;
+        fallbackLastTime = timestamp;
+
+        if (!fallbackCtx) return;
+
+        fallbackCtx.clearRect(0, 0, fallbackCanvas.width, fallbackCanvas.height);
+        drawFallbackBackground();
+
+        if (gameRunning && deltaSeconds) {
+          if (isJumping) {
+            player.position.y += jumpVelocity * deltaSeconds;
+            jumpVelocity -= gravity * deltaSeconds;
+            if (player.position.y <= 0.5) {
+              player.position.y = 0.5;
+              isJumping = false;
+              jumpVelocity = 0;
+            }
+          }
+
+          scrollFallbackLaneMarkers(deltaSeconds);
+
+          spawnTimer += deltaSeconds;
+          if (spawnTimer >= spawnInterval) {
+            spawnFallbackObstacle();
+            spawnTimer = 0;
+            spawnInterval = Math.max(MIN_SPAWN_INTERVAL, spawnInterval - 0.01);
+          }
+
+          updateFallbackObstacles(deltaSeconds);
+
+          speed = Math.min(MAX_SPEED, speed + deltaSeconds * 0.4);
+          distanceTravelled += speed * deltaSeconds * 0.5;
+          score = Math.floor(distanceTravelled);
+          updateScoreboard();
+        }
+
+        drawFallbackLaneMarkers();
+        drawFallbackPlayer();
+        drawFallbackObstacles();
+      }
+
+      function drawFallbackBackground() {
+        const { width, height } = fallbackCanvas;
+        const gradient = fallbackCtx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, '#0b1120');
+        gradient.addColorStop(1, '#030712');
+        fallbackCtx.fillStyle = gradient;
+        fallbackCtx.fillRect(0, 0, width, height);
+
+        fallbackCtx.fillStyle = '#0f172a';
+        fallbackCtx.fillRect(0, height * 0.3, width, height * 0.7);
+
+        fallbackCtx.fillStyle = '#0d9488';
+        fallbackCtx.fillRect(width * 0.25, height * 0.3, width * 0.5, height * 0.7);
+      }
+
+      function mapLaneXToScreen(x) {
+        const laneWidth = (fallbackCanvas.width * 0.5) / 2;
+        return fallbackCanvas.width * 0.5 + x * laneWidth;
+      }
+
+      function mapZToScreen(z) {
+        return fallbackCanvas.height * 0.8 + z * 12;
+      }
+
+      function drawFallbackLaneMarkers() {
+        fallbackCtx.strokeStyle = 'rgba(255,255,255,0.9)';
+        fallbackCtx.lineWidth = 3;
+        fallbackLaneMarkers.forEach((z) => {
+          const y = mapZToScreen(z);
+          fallbackCtx.beginPath();
+          fallbackCtx.moveTo(mapLaneXToScreen(-2), y);
+          fallbackCtx.lineTo(mapLaneXToScreen(2), y);
+          fallbackCtx.stroke();
+        });
+      }
+
+      function drawFallbackPlayer() {
+        const radius = 18;
+        const x = mapLaneXToScreen(player.position.x);
+        const y = mapZToScreen(0) - player.position.y * 40;
+        fallbackCtx.fillStyle = '#ffd166';
+        fallbackCtx.beginPath();
+        fallbackCtx.arc(x, y, radius, 0, Math.PI * 2);
+        fallbackCtx.fill();
+        fallbackCtx.strokeStyle = 'rgba(0,0,0,0.35)';
+        fallbackCtx.lineWidth = 4;
+        fallbackCtx.stroke();
+      }
+
+      function drawFallbackObstacles() {
+        fallbackObstacles.forEach((obstacle) => {
+          const x = mapLaneXToScreen(laneX[obstacle.laneIndex]);
+          const y = mapZToScreen(obstacle.z);
+          const size = 26;
+          fallbackCtx.fillStyle = obstacle.isCone ? '#f97316' : '#ff4d6d';
+          fallbackCtx.strokeStyle = 'rgba(0,0,0,0.35)';
+          fallbackCtx.lineWidth = 3;
+          fallbackCtx.save();
+          fallbackCtx.translate(x, y);
+          fallbackCtx.rotate(obstacle.rotation || 0);
+          if (obstacle.isCone) {
+            fallbackCtx.beginPath();
+            fallbackCtx.moveTo(-size * 0.5, size * 0.5);
+            fallbackCtx.lineTo(size * 0.5, size * 0.5);
+            fallbackCtx.lineTo(0, -size * 0.6);
+            fallbackCtx.closePath();
+            fallbackCtx.fill();
+            fallbackCtx.stroke();
+          } else {
+            fallbackCtx.fillRect(-size * 0.35, -size * 0.6, size * 0.7, size * 1.2);
+            fallbackCtx.strokeRect(-size * 0.35, -size * 0.6, size * 0.7, size * 1.2);
+          }
+          fallbackCtx.restore();
+        });
+      }
+
+      function spawnFallbackObstacle() {
+        const laneIndex = Math.floor(Math.random() * 3);
+        const isCone = Math.random() > 0.4;
+        fallbackObstacles.push({
+          laneIndex,
+          z: -50,
+          isCone,
+          speedFactor: 1 + Math.random() * 0.35,
+          rotation: (Math.random() * 0.4 + 0.2) * (Math.random() > 0.5 ? 1 : -1),
+        });
+      }
+
+      function updateFallbackObstacles(deltaSeconds) {
+        for (let i = fallbackObstacles.length - 1; i >= 0; i--) {
+          const obstacle = fallbackObstacles[i];
+          const travel = speed * obstacle.speedFactor * deltaSeconds * 1.8;
+          obstacle.z += travel;
+          obstacle.rotation += deltaSeconds * obstacle.rotation * 0.5;
+          if (obstacle.z > 5) {
+            fallbackObstacles.splice(i, 1);
+          } else if (
+            gameRunning &&
+            obstacle.laneIndex === currentLane &&
+            Math.abs(obstacle.z - PLAYER_Z) < 0.8 &&
+            player.position.y < 1
+          ) {
+            endGame(
+              `You clipped a defender! Final score: <strong>${score}</strong>.<br />Your best drill: <strong>${Math.max(
+                highScore,
+                score
+              )}</strong>.`
+            );
+          }
+        }
+      }
+
+      function scrollFallbackLaneMarkers(deltaSeconds) {
+        const travel = speed * deltaSeconds;
+        const minZ = -LANE_MARKER_SPACING * (fallbackLaneMarkers.length - 1);
+        for (let i = 0; i < fallbackLaneMarkers.length; i++) {
+          fallbackLaneMarkers[i] += travel;
+          if (fallbackLaneMarkers[i] > PLAYER_Z) {
+            fallbackLaneMarkers[i] = minZ;
+          }
         }
       }
 
