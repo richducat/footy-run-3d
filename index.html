@@ -236,6 +236,15 @@
       let cameraBobTime = 0;
       let engineReady = false;
 
+      function canUseWebGL() {
+        const canvas = document.createElement('canvas');
+        const context =
+          canvas.getContext('webgl2') ||
+          canvas.getContext('webgl') ||
+          canvas.getContext('experimental-webgl');
+        return Boolean(window.WebGLRenderingContext && context instanceof WebGLRenderingContext);
+      }
+
       function requireEngine() {
         if (engineReady) return true;
         overlayMessage.innerHTML = 'Loading the field. Please try again in a moment.';
@@ -289,6 +298,15 @@
       async function bootstrap() {
         startBtn.disabled = true;
         overlayMessage.textContent = 'Loading the field...';
+
+        if (!canUseWebGL()) {
+          console.warn('WebGL context could not be created; enabling fallback.');
+          enableFallback(
+            'Your browser could not start WebGL. We loaded a simplified view so you can still play. Check that hardware acceleration is enabled and try again.'
+          );
+          return;
+        }
+
         try {
           THREE = await loadEngine();
           init();
@@ -296,16 +314,19 @@
           startBtn.disabled = false;
         } catch (error) {
           console.error('Game initialization failed', error);
-          enableFallback();
+          enableFallback(
+            'We could not start the 3D view, so we loaded a simplified field. You can still play—press Start Run to begin!'
+          );
         }
       }
 
-      function enableFallback() {
+      function enableFallback(message) {
         useFallback = true;
         engineReady = true;
         startBtn.disabled = false;
         startBtn.textContent = 'Start Run (2D fallback)';
         overlayMessage.textContent =
+          message ||
           'We could not start the 3D view, so we loaded a simplified field. You can still play—press Start Run to begin!';
         initFallback();
       }
@@ -326,11 +347,24 @@
         camera.position.set(0, 4, 8);
         camera.lookAt(0, 1, 0);
 
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.shadowMap.enabled = true;
-        document.body.appendChild(renderer.domElement);
+        try {
+          renderer = new THREE.WebGLRenderer({ antialias: true });
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          renderer.setPixelRatio(window.devicePixelRatio);
+          renderer.shadowMap.enabled = true;
+          document.body.appendChild(renderer.domElement);
+        } catch (error) {
+          console.error('Failed to initialize WebGLRenderer, attempting WebGL1 fallback.', error);
+          if (THREE.WebGL1Renderer) {
+            renderer = new THREE.WebGL1Renderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+          } else {
+            throw error;
+          }
+        }
 
         if (isTouch()) {
           touchControls.classList.add('visible');
