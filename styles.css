@@ -237,11 +237,6 @@ canvas {
   font-weight: 600;
 }
 
-.hud-bottom {
-  display: flex;
-  justify-content: center;
-}
-
 .shot-meter {
   width: 80%;
   max-width: 360px;
@@ -273,6 +268,13 @@ canvas {
   border-radius: inherit;
   background: linear-gradient(90deg, #10e85f, #0bb799);
   transition: width 0.08s linear;
+}
+
+.shot-meter-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 0 auto 4px;
 }
 
 /* Screens */
