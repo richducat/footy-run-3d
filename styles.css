@@ -169,9 +169,8 @@ html.remote-loaded,
 .game-shell {
   position: relative;
   width: min(540px, 100%);
-  max-width: calc((100vh - var(--chrome-height)) * 9 / 16);
   aspect-ratio: 9 / 16;
-  max-height: calc(100vh - var(--chrome-height));
+  max-height: calc(100vh - 130px);
   margin: 0 auto;
   border-radius: 18px;
   overflow: hidden;
@@ -768,7 +767,6 @@ canvas {
   .app {
     padding: 8px 6px;
     gap: 6px;
-    --chrome-height: 175px;
   }
 
   .app-header {
@@ -783,29 +781,9 @@ canvas {
 
   .game-shell {
     width: 100%;
-    max-width: calc((100vh - var(--chrome-height)) * 9 / 16);
-    max-height: calc(100vh - var(--chrome-height));
   }
 
   .touch-controls {
     display: flex;
-  }
-}
-
-@supports (height: 100dvh) {
-  .app {
-    min-height: 100dvh;
-  }
-
-  .game-shell {
-    max-width: calc((100dvh - var(--chrome-height)) * 9 / 16);
-    max-height: calc(100dvh - var(--chrome-height));
-  }
-
-  @media (max-width: 740px) {
-    .game-shell {
-      max-width: calc((100dvh - var(--chrome-height)) * 9 / 16);
-      max-height: calc(100dvh - var(--chrome-height));
-    }
   }
 }
