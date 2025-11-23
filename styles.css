@@ -243,7 +243,7 @@ canvas {
   padding: 6px 10px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid #2991ff;
 }
 
 .shot-meter__label {
@@ -266,7 +266,7 @@ canvas {
   width: 0%;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #10e85f, #0bb799);
+  background: linear-gradient(90deg, #d6d8de, #aeb4c0);
   transition: width 0.08s linear;
 }
 
