@@ -367,41 +367,72 @@ export class Game {
   }
 
   drawPitch(ctx) {
-    const stripeHeight = 60;
-    for (let y = 0; y < this.height; y += stripeHeight) {
-      ctx.fillStyle =
-        Math.floor(y / stripeHeight) % 2 === 0
-          ? "rgba(10, 140, 80, 0.85)"
-          : "rgba(5, 110, 64, 0.85)";
-      ctx.fillRect(0, y, this.width, stripeHeight);
-    }
-
-    // center "TV" shadow gradient
-    const gradient = ctx.createRadialGradient(
-      this.width / 2,
-      this.height * 0.2,
-      0,
-      this.width / 2,
-      this.height / 2,
-      this.height * 0.8
-    );
-    gradient.addColorStop(0, "rgba(0,0,0,0)");
-    gradient.addColorStop(1, "rgba(0,0,0,0.65)");
-    ctx.fillStyle = gradient;
+    const horizon = this.height * 0.12;
+    const pitchGradient = ctx.createLinearGradient(0, horizon, 0, this.height);
+    pitchGradient.addColorStop(0, "#0c6138");
+    pitchGradient.addColorStop(0.5, "#0a7a41");
+    pitchGradient.addColorStop(1, "#05562c");
+    ctx.fillStyle = pitchGradient;
     ctx.fillRect(0, 0, this.width, this.height);
 
-    // lane lines
-    ctx.lineWidth = 3;
-    ctx.setLineDash([12, 12]);
-    ctx.strokeStyle = "rgba(255,255,255,0.28)";
-    for (let i = 1; i < this.lanes; i++) {
-      const x = this.width * (0.2 + 0.3 * i) - (this.width * 0.3) / 2;
+    // Stadium glow above the pitch
+    const crowdGradient = ctx.createLinearGradient(0, 0, 0, horizon + 60);
+    crowdGradient.addColorStop(0, "rgba(0,0,0,0.8)");
+    crowdGradient.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = crowdGradient;
+    ctx.fillRect(0, 0, this.width, horizon + 60);
+
+    // Perspective stripes
+    const stripeCount = 10;
+    for (let i = 0; i < stripeCount; i++) {
+      const tTop = i / stripeCount;
+      const tBot = (i + 1) / stripeCount;
+      const yTop = horizon + tTop * (this.height - horizon);
+      const yBot = horizon + tBot * (this.height - horizon);
       ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, this.height);
+      ctx.moveTo(this.width * (0.12 + tTop * 0.04), yTop);
+      ctx.lineTo(this.width * (0.88 - tTop * 0.04), yTop);
+      ctx.lineTo(this.width * (0.9 - tBot * 0.05), yBot);
+      ctx.lineTo(this.width * (0.1 + tBot * 0.05), yBot);
+      ctx.closePath();
+      ctx.fillStyle =
+        i % 2 === 0 ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.08)";
+      ctx.fill();
+    }
+
+    // Vignette for focus
+    const vignette = ctx.createRadialGradient(
+      this.width / 2,
+      this.height * 0.55,
+      this.height * 0.15,
+      this.width / 2,
+      this.height * 0.55,
+      this.height * 0.65
+    );
+    vignette.addColorStop(0, "rgba(0,0,0,0)");
+    vignette.addColorStop(1, "rgba(0,0,0,0.6)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, this.width, this.height);
+
+    // Field markings with slight convergence toward the top
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "rgba(255,255,255,0.32)";
+    ctx.setLineDash([12, 12]);
+    for (let i = 1; i < this.lanes; i++) {
+      const baseRatio = 0.2 + 0.3 * i;
+      const topRatio = 0.5 + (baseRatio - 0.5) * 0.72;
+      ctx.beginPath();
+      ctx.moveTo(baseRatio * this.width, this.height);
+      ctx.lineTo(topRatio * this.width, horizon);
       ctx.stroke();
     }
     ctx.setLineDash([]);
+
+    // Center markings
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(255,255,255,0.28)";
+    ctx.arc(this.width / 2, this.height * 0.45, 70, 0, Math.PI * 2);
+    ctx.stroke();
   }
 
   drawPlayer(ctx) {
@@ -410,12 +441,39 @@ export class Game {
     let h = this.player.height;
     if (this.player.isSliding) h = this.player.height * 0.5;
 
+    // Depth shadow
+    ctx.save();
+    ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+    ctx.filter = "blur(3px)";
+    ctx.beginPath();
+    ctx.ellipse(
+      x + this.player.width / 2,
+      y + h + 10,
+      this.player.width * 0.55,
+      this.player.isSliding ? h * 0.45 : h * 0.3,
+      0,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+    ctx.restore();
+
     // Player body
-    const gradient = ctx.createLinearGradient(x, y, x + this.player.width, y + h);
-    gradient.addColorStop(0, "#f5f5f5");
-    gradient.addColorStop(1, "#cdd9ff");
+    const gradient = ctx.createLinearGradient(
+      x,
+      y,
+      x + this.player.width,
+      y + h * 0.8
+    );
+    gradient.addColorStop(0, "#f9fbff");
+    gradient.addColorStop(1, "#c7d4f8");
     ctx.fillStyle = gradient;
     ctx.fillRect(x, y, this.player.width, h);
+
+    // Outline for definition
+    ctx.strokeStyle = "rgba(0,0,0,0.35)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, this.player.width, h);
 
     // Jersey band
     ctx.fillStyle = "#1088ff";
@@ -429,6 +487,18 @@ export class Game {
     // Shorts
     ctx.fillStyle = "#22263a";
     ctx.fillRect(x, y + h * 0.6, this.player.width, h * 0.4);
+
+    // Light sheen on shorts
+    const shortsSheen = ctx.createLinearGradient(
+      x + this.player.width * 0.1,
+      y + h * 0.6,
+      x + this.player.width * 0.9,
+      y + h
+    );
+    shortsSheen.addColorStop(0, "rgba(255,255,255,0.15)");
+    shortsSheen.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = shortsSheen;
+    ctx.fillRect(x + this.player.width * 0.05, y + h * 0.62, this.player.width * 0.9, h * 0.3);
 
     // Ball at feet
     const ballY = y + h + 12;
@@ -446,6 +516,20 @@ export class Game {
     ctx.strokeStyle = "#555";
     ctx.lineWidth = 1;
     ctx.stroke();
+
+    // Glow around the player for depth
+    const glow = ctx.createRadialGradient(
+      x + this.player.width / 2,
+      y + h * 0.4,
+      5,
+      x + this.player.width / 2,
+      y + h * 0.4,
+      38
+    );
+    glow.addColorStop(0, "rgba(255,255,255,0.08)");
+    glow.addColorStop(1, "rgba(16,136,255,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(x - 12, y - 16, this.player.width + 24, h + 48);
   }
 
   drawObstacles(ctx) {
@@ -455,12 +539,25 @@ export class Game {
 
       if (o.type === "ground") {
         // Sliding tackle defender
-        ctx.fillStyle = "#e5534b";
+        const body = ctx.createLinearGradient(x, y, x + o.width, y + o.height);
+        body.addColorStop(0, "#f07669");
+        body.addColorStop(1, "#c0362f");
+        ctx.fillStyle = body;
         ctx.fillRect(x, y, o.width, o.height);
+
+        ctx.strokeStyle = "rgba(0,0,0,0.45)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, o.width, o.height);
       } else {
         // Overhead camera rig / banner
-        ctx.fillStyle = "#f1c40f";
+        const rig = ctx.createLinearGradient(x, y, x + o.width, y + o.height);
+        rig.addColorStop(0, "#ffe27a");
+        rig.addColorStop(1, "#d4a600");
+        ctx.fillStyle = rig;
         ctx.fillRect(x, y, o.width, o.height);
+
+        ctx.fillStyle = "rgba(0,0,0,0.25)";
+        ctx.fillRect(x, y + o.height - 6, o.width, 6);
       }
     }
   }
@@ -469,6 +566,19 @@ export class Game {
     for (const p of this.pickups) {
       const x = this.laneX(p.lane);
       const y = p.y;
+      const glow = ctx.createRadialGradient(x, y, 4, x, y, p.radius * 2.4);
+      if (p.type === "coin") {
+        glow.addColorStop(0, "rgba(255, 216, 110, 0.8)");
+        glow.addColorStop(1, "rgba(255, 216, 110, 0)");
+      } else {
+        glow.addColorStop(0, "rgba(255,255,255,0.7)");
+        glow.addColorStop(1, "rgba(255,255,255,0)");
+      }
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, p.radius * 1.8, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.beginPath();
       ctx.arc(x, y, p.radius, 0, Math.PI * 2);
 
@@ -482,6 +592,10 @@ export class Game {
       if (p.type === "ball") {
         ctx.strokeStyle = "#222";
         ctx.lineWidth = 2;
+        ctx.stroke();
+      } else {
+        ctx.strokeStyle = "rgba(0,0,0,0.35)";
+        ctx.lineWidth = 1.5;
         ctx.stroke();
       }
     }
