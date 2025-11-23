@@ -59,6 +59,18 @@ const btnResetProgress = document.getElementById("btnResetProgress");
 const touchControls = document.querySelectorAll(
   ".touch-controls [data-action]"
 );
+const touchControlsContainer = document.querySelector(".touch-controls");
+const startButton = document.querySelector(
+  '.touch-controls [data-action="startRun"]'
+);
+
+// Login / save
+const loginEmailInput = document.getElementById("loginEmail");
+const loginNameInput = document.getElementById("loginName");
+const authStatus = document.getElementById("authStatus");
+const saveStatus = document.getElementById("saveStatus");
+const btnLogin = document.getElementById("btnLogin");
+const btnSaveProgress = document.getElementById("btnSaveProgress");
 
 // Team screen
 const cardListEl = document.getElementById("cardList");
@@ -85,6 +97,7 @@ function setActiveScreen(id) {
 
   const inRun = id === null;
   hudEl.classList.toggle("hidden", !inRun);
+  updateTouchControlsVisibility();
 }
 
 function updateCoinsHeader() {
@@ -109,6 +122,18 @@ function buildGameInstance() {
     onGoal: handleGameGoal,
     onGameOver: handleGameOver
   });
+}
+
+function updateTouchControlsVisibility() {
+  const isInRun = currentScreenId === null;
+  touchControlsContainer?.classList.toggle(
+    "touch-controls--visible",
+    isInRun
+  );
+
+  const runState = game?.getRunState?.();
+  const showStartButton = !runState || runState === "ready";
+  startButton?.classList.toggle("hidden", !showStartButton);
 }
 
 function renderTeamScreen() {
@@ -325,6 +350,7 @@ function startRun() {
   setActiveScreen(null); // close menus
   pauseBanner.classList.add("hidden");
   game.startRun();
+  updateTouchControlsVisibility();
 }
 
 function togglePause() {
@@ -353,6 +379,7 @@ function handleGameState(state) {
   } else {
     pauseBanner.classList.add("hidden");
   }
+  updateTouchControlsVisibility();
 }
 
 function handleGameGoal() {
@@ -408,7 +435,7 @@ function handleGameOver(payload) {
 function handleInputAction(action) {
   // While a menu screen is open
   if (currentScreenId === "mainMenu") {
-    if (action === "primary" || action === "jump") {
+    if (action === "startRun") {
       startRun();
     } else if (action === "pauseToggle") {
       // ignore
@@ -423,11 +450,7 @@ function handleInputAction(action) {
   ) {
     if (action === "pauseToggle") {
       setActiveScreen("mainMenu");
-    } else if (
-      currentScreenId === "gameOverScreen" &&
-      (action === "primary" || action === "jump")
-    ) {
-      // quick replay
+    } else if (currentScreenId === "gameOverScreen" && action === "startRun") {
       setActiveScreen(null);
       game.startRun();
     }
@@ -444,7 +467,7 @@ function handleInputAction(action) {
   }
 
   if (state !== "running") {
-    if (action === "primary" || action === "jump") {
+    if (action === "startRun") {
       startRun();
     }
     return;
@@ -501,6 +524,7 @@ btnResetProgress.addEventListener("click", () => {
     buildGameInstance();
     renderTeamScreen();
     renderMissions();
+    updateProfileUI();
   }
 });
 
@@ -515,6 +539,50 @@ touchControls.forEach((btn) => {
     },
     { passive: false }
   );
+});
+
+// Login / save UI
+function updateProfileUI(message) {
+  const profile = playerData.profile || {};
+  if (loginEmailInput) loginEmailInput.value = profile.email || "";
+  if (loginNameInput) loginNameInput.value = profile.displayName || "";
+
+  const statusLabel = profile.displayName
+    ? `Signed in as ${profile.displayName}`
+    : "Not logged in";
+  if (authStatus) authStatus.textContent = statusLabel;
+
+  const saveLabel = profile.lastManualSave
+    ? `Last saved ${new Date(profile.lastManualSave).toLocaleString()}`
+    : "Progress auto-saves locally on this device.";
+  if (saveStatus) saveStatus.textContent = message || saveLabel;
+}
+
+btnLogin?.addEventListener("click", () => {
+  const email = loginEmailInput?.value.trim();
+  const displayName = loginNameInput?.value.trim();
+
+  if (!email || !displayName) {
+    alert("Enter a display name and email to log in.");
+    return;
+  }
+
+  playerData.profile = {
+    ...playerData.profile,
+    email,
+    displayName
+  };
+  savePlayerData(playerData);
+  updateProfileUI("Profile updated and saved.");
+});
+
+btnSaveProgress?.addEventListener("click", () => {
+  playerData.profile = {
+    ...playerData.profile,
+    lastManualSave: new Date().toISOString()
+  };
+  savePlayerData(playerData);
+  updateProfileUI("Progress saved to this device.");
 });
 
 // Back buttons with data-nav
@@ -545,6 +613,8 @@ buildGameInstance();
 renderTeamScreen();
 renderMissions();
 setActiveScreen("mainMenu");
+updateProfileUI();
+updateTouchControlsVisibility();
 
 input = new InputManager(canvas, handleInputAction);
 input.attach();

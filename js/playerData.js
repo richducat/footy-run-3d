@@ -205,7 +205,12 @@ function defaultData() {
       crowd_favorite: 1
     },
     missions: defaultMissions(),
-    recentRunCoins: []
+    recentRunCoins: [],
+    profile: {
+      displayName: "",
+      email: "",
+      lastManualSave: null
+    }
   };
 }
 
