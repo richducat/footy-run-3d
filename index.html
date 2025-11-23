@@ -4,7 +4,17 @@
   <meta charset="UTF-8" />
   <title>Ultimate Striker Run</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css" id="appStylesheet" />
+  <script>
+    // Simple cache-busting so refreshes always load the latest assets
+    const CACHE_BUSTER = Date.now().toString();
+    const bustUrl = (url) => `${url}${url.includes("?") ? "&" : "?"}v=${CACHE_BUSTER}`;
+    document.documentElement.dataset.cacheBuster = CACHE_BUSTER;
+    const stylesheet = document.getElementById("appStylesheet");
+    if (stylesheet) {
+      stylesheet.href = bustUrl(stylesheet.getAttribute("href"));
+    }
+  </script>
 </head>
 <body>
   <div id="previewContainer" class="preview-container hidden">
@@ -250,12 +260,14 @@
 
     // When running inside the preview iframe, skip the nested iframe loop and
     // boot the game directly.
+    const cacheBustedImport = () => import(bustUrl("./js/main.js"));
+
     if (isEmbedded) {
       previewContainer.classList.add("hidden");
       document.documentElement.classList.remove("remote-loaded");
-      import("./js/main.js");
+      cacheBustedImport();
     } else {
-      const REMOTE_URL = "https://richducat.github.io/footy-run-3d/?embed=1";
+      const REMOTE_URL = bustUrl("https://richducat.github.io/footy-run-3d/?embed=1");
       let fallbackLoaded = false;
       const fallbackDelay = 3500;
 
@@ -264,7 +276,7 @@
         fallbackLoaded = true;
         previewContainer.classList.add("hidden");
         document.documentElement.classList.remove("remote-loaded");
-        import("./js/main.js");
+        cacheBustedImport();
         if (reason) console.info("Using local build:", reason);
       };
 
