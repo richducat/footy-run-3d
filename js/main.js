@@ -63,6 +63,9 @@ const touchControlsContainer = document.querySelector(".touch-controls");
 const startButton = document.querySelector(
   '.touch-controls [data-action="startRun"]'
 );
+const pauseTouchButton = document.querySelector(
+  '.touch-controls [data-action="pauseToggle"]'
+);
 
 // Login / save
 const loginEmailInput = document.getElementById("loginEmail");
@@ -132,8 +135,12 @@ function updateTouchControlsVisibility() {
   );
 
   const runState = game?.getRunState?.();
-  const showStartButton = !runState || runState === "ready";
+  const showStartButton =
+    !isInRun || !runState || runState === "idle" || runState === "ready";
   startButton?.classList.toggle("hidden", !showStartButton);
+
+  const showPauseButton = isInRun && runState === "running";
+  pauseTouchButton?.classList.toggle("hidden", !showPauseButton);
 }
 
 function renderTeamScreen() {
