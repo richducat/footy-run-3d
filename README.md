@@ -30,6 +30,11 @@ python -m http.server 8000
 # then open http://localhost:8000
 ```
 
+## 3D live preview
+- The production 3D build is served from `https://richducat.github.io/footy-run-3d/?embed=1`.
+- The landing page loads that URL inside an iframe and falls back to the local build after 3.5 seconds or on error/offline.
+- When the build runs inside the iframe (signaled by `?embed=1`), the nested preview is skipped and the game boots immediately, preventing infinite iframe recursion.
+
 ## Deploy to GitHub Pages
 1. Push the repo to GitHub.
 2. In **Settings → Pages**, choose **Deploy from a branch** and select the `main` branch with the root directory.
