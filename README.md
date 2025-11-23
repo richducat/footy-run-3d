@@ -1,24 +1,38 @@
-# Footy Run 3D
+# Ultimate Striker Run
 
-A small WebGL endless runner demo using [Three.js](https://threejs.org/).
+A lightweight HTML5 Temple Run–style soccer runner with mobile-friendly swipe controls, keyboard support, and simple “Ultimate Team” style striker cards.
+
+## Features
+- Three-lane endless runner with jump/slide mechanics and soccer-themed obstacles.
+- Coin and ball pickups that build a shot meter and trigger goals.
+- Unlockable striker cards that modify speed, coin gain, and shot meter fill.
+- In-game HUD, pause, settings, squad selection, and game-over summary screens.
+- Local persistence for coins, best distance, goals, and unlocked cards.
+
+## Project structure
+```
+index.html
+styles.css
+js/
+  game.js
+  input.js
+  main.js
+  playerData.js
+assets/
+  (drop any images or audio here)
+```
 
 ## Run locally
+Open `index.html` in a browser or serve the folder with a static server (example shown below):
 
 ```bash
 python -m http.server 8000
-# open http://localhost:8000
+# then open http://localhost:8000
 ```
 
-## Deploy to your own URL
+## Deploy to GitHub Pages
+1. Push the repo to GitHub.
+2. In **Settings → Pages**, choose **Deploy from a branch** and select the `main` branch with the root directory.
+3. After the build finishes, access the site at `https://<username>.github.io/<repo-name>/`.
 
-### One-click GitHub Pages
-
-The repository includes a GitHub Actions workflow (`.github/workflows/pages.yml`) that publishes the contents of the `main` branch to GitHub Pages automatically. After pushing to your own GitHub repository:
-
-1. Open **Settings → Pages** and select **GitHub Actions** as the source.
-2. The `Deploy to GitHub Pages` workflow will run on every push to `main` and update the live site at `https://<username>.github.io/<repo-name>/`.
-3. (Optional) Add a `CNAME` file at the repo root that contains only your custom domain name, e.g. `play.myfootydemo.com`.
-
-### Other static hosts
-
-Because the project is a single static page you can push it to any static host (Netlify, Vercel, Cloudflare Pages, S3+CloudFront, etc.). Upload `index.html` (and any future assets) and point your domain's DNS records at the host's endpoint.
+This build uses only original branding and assets—no licensed clubs, logos, or likenesses.
