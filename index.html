@@ -192,49 +192,61 @@
   </div>
 
   <script type="module">
-    const REMOTE_URL = new URL("./", window.location.href).href;
     const previewContainer = document.getElementById("previewContainer");
     const previewFrame = document.getElementById("previewFrame");
     const previewStatus = document.getElementById("previewStatus");
 
-    let fallbackLoaded = false;
-    const fallbackDelay = 3500;
+    const isEmbedded =
+      window.self !== window.top ||
+      new URLSearchParams(window.location.search).has("embed");
 
-    const activateFallback = (reason) => {
-      if (fallbackLoaded) return;
-      fallbackLoaded = true;
+    // When running inside the preview iframe, skip the nested iframe loop and
+    // boot the game directly.
+    if (isEmbedded) {
       previewContainer.classList.add("hidden");
       document.documentElement.classList.remove("remote-loaded");
       import("./js/main.js");
-      if (reason) console.info("Using local build:", reason);
-    };
+    } else {
+      const REMOTE_URL = "https://richducat.github.io/footy-run-3d/?embed=1";
+      let fallbackLoaded = false;
+      const fallbackDelay = 3500;
 
-    const startRemotePreview = () => {
-      previewContainer.classList.remove("hidden");
-      document.documentElement.classList.add("remote-loaded");
-      previewFrame.src = REMOTE_URL;
-    };
+      const activateFallback = (reason) => {
+        if (fallbackLoaded) return;
+        fallbackLoaded = true;
+        previewContainer.classList.add("hidden");
+        document.documentElement.classList.remove("remote-loaded");
+        import("./js/main.js");
+        if (reason) console.info("Using local build:", reason);
+      };
 
-    startRemotePreview();
+      const startRemotePreview = () => {
+        previewContainer.classList.remove("hidden");
+        document.documentElement.classList.add("remote-loaded");
+        previewFrame.src = REMOTE_URL;
+      };
 
-    const timeoutId = window.setTimeout(
-      () => activateFallback("Timed out loading remote preview"),
-      fallbackDelay
-    );
+      startRemotePreview();
 
-    previewFrame.addEventListener("load", () => {
-      window.clearTimeout(timeoutId);
-      previewContainer.classList.add("preview-container--ready");
-      previewStatus.classList.add("hidden");
-    });
+      const timeoutId = window.setTimeout(
+        () => activateFallback("Timed out loading remote preview"),
+        fallbackDelay
+      );
 
-    previewFrame.addEventListener("error", (event) => {
-      console.error("Remote preview failed to load", event);
-      activateFallback("Remote preview blocked");
-    });
+      previewFrame.addEventListener("load", () => {
+        window.clearTimeout(timeoutId);
+        previewContainer.classList.add("preview-container--ready");
+        previewStatus.classList.add("hidden");
+      });
 
-    if (navigator.onLine === false) {
-      activateFallback("Offline detected");
+      previewFrame.addEventListener("error", (event) => {
+        console.error("Remote preview failed to load", event);
+        activateFallback("Remote preview blocked");
+      });
+
+      if (navigator.onLine === false) {
+        activateFallback("Offline detected");
+      }
     }
   </script>
 </body>
