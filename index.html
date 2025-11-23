@@ -68,6 +68,19 @@
               Mobile: swipe to move, jump &amp; slide.<br />
               Desktop: arrow keys to move, jump &amp; slide.
             </p>
+
+            <div class="panel">
+              <div class="panel__header">
+                <h3>Daily Missions</h3>
+                <span class="pill pill--soft" id="dailyResetNote">Resets daily</span>
+              </div>
+              <div id="dailyMissions" class="mission-list"></div>
+              <div class="panel__header panel__header--spaced">
+                <h3>Weekly Missions</h3>
+                <span class="pill pill--soft" id="weeklyResetNote">Resets weekly</span>
+              </div>
+              <div id="weeklyMissions" class="mission-list"></div>
+            </div>
           </div>
         </section>
 
@@ -129,6 +142,17 @@
                 <span class="stat-label">Coins</span>
                 <span class="stat-value" id="goCoins">0</span>
               </div>
+            </div>
+            <div class="panel panel--subtle">
+              <div class="panel__header panel__header--compact">
+                <h3>Coin Breakdown</h3>
+              </div>
+              <ul class="coin-breakdown">
+                <li><span>Pickups</span><span id="goCoinsInRun">0</span></li>
+                <li><span>Distance bonus</span><span id="goCoinsDistance">0</span></li>
+                <li><span>Goal bonus</span><span id="goCoinsGoals">0</span></li>
+                <li class="coin-breakdown__total"><span>Total</span><span id="goCoinsTotal">0</span></li>
+              </ul>
             </div>
             <p class="stat-note" id="goBestNote"></p>
 

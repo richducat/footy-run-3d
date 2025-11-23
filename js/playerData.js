@@ -4,6 +4,7 @@ export const PLAYER_CARDS = [
   {
     id: "street_striker",
     name: "Street Striker",
+    rarity: "common",
     rating: 72,
     position: "ST",
     tagline: "Balanced finisher built for tight lanes.",
@@ -15,6 +16,7 @@ export const PLAYER_CARDS = [
   {
     id: "pace_merchant",
     name: "Pace Merchant",
+    rarity: "rare",
     rating: 80,
     position: "ST",
     tagline: "+Speed, less control. For aggressive players.",
@@ -26,6 +28,7 @@ export const PLAYER_CARDS = [
   {
     id: "clinical_finisher",
     name: "Clinical Finisher",
+    rarity: "epic",
     rating: 83,
     position: "ST",
     tagline: "Shot meter builds faster. More goals per run.",
@@ -37,6 +40,7 @@ export const PLAYER_CARDS = [
   {
     id: "crowd_favorite",
     name: "Crowd Favorite",
+    rarity: "legendary",
     rating: 85,
     position: "CF",
     tagline: "Earn more coins from every pickup.",
@@ -49,25 +53,172 @@ export const PLAYER_CARDS = [
 
 const STORAGE_KEY = "usr_player_data_v1";
 
+export const CARD_LEVEL_CAP = 5;
+
+export const RARITY_CONFIG = {
+  common: {
+    speedBonusPerLevel: 0.03,
+    coinBonusPerLevel: 0.03,
+    shotBonusPerLevel: 0.03,
+    upgradeCosts: {
+      2: 150,
+      3: 250,
+      4: 350,
+      5: 500
+    }
+  },
+  rare: {
+    speedBonusPerLevel: 0.05,
+    coinBonusPerLevel: 0.02,
+    shotBonusPerLevel: 0.02,
+    upgradeCosts: {
+      2: 250,
+      3: 400,
+      4: 600,
+      5: 850
+    }
+  },
+  epic: {
+    speedBonusPerLevel: 0.02,
+    coinBonusPerLevel: 0.02,
+    shotBonusPerLevel: 0.05,
+    upgradeCosts: {
+      2: 350,
+      3: 550,
+      4: 800,
+      5: 1100
+    }
+  },
+  legendary: {
+    speedBonusPerLevel: 0.02,
+    coinBonusPerLevel: 0.05,
+    shotBonusPerLevel: 0.02,
+    upgradeCosts: {
+      2: 500,
+      3: 800,
+      4: 1200,
+      5: 1600
+    }
+  }
+};
+
+const DAILY_MISSIONS = [
+  {
+    id: "daily_runs",
+    name: "Kickoff Runs",
+    description: "Complete 3 runs.",
+    metric: "runs",
+    goal: 3,
+    reward: 75
+  },
+  {
+    id: "daily_goals",
+    name: "Sharpshooter",
+    description: "Score 5 goals (total across runs).",
+    metric: "goals",
+    goal: 5,
+    reward: 75
+  },
+  {
+    id: "daily_distance",
+    name: "Marathon Legs",
+    description: "Reach 1,500m total distance in a day.",
+    metric: "distance",
+    goal: 1500,
+    reward: 100
+  }
+];
+
+const WEEKLY_MISSIONS = [
+  {
+    id: "weekly_distance",
+    name: "Endless Engine",
+    description: "Run 10,000m total.",
+    metric: "distance",
+    goal: 10000,
+    reward: 250
+  },
+  {
+    id: "weekly_goals",
+    name: "Net Shredder",
+    description: "Score 40 goals.",
+    metric: "goals",
+    goal: 40,
+    reward: 250
+  },
+  {
+    id: "weekly_coins",
+    name: "Treasure Hunter",
+    description: "Collect 300 coins in runs.",
+    metric: "coins",
+    goal: 300,
+    reward: 300
+  }
+];
+
+function getDayKey(date = new Date()) {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy.toISOString();
+}
+
+function getWeekKey(date = new Date()) {
+  const copy = new Date(date);
+  const day = (copy.getDay() + 6) % 7; // Monday = 0
+  copy.setDate(copy.getDate() - day);
+  copy.setHours(0, 0, 0, 0);
+  return copy.toISOString();
+}
+
+function missionStateFromDefs(defs) {
+  return defs.map((mission) => ({
+    ...mission,
+    progress: 0,
+    claimed: false
+  }));
+}
+
+function defaultMissions(now = new Date()) {
+  return {
+    daily: {
+      key: getDayKey(now),
+      missions: missionStateFromDefs(DAILY_MISSIONS)
+    },
+    weekly: {
+      key: getWeekKey(now),
+      missions: missionStateFromDefs(WEEKLY_MISSIONS)
+    }
+  };
+}
+
 function defaultData() {
   return {
     coins: 0,
     bestDistance: 0,
     totalGoals: 0,
     unlockedCards: ["street_striker"],
-    selectedCardId: "street_striker"
+    selectedCardId: "street_striker",
+    cardLevels: {
+      street_striker: 1,
+      pace_merchant: 1,
+      clinical_finisher: 1,
+      crowd_favorite: 1
+    },
+    missions: defaultMissions(),
+    recentRunCoins: []
   };
 }
 
 export function loadPlayerData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultData();
-    const parsed = JSON.parse(raw);
-    return {
+    const parsed = raw ? JSON.parse(raw) : {};
+    const data = {
       ...defaultData(),
       ...parsed
     };
+    refreshMissions(data);
+    return data;
   } catch (e) {
     console.warn("Failed to load player data, using defaults.", e);
     return defaultData();
@@ -86,6 +237,38 @@ export function getCardById(id) {
   return PLAYER_CARDS.find((card) => card.id === id) || null;
 }
 
+export function getCardLevel(data, cardId) {
+  if (!data.cardLevels) return 1;
+  return data.cardLevels[cardId] || 1;
+}
+
+export function getUpgradeCost(card, currentLevel) {
+  const rarityCfg = RARITY_CONFIG[card.rarity];
+  if (!rarityCfg) return null;
+  const targetLevel = currentLevel + 1;
+  return rarityCfg.upgradeCosts[targetLevel] || null;
+}
+
+export function getEffectiveMultipliers(card, level = 1) {
+  const rarityCfg = RARITY_CONFIG[card.rarity] || RARITY_CONFIG.common;
+  const levelsAboveBase = Math.max(0, level - 1);
+
+  const speed =
+    card.speedMultiplier *
+    (1 + rarityCfg.speedBonusPerLevel * levelsAboveBase);
+  const coins =
+    card.coinMultiplier * (1 + rarityCfg.coinBonusPerLevel * levelsAboveBase);
+  const shotGain =
+    card.shotGainMultiplier *
+    (1 + rarityCfg.shotBonusPerLevel * levelsAboveBase);
+
+  return {
+    speed,
+    coins,
+    shotGain
+  };
+}
+
 export function unlockCard(data, card) {
   if (data.unlockedCards.includes(card.id)) return false;
   if (data.coins < card.unlockCost) return false;
@@ -94,8 +277,91 @@ export function unlockCard(data, card) {
   return true;
 }
 
+export function upgradeCard(data, card) {
+  const currentLevel = getCardLevel(data, card.id);
+  if (currentLevel >= CARD_LEVEL_CAP) return { success: false, reason: "max" };
+
+  const cost = getUpgradeCost(card, currentLevel);
+  if (cost == null || data.coins < cost) {
+    return { success: false, reason: "coins", cost };
+  }
+
+  data.coins -= cost;
+  data.cardLevels[card.id] = currentLevel + 1;
+  return { success: true, newLevel: currentLevel + 1, cost };
+}
+
 export function selectCard(data, card) {
   if (!data.unlockedCards.includes(card.id)) return false;
   data.selectedCardId = card.id;
   return true;
+}
+
+function addProgress(mission, amount) {
+  mission.progress = Math.min(mission.goal, mission.progress + amount);
+}
+
+export function refreshMissions(data, now = new Date()) {
+  if (!data.missions) {
+    data.missions = defaultMissions(now);
+    return;
+  }
+
+  const currentDay = getDayKey(now);
+  if (data.missions.daily?.key !== currentDay) {
+    data.missions.daily = {
+      key: currentDay,
+      missions: missionStateFromDefs(DAILY_MISSIONS)
+    };
+  }
+
+  const currentWeek = getWeekKey(now);
+  if (data.missions.weekly?.key !== currentWeek) {
+    data.missions.weekly = {
+      key: currentWeek,
+      missions: missionStateFromDefs(WEEKLY_MISSIONS)
+    };
+  }
+}
+
+export function updateMissionsAfterRun(data, runStats) {
+  refreshMissions(data);
+
+  const increments = {
+    runs: 1,
+    goals: runStats.goals || 0,
+    distance: runStats.distance || 0,
+    coins: runStats.coins || 0
+  };
+
+  ["daily", "weekly"].forEach((cadence) => {
+    const bucket = data.missions[cadence];
+    if (!bucket?.missions) return;
+
+    bucket.missions.forEach((mission) => {
+      addProgress(mission, increments[mission.metric] || 0);
+    });
+  });
+}
+
+export function claimMissionReward(data, cadence, missionId) {
+  refreshMissions(data);
+
+  const bucket = data.missions[cadence];
+  if (!bucket?.missions) return 0;
+  const mission = bucket.missions.find((m) => m.id === missionId);
+  if (!mission || mission.claimed || mission.progress < mission.goal) return 0;
+
+  mission.claimed = true;
+  data.coins += mission.reward;
+  return mission.reward;
+}
+
+export function estimateRunsForCost(data, cost) {
+  const history = Array.isArray(data.recentRunCoins) ? data.recentRunCoins : [];
+  const average =
+    history.length > 0
+      ? history.reduce((sum, val) => sum + val, 0) / history.length
+      : 70;
+  return Math.max(1, Math.ceil(cost / average));
 }
