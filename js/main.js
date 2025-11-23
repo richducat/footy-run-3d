@@ -128,19 +128,11 @@ function buildGameInstance() {
 }
 
 function updateTouchControlsVisibility() {
-  const isInRun = currentScreenId === null;
-  touchControlsContainer?.classList.toggle(
-    "touch-controls--visible",
-    isInRun
-  );
-
-  const runState = game?.getRunState?.();
-  const showStartButton =
-    !isInRun || !runState || runState === "idle" || runState === "ready";
-  startButton?.classList.toggle("hidden", !showStartButton);
-
-  const showPauseButton = isInRun && runState === "running";
-  pauseTouchButton?.classList.toggle("hidden", !showPauseButton);
+  // Hide on-screen buttons during gameplay so they don't overlay the action.
+  // Players can still use swipe gestures on mobile or keyboard controls on desktop.
+  touchControlsContainer?.classList.remove("touch-controls--visible");
+  startButton?.classList.add("hidden");
+  pauseTouchButton?.classList.add("hidden");
 }
 
 function renderTeamScreen() {
