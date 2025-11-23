@@ -82,7 +82,7 @@
             <button id="btnTeam" class="btn">Squad</button>
             <button id="btnSettings" class="btn btn--ghost">Settings</button>
             <p class="screen-help">
-              Mobile: swipe to move, jump &amp; slide.<br />
+              Mobile: swipe or use the on-screen controls to move, jump &amp; slide.<br />
               Desktop: arrow keys to move, jump &amp; slide.
             </p>
 
@@ -183,6 +183,21 @@
 
         <!-- Pause banner -->
         <div id="pauseBanner" class="pause-banner hidden">Paused</div>
+
+        <!-- Mobile touch controls -->
+        <div class="touch-controls" aria-label="Touch controls">
+          <div class="touch-controls__cluster touch-controls__cluster--move">
+            <button class="touch-btn" data-action="moveLeft" aria-label="Move left">←</button>
+            <button class="touch-btn" data-action="moveRight" aria-label="Move right">→</button>
+          </div>
+          <div class="touch-controls__cluster touch-controls__cluster--actions">
+            <button class="touch-btn touch-btn--accent" data-action="jump" aria-label="Jump">Jump</button>
+            <button class="touch-btn" data-action="slide" aria-label="Slide">Slide</button>
+          </div>
+          <button class="touch-btn touch-btn--ghost touch-controls__pause" data-action="pauseToggle" aria-label="Pause">
+            Pause
+          </button>
+        </div>
       </div>
     </main>
 

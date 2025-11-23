@@ -56,6 +56,9 @@ const btnReplay = document.getElementById("btnReplay");
 const btnGoToTeam = document.getElementById("btnGoToTeam");
 const btnGoToMenu = document.getElementById("btnGoToMenu");
 const btnResetProgress = document.getElementById("btnResetProgress");
+const touchControls = document.querySelectorAll(
+  ".touch-controls [data-action]"
+);
 
 // Team screen
 const cardListEl = document.getElementById("cardList");
@@ -499,6 +502,19 @@ btnResetProgress.addEventListener("click", () => {
     renderTeamScreen();
     renderMissions();
   }
+});
+
+// Touch controls for mobile devices
+touchControls.forEach((btn) => {
+  btn.addEventListener(
+    "pointerdown",
+    (event) => {
+      event.preventDefault();
+      const action = btn.dataset.action;
+      if (action) handleInputAction(action);
+    },
+    { passive: false }
+  );
 });
 
 // Back buttons with data-nav
