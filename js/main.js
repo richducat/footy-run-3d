@@ -7,7 +7,15 @@ import {
   savePlayerData,
   getCardById,
   unlockCard,
-  selectCard
+  selectCard,
+  getCardLevel,
+  getEffectiveMultipliers,
+  upgradeCard,
+  updateMissionsAfterRun,
+  claimMissionReward,
+  estimateRunsForCost,
+  CARD_LEVEL_CAP,
+  getUpgradeCost
 } from "./playerData.js";
 import { InputManager } from "./input.js";
 
@@ -33,6 +41,10 @@ let currentScreenId = "mainMenu";
 const goDistance = document.getElementById("goDistance");
 const goGoals = document.getElementById("goGoals");
 const goCoins = document.getElementById("goCoins");
+const goCoinsInRun = document.getElementById("goCoinsInRun");
+const goCoinsDistance = document.getElementById("goCoinsDistance");
+const goCoinsGoals = document.getElementById("goCoinsGoals");
+const goCoinsTotal = document.getElementById("goCoinsTotal");
 const goBestNote = document.getElementById("goBestNote");
 
 // Buttons
@@ -47,6 +59,10 @@ const btnResetProgress = document.getElementById("btnResetProgress");
 
 // Team screen
 const cardListEl = document.getElementById("cardList");
+
+// Missions
+const dailyMissionsEl = document.getElementById("dailyMissions");
+const weeklyMissionsEl = document.getElementById("weeklyMissions");
 
 let playerData = loadPlayerData();
 updateCoinsHeader();
@@ -78,8 +94,12 @@ function buildGameInstance() {
     PLAYER_CARDS.find((c) => c.id === "street_striker") ||
     PLAYER_CARDS[0];
 
+  const level = getCardLevel(playerData, selectedCard.id);
+  const multipliers = getEffectiveMultipliers(selectedCard, level);
+
   game = new Game(canvas, {
     playerCard: selectedCard,
+    multipliers,
     bestDistance: playerData.bestDistance,
     onStats: handleGameStats,
     onState: handleGameState,
@@ -94,6 +114,10 @@ function renderTeamScreen() {
   PLAYER_CARDS.forEach((card) => {
     const isUnlocked = playerData.unlockedCards.includes(card.id);
     const isSelected = playerData.selectedCardId === card.id;
+    const cardLevel = getCardLevel(playerData, card.id);
+    const effective = getEffectiveMultipliers(card, cardLevel);
+    const nextLevel = Math.min(CARD_LEVEL_CAP, cardLevel + 1);
+    const nextEffective = getEffectiveMultipliers(card, nextLevel);
 
     const el = document.createElement("article");
     el.className = "player-card";
@@ -118,16 +142,29 @@ function renderTeamScreen() {
     name.textContent = card.name;
     const meta = document.createElement("div");
     meta.className = "player-card__meta";
-    meta.textContent = `Speed x${card.speedMultiplier.toFixed(
+    meta.textContent = `Level ${cardLevel}/${CARD_LEVEL_CAP} · Speed x${effective.speed.toFixed(
       2
-    )} · Coins x${card.coinMultiplier.toFixed(
+    )} · Coins x${effective.coins.toFixed(
       2
-    )} · Shot x${card.shotGainMultiplier.toFixed(2)}`;
+    )} · Shot x${effective.shotGain.toFixed(2)}`;
+    const levelNote = document.createElement("div");
+    levelNote.className = "player-card__meta";
+    levelNote.textContent =
+      cardLevel >= CARD_LEVEL_CAP
+        ? "Max level reached"
+        : `Next: +${((nextEffective.speed / effective.speed - 1) * 100).toFixed(
+            0
+          )}% Speed · +${(
+            (nextEffective.coins / effective.coins - 1) * 100
+          ).toFixed(0)}% Coins · +${(
+            (nextEffective.shotGain / effective.shotGain - 1) * 100
+          ).toFixed(0)}% Shot`;
     const tagline = document.createElement("div");
     tagline.className = "player-card__tagline";
     tagline.textContent = card.tagline;
     info.appendChild(name);
     info.appendChild(meta);
+    info.appendChild(levelNote);
     info.appendChild(tagline);
 
     const actions = document.createElement("div");
@@ -136,7 +173,8 @@ function renderTeamScreen() {
     if (!isUnlocked) {
       const unlockBtn = document.createElement("button");
       unlockBtn.className = "btn btn--small btn--primary";
-      unlockBtn.textContent = `Unlock – ${card.unlockCost} coins`;
+      const runsEstimate = estimateRunsForCost(playerData, card.unlockCost);
+      unlockBtn.textContent = `Unlock – ${card.unlockCost} coins (≈${runsEstimate} runs)`;
       unlockBtn.addEventListener("click", () => {
         if (playerData.coins < card.unlockCost) {
           alert("Not enough coins to unlock this card.");
@@ -165,6 +203,27 @@ function renderTeamScreen() {
         });
       }
       actions.appendChild(selectBtn);
+
+      if (cardLevel < CARD_LEVEL_CAP) {
+        const nextCost = getUpgradeCost(card, cardLevel);
+        const upgradeBtn = document.createElement("button");
+        upgradeBtn.className = "btn btn--small btn--primary";
+        upgradeBtn.textContent = `Upgrade – ${nextCost} coins`;
+        upgradeBtn.addEventListener("click", () => {
+          if (playerData.coins < nextCost) {
+            alert("Not enough coins to upgrade this card.");
+            return;
+          }
+          const result = upgradeCard(playerData, card);
+          if (result.success) {
+            savePlayerData(playerData);
+            updateCoinsHeader();
+            renderTeamScreen();
+            buildGameInstance();
+          }
+        });
+        actions.appendChild(upgradeBtn);
+      }
     }
 
     el.appendChild(badge);
@@ -173,6 +232,90 @@ function renderTeamScreen() {
 
     cardListEl.appendChild(el);
   });
+}
+
+function renderMissionList(container, missions, cadence) {
+  container.innerHTML = "";
+  missions.forEach((mission) => {
+    const progressPct = Math.min(100, (mission.progress / mission.goal) * 100);
+    const isComplete = mission.progress >= mission.goal;
+
+    const card = document.createElement("div");
+    card.className = "mission-card";
+    if (isComplete) card.classList.add("mission-card--complete");
+    if (mission.claimed) card.classList.add("mission-card--claimed");
+
+    const header = document.createElement("div");
+    header.className = "mission-card__header";
+    const title = document.createElement("p");
+    title.className = "mission-card__title";
+    title.textContent = mission.name;
+    const reward = document.createElement("span");
+    reward.className = "mission-card__reward pill pill--soft";
+    reward.textContent = `+${mission.reward} coins`;
+    header.appendChild(title);
+    header.appendChild(reward);
+
+    const desc = document.createElement("p");
+    desc.className = "mission-card__desc";
+    desc.textContent = mission.description;
+
+    const meta = document.createElement("div");
+    meta.className = "mission-card__meta";
+    meta.textContent = `${mission.progress}/${mission.goal}`;
+
+    const progressBar = document.createElement("div");
+    progressBar.className = "progress-bar";
+    const fill = document.createElement("div");
+    fill.className = "progress-bar__fill";
+    fill.style.width = `${progressPct}%`;
+    progressBar.appendChild(fill);
+
+    const actions = document.createElement("div");
+    actions.className = "mission-card__actions";
+    const claimBtn = document.createElement("button");
+    claimBtn.className = "btn btn--small";
+    if (mission.claimed) {
+      claimBtn.textContent = "Claimed";
+      claimBtn.disabled = true;
+    } else if (isComplete) {
+      claimBtn.classList.add("btn--primary");
+      claimBtn.textContent = "Claim";
+      claimBtn.addEventListener("click", () => {
+        const rewardCoins = claimMissionReward(playerData, cadence, mission.id);
+        if (rewardCoins > 0) {
+          savePlayerData(playerData);
+          updateCoinsHeader();
+          renderMissions();
+        }
+      });
+    } else {
+      claimBtn.textContent = "In progress";
+      claimBtn.disabled = true;
+    }
+    actions.appendChild(claimBtn);
+
+    card.appendChild(header);
+    card.appendChild(desc);
+    card.appendChild(progressBar);
+    card.appendChild(meta);
+    card.appendChild(actions);
+    container.appendChild(card);
+  });
+}
+
+function renderMissions() {
+  if (!playerData.missions) return;
+  renderMissionList(
+    dailyMissionsEl,
+    playerData.missions.daily?.missions || [],
+    "daily"
+  );
+  renderMissionList(
+    weeklyMissionsEl,
+    playerData.missions.weekly?.missions || [],
+    "weekly"
+  );
 }
 
 function startRun() {
@@ -214,20 +357,43 @@ function handleGameGoal() {
 }
 
 function handleGameOver(payload) {
+  const previousBest = playerData.bestDistance;
+  const distanceBonus = Math.floor(payload.distance / 20);
+  const goalBonus = payload.goals * 20;
+  const runCoins = payload.coins + distanceBonus + goalBonus;
+
   // Merge into persistent data
-  playerData.coins += payload.coins;
+  playerData.coins += runCoins;
   playerData.totalGoals += payload.goals;
   if (payload.distance > playerData.bestDistance) {
     playerData.bestDistance = payload.distance;
   }
+  updateMissionsAfterRun(playerData, {
+    distance: payload.distance,
+    goals: payload.goals,
+    coins: runCoins
+  });
+
+  const history = Array.isArray(playerData.recentRunCoins)
+    ? playerData.recentRunCoins
+    : [];
+  history.push(runCoins);
+  playerData.recentRunCoins = history.slice(-5);
+
   savePlayerData(playerData);
   updateCoinsHeader();
+  renderMissions();
 
   // Update game over screen
   goDistance.textContent = `${payload.distance} m`;
   goGoals.textContent = `${payload.goals}`;
-  goCoins.textContent = `${payload.coins}`;
-  if (payload.distance >= playerData.bestDistance) {
+  goCoins.textContent = `${runCoins}`;
+  goCoinsInRun.textContent = `${payload.coins}`;
+  goCoinsDistance.textContent = `${distanceBonus}`;
+  goCoinsGoals.textContent = `${goalBonus}`;
+  goCoinsTotal.textContent = `${runCoins}`;
+
+  if (payload.distance > previousBest) {
     goBestNote.textContent = "New personal best for this device!";
   } else {
     goBestNote.textContent = `Best distance so far: ${playerData.bestDistance} m`;
@@ -331,6 +497,7 @@ btnResetProgress.addEventListener("click", () => {
     updateCoinsHeader();
     buildGameInstance();
     renderTeamScreen();
+    renderMissions();
   }
 });
 
@@ -360,6 +527,7 @@ function loop(timestamp) {
 // Bootstrap
 buildGameInstance();
 renderTeamScreen();
+renderMissions();
 setActiveScreen("mainMenu");
 
 input = new InputManager(canvas, handleInputAction);

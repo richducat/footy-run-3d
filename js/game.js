@@ -20,9 +20,13 @@ export class Game {
 
     // Player card tuning
     const playerCard = options.playerCard || {};
-    this.speedMultiplier = playerCard.speedMultiplier || 1.0;
-    this.coinMultiplier = playerCard.coinMultiplier || 1.0;
-    this.shotGainMultiplier = playerCard.shotGainMultiplier || 1.0;
+    const multipliers = options.multipliers || {};
+    this.speedMultiplier =
+      multipliers.speed || playerCard.speedMultiplier || 1.0;
+    this.coinMultiplier =
+      multipliers.coins || playerCard.coinMultiplier || 1.0;
+    this.shotGainMultiplier =
+      multipliers.shotGain || playerCard.shotGainMultiplier || 1.0;
     this.playerCardMeta = playerCard;
 
     // Player
