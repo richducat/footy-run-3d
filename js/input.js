@@ -29,6 +29,16 @@ export class InputManager {
   }
 
   _handleKeyDown(e) {
+    const target = e.target;
+    const tagName = target?.tagName;
+    const isEditingFormField =
+      target?.isContentEditable ||
+      tagName === "INPUT" ||
+      tagName === "TEXTAREA" ||
+      tagName === "SELECT";
+
+    if (isEditingFormField) return;
+
     const code = e.code;
 
     let action = null;
