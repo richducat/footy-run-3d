@@ -93,6 +93,7 @@ html.remote-loaded,
   min-height: 100vh;
   padding: 10px 12px;
   gap: 8px;
+  --chrome-height: 140px;
 }
 
 .app-header {
