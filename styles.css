@@ -93,6 +93,7 @@ html.remote-loaded,
   min-height: 100vh;
   padding: 10px 12px;
   gap: 8px;
+  --chrome-height: 140px;
 }
 
 .app-header {
@@ -162,11 +163,15 @@ html.remote-loaded,
   flex: 1;
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
 .game-shell {
   position: relative;
   width: min(540px, 100%);
+  max-width: calc((100vh - var(--chrome-height)) * 9 / 16);
+  aspect-ratio: 9 / 16;
+  max-height: calc(100vh - var(--chrome-height));
   margin: 0 auto;
   border-radius: 18px;
   overflow: hidden;
@@ -178,7 +183,7 @@ html.remote-loaded,
 canvas {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
 }
 
 /* HUD */
@@ -191,6 +196,11 @@ canvas {
   flex-direction: column;
   justify-content: space-between;
   pointer-events: none;
+}
+
+.hud button,
+.hud .btn {
+  pointer-events: auto;
 }
 
 .hud-row {
@@ -688,8 +698,114 @@ canvas {
   display: none !important;
 }
 
+/* Touch controls */
+
+.touch-controls {
+  position: absolute;
+  inset: auto 0 8px 0;
+  display: none;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 12px;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.touch-controls__cluster {
+  display: flex;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.touch-controls__cluster--actions {
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.touch-controls__pause {
+  pointer-events: auto;
+  align-self: center;
+  margin: 0 auto;
+}
+
+.touch-btn {
+  min-width: 64px;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(0, 0, 0, 0.55);
+  color: #f5f5f5;
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+}
+
+.touch-btn--accent {
+  background: linear-gradient(135deg, #10e85f, #0bb799);
+  color: #021006;
+  border-color: rgba(16, 232, 95, 0.8);
+}
+
+.touch-btn--ghost {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f5;
+}
+
+.touch-btn:active {
+  transform: translateY(1px);
+}
+
 @media (min-width: 640px) {
   .button-row {
     flex-direction: row;
+  }
+}
+
+@media (max-width: 740px) {
+  .app {
+    padding: 8px 6px;
+    gap: 6px;
+    --chrome-height: 175px;
+  }
+
+  .app-header {
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+  }
+
+  .brand-meta {
+    justify-content: center;
+  }
+
+  .game-shell {
+    width: 100%;
+    max-width: calc((100vh - var(--chrome-height)) * 9 / 16);
+    max-height: calc(100vh - var(--chrome-height));
+  }
+
+  .touch-controls {
+    display: flex;
+  }
+}
+
+@supports (height: 100dvh) {
+  .app {
+    min-height: 100dvh;
+  }
+
+  .game-shell {
+    max-width: calc((100dvh - var(--chrome-height)) * 9 / 16);
+    max-height: calc(100dvh - var(--chrome-height));
+  }
+
+  @media (max-width: 740px) {
+    .game-shell {
+      max-width: calc((100dvh - var(--chrome-height)) * 9 / 16);
+      max-height: calc(100dvh - var(--chrome-height));
+    }
   }
 }
