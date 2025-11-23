@@ -75,16 +75,40 @@
 
         <!-- Main menu -->
         <section id="mainMenu" class="screen screen--active">
-          <div class="screen-inner">
+          <div class="screen-inner screen-inner--scrollable">
             <h1 class="screen-title">Ultimate Striker Run</h1>
             <p class="screen-subtitle">Temple-run style endless runner with a pro soccer twist.</p>
-            <button id="btnPlay" class="btn btn--primary">Play</button>
+            <button id="btnPlay" class="btn btn--primary">Start run</button>
             <button id="btnTeam" class="btn">Squad</button>
             <button id="btnSettings" class="btn btn--ghost">Settings</button>
             <p class="screen-help">
               Mobile: swipe or use the on-screen controls to move, jump &amp; slide.<br />
               Desktop: arrow keys to move, jump &amp; slide.
             </p>
+
+            <div class="panel">
+              <div class="panel__header">
+                <h3>Login &amp; save</h3>
+                <span class="pill pill--soft" id="authStatus">Not logged in</span>
+              </div>
+              <div class="form-grid">
+                <label class="form-field">
+                  <span class="form-field__label">Display name</span>
+                  <input type="text" id="loginName" name="loginName" placeholder="Striker handle" />
+                </label>
+                <label class="form-field">
+                  <span class="form-field__label">Email</span>
+                  <input type="email" id="loginEmail" name="loginEmail" placeholder="you@example.com" />
+                </label>
+              </div>
+              <div class="button-row button-row--inline">
+                <button id="btnLogin" class="btn btn--primary btn--small">Log in</button>
+                <button id="btnSaveProgress" class="btn btn--ghost btn--small">Save progress</button>
+              </div>
+              <p class="screen-subtitle" id="saveStatus">
+                Progress auto-saves locally on this device.
+              </p>
+            </div>
 
             <div class="panel">
               <div class="panel__header">
@@ -193,6 +217,15 @@
           <div class="touch-controls__cluster touch-controls__cluster--actions">
             <button class="touch-btn touch-btn--accent" data-action="jump" aria-label="Jump">Jump</button>
             <button class="touch-btn" data-action="slide" aria-label="Slide">Slide</button>
+          </div>
+          <div class="touch-controls__cluster touch-controls__start">
+            <button
+              class="touch-btn touch-btn--primary"
+              data-action="startRun"
+              aria-label="Start run"
+            >
+              Start
+            </button>
           </div>
           <button class="touch-btn touch-btn--ghost touch-controls__pause" data-action="pauseToggle" aria-label="Pause">
             Pause
