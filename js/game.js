@@ -701,22 +701,124 @@ export class Game {
     ctx.fillRect(x - 14, y - 22, this.player.width + 28, h + 58);
   }
 
+  drawDefender(ctx, x, y, width, height) {
+    ctx.save();
+
+    // Shadow for depth
+    ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+    ctx.filter = "blur(2.5px)";
+    ctx.beginPath();
+    ctx.ellipse(
+      x + width / 2,
+      y + height * 0.9,
+      width * 0.55,
+      height * 0.35,
+      0,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+    ctx.restore();
+
+    // Base jersey
+    const torsoX = x + width * 0.18;
+    const torsoY = y + height * 0.15;
+    const torsoW = width * 0.64;
+    const torsoH = height * 0.55;
+    const jersey = ctx.createLinearGradient(torsoX, torsoY, torsoX, torsoY + torsoH);
+    jersey.addColorStop(0, "#2a3b84");
+    jersey.addColorStop(1, "#1a2654");
+    ctx.fillStyle = jersey;
+    ctx.fillRect(torsoX, torsoY, torsoW, torsoH);
+
+    // Shoulder stripes
+    ctx.fillStyle = "#d9e3ff";
+    ctx.fillRect(torsoX, torsoY + torsoH * 0.08, torsoW, torsoH * 0.1);
+    ctx.fillRect(torsoX, torsoY + torsoH * 0.3, torsoW, torsoH * 0.08);
+
+    // Arms
+    const armGradient = ctx.createLinearGradient(x, torsoY, x, torsoY + torsoH * 0.6);
+    armGradient.addColorStop(0, "#f0d3b3");
+    armGradient.addColorStop(1, "#d5b08a");
+    ctx.fillStyle = armGradient;
+    ctx.beginPath();
+    ctx.roundRect(x + width * 0.05, torsoY + torsoH * 0.15, width * 0.22, torsoH * 0.45, 6);
+    ctx.roundRect(x + width * 0.73, torsoY + torsoH * 0.05, width * 0.22, torsoH * 0.35, 6);
+    ctx.fill();
+
+    // Legs (sliding pose)
+    const legGradient = ctx.createLinearGradient(x, y + height * 0.5, x, y + height);
+    legGradient.addColorStop(0, "#f0d3b3");
+    legGradient.addColorStop(1, "#d5b08a");
+    ctx.fillStyle = legGradient;
+    ctx.beginPath();
+    ctx.roundRect(x + width * 0.1, y + height * 0.55, width * 0.3, height * 0.3, 6);
+    ctx.roundRect(x + width * 0.45, y + height * 0.6, width * 0.4, height * 0.26, 6);
+    ctx.fill();
+
+    // Cleats
+    ctx.fillStyle = "#0f9b4c";
+    ctx.fillRect(x + width * 0.08, y + height * 0.82, width * 0.22, height * 0.12);
+    ctx.fillRect(x + width * 0.7, y + height * 0.82, width * 0.18, height * 0.12);
+
+    // Head
+    const headRadius = width * 0.18;
+    const headCenterX = x + width / 2;
+    const headCenterY = y + height * 0.2;
+    const headGradient = ctx.createLinearGradient(
+      headCenterX,
+      headCenterY - headRadius,
+      headCenterX,
+      headCenterY + headRadius
+    );
+    headGradient.addColorStop(0, "#f4d7b8");
+    headGradient.addColorStop(1, "#d6b08a");
+    ctx.fillStyle = headGradient;
+    ctx.beginPath();
+    ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Facial features
+    ctx.strokeStyle = "rgba(0,0,0,0.35)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(headCenterX, headCenterY + headRadius * 0.35, headRadius * 0.45, 0, Math.PI);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(headCenterX - headRadius * 0.45, headCenterY - headRadius * 0.1, headRadius * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(headCenterX + headRadius * 0.45, headCenterY - headRadius * 0.1, headRadius * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hair and headband
+    ctx.fillStyle = "#1c1c1c";
+    ctx.beginPath();
+    ctx.arc(headCenterX, headCenterY - headRadius * 0.15, headRadius, Math.PI, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ff6b6b";
+    ctx.fillRect(
+      headCenterX - headRadius,
+      headCenterY - headRadius * 0.25,
+      headRadius * 2,
+      headRadius * 0.16
+    );
+
+    // Gloves
+    ctx.fillStyle = "#0f9b4c";
+    ctx.beginPath();
+    ctx.roundRect(x + width * 0.06, torsoY + torsoH * 0.52, width * 0.12, width * 0.14, 4);
+    ctx.roundRect(x + width * 0.82, torsoY + torsoH * 0.12, width * 0.1, width * 0.14, 4);
+    ctx.fill();
+  }
+
   drawObstacles(ctx) {
     for (const o of this.obstacles) {
       const x = this.laneX(o.lane) - o.width / 2;
       const y = o.y;
 
       if (o.type === "ground") {
-        // Sliding tackle defender
-        const body = ctx.createLinearGradient(x, y, x + o.width, y + o.height);
-        body.addColorStop(0, "#f07669");
-        body.addColorStop(1, "#c0362f");
-        ctx.fillStyle = body;
-        ctx.fillRect(x, y, o.width, o.height);
-
-        ctx.strokeStyle = "rgba(0,0,0,0.45)";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, o.width, o.height);
+        this.drawDefender(ctx, x, y, o.width, o.height);
       } else {
         // Overhead camera rig / banner
         const rig = ctx.createLinearGradient(x, y, x + o.width, y + o.height);
