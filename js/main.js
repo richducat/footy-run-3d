@@ -409,9 +409,14 @@ function handleGameOver(payload) {
   history.push(runCoins);
   playerData.recentRunCoins = history.slice(-5);
 
+  playerData.profile = {
+    ...playerData.profile,
+    lastAutoSave: new Date().toISOString()
+  };
   savePlayerData(playerData);
   updateCoinsHeader();
   renderMissions();
+  updateProfileUI("Progress auto-saved after the match.");
 
   // Update game over screen
   goDistance.textContent = `${payload.distance} m`;
@@ -551,9 +556,11 @@ function updateProfileUI(message) {
     : "Not logged in";
   if (authStatus) authStatus.textContent = statusLabel;
 
-  const saveLabel = profile.lastManualSave
-    ? `Last saved ${new Date(profile.lastManualSave).toLocaleString()}`
-    : "Progress auto-saves locally on this device.";
+  const saveLabel = profile.lastAutoSave
+    ? `Auto-saved after last match on ${new Date(profile.lastAutoSave).toLocaleString()}`
+    : profile.lastManualSave
+      ? `Last saved ${new Date(profile.lastManualSave).toLocaleString()}`
+      : "Progress auto-saves locally on this device.";
   if (saveStatus) saveStatus.textContent = message || saveLabel;
 }
 

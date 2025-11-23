@@ -209,7 +209,8 @@ function defaultData() {
     profile: {
       displayName: "",
       email: "",
-      lastManualSave: null
+      lastManualSave: null,
+      lastAutoSave: null
     }
   };
 }
