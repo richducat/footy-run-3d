@@ -21,6 +21,63 @@ body {
   justify-content: center;
 }
 
+.remote-loaded body {
+  overflow: hidden;
+}
+
+.preview-container {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.preview-container.hidden {
+  display: none !important;
+}
+
+.preview-container iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.preview-status {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 10px 12px;
+  max-width: min(520px, 92%);
+  text-align: center;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.preview-status a {
+  color: #4ee8b4;
+}
+
+.preview-status__title {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.preview-status__meta {
+  font-size: 13px;
+  color: #d5dce6;
+}
+
+.remote-loaded .app {
+  display: none !important;
+}
+
 .app {
   width: 100%;
   max-width: 900px;

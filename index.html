@@ -7,6 +7,23 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div id="previewContainer" class="preview-container hidden">
+    <iframe
+      id="previewFrame"
+      title="Ultimate Striker Run 3D"
+      loading="eager"
+      allow="accelerometer; gyroscope; fullscreen; gamepad *; xr-spatial-tracking"
+      allowfullscreen
+      referrerpolicy="no-referrer-when-downgrade"
+    ></iframe>
+    <div class="preview-status" id="previewStatus">
+      <div class="preview-status__title">Loading 3D experience…</div>
+      <div class="preview-status__meta">
+        If the preview doesn't appear, <a href="https://richducat.github.io/footy-run-3d/" target="_blank" rel="noopener">open it in a new tab</a> while the local build loads as a fallback.
+      </div>
+    </div>
+  </div>
+
   <div class="app">
     <header class="app-header">
       <div class="brand">
@@ -174,6 +191,50 @@
     </footer>
   </div>
 
-  <script type="module" src="js/main.js"></script>
+  <script type="module">
+    const REMOTE_URL = "https://richducat.github.io/footy-run-3d/";
+    const previewContainer = document.getElementById("previewContainer");
+    const previewFrame = document.getElementById("previewFrame");
+    const previewStatus = document.getElementById("previewStatus");
+
+    let fallbackLoaded = false;
+    const fallbackDelay = 3500;
+
+    const activateFallback = (reason) => {
+      if (fallbackLoaded) return;
+      fallbackLoaded = true;
+      previewContainer.classList.add("hidden");
+      document.documentElement.classList.remove("remote-loaded");
+      import("./js/main.js");
+      if (reason) console.info("Using local build:", reason);
+    };
+
+    const startRemotePreview = () => {
+      previewContainer.classList.remove("hidden");
+      document.documentElement.classList.add("remote-loaded");
+      previewFrame.src = REMOTE_URL;
+    };
+
+    startRemotePreview();
+
+    const timeoutId = window.setTimeout(
+      () => activateFallback("Timed out loading remote preview"),
+      fallbackDelay
+    );
+
+    previewFrame.addEventListener("load", () => {
+      window.clearTimeout(timeoutId);
+      previewContainer.classList.add("preview-container--ready");
+      previewStatus.classList.add("hidden");
+    });
+
+    previewFrame.addEventListener("error", () =>
+      activateFallback("Remote preview blocked")
+    );
+
+    if (navigator.onLine === false) {
+      activateFallback("Offline detected");
+    }
+  </script>
 </body>
 </html>
