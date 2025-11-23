@@ -1,959 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Footy Run 3D</title>
-    <style>
-      :root {
-        color-scheme: dark;
-      }
-
-      body {
-        margin: 0;
-        overflow: hidden;
-        font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-        background: radial-gradient(circle at top, #1f2937, #030712 55%);
-        color: #fff;
-      }
-
-      #touchControls {
-        position: fixed;
-        inset: auto 0 1.5rem 0;
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.65rem;
-        width: min(520px, 90vw);
-        margin: 0 auto;
-        padding: 0.75rem 1rem;
-        background: linear-gradient(180deg, rgba(3, 7, 18, 0) 0%, rgba(3, 7, 18, 0.75) 30%);
-        backdrop-filter: blur(8px);
-        z-index: 12;
-        visibility: hidden;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-        pointer-events: none;
-      }
-
-      #touchControls.visible {
-        visibility: visible;
-        opacity: 1;
-        pointer-events: auto;
-      }
-
-      #touchControls .control {
-        padding: 1rem;
-        border-radius: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        background: rgba(14, 165, 233, 0.28);
-        color: #fff;
-        font-size: 1.3rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
-        cursor: pointer;
-        transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
-      }
-
-      #touchControls .control:active {
-        transform: translateY(2px);
-        background: rgba(14, 165, 233, 0.4);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
-      }
-
-      #score {
-        position: absolute;
-        top: 16px;
-        left: 16px;
-        padding: 0.35rem 0.75rem;
-        background: rgba(3, 7, 18, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 999px;
-        font-size: 1rem;
-        letter-spacing: 0.02em;
-        z-index: 10;
-        backdrop-filter: blur(8px);
-      }
-
-      #overlay {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: radial-gradient(circle, rgba(3, 7, 18, 0.95), rgba(3, 7, 18, 0.75));
-        z-index: 20;
-      }
-
-      #overlay .panel {
-        width: min(420px, 90vw);
-        text-align: center;
-        padding: 2.5rem 2rem;
-        background: rgba(8, 47, 73, 0.85);
-        border-radius: 1.5rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
-        backdrop-filter: blur(12px);
-      }
-
-      #overlay h1 {
-        margin: 0 0 0.5rem;
-        font-size: clamp(1.5rem, 5vw, 2.5rem);
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      #overlayMessage {
-        margin: 0 auto 1.5rem;
-        max-width: 30ch;
-        line-height: 1.5;
-        color: rgba(255, 255, 255, 0.85);
-      }
-
-      #startBtn {
-        width: 100%;
-        padding: 1rem 2rem;
-        font-size: 1.1rem;
-        background: linear-gradient(135deg, #ef4444, #f97316);
-        border: none;
-        border-radius: 999px;
-        color: #fff;
-        cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
-        font-weight: 600;
-        box-shadow: 0 10px 25px rgba(249, 115, 22, 0.35);
-      }
-
-      #startBtn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 16px 35px rgba(249, 115, 22, 0.5);
-      }
-
-      .hint {
-        margin-top: 1.5rem;
-        font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.65);
-      }
-
-      canvas {
-        display: block;
-      }
-
-      @media (max-width: 640px) {
-        #score {
-          font-size: 0.9rem;
-          left: 50%;
-          transform: translateX(-50%);
-        }
-
-        #overlay .panel {
-          padding: 2rem 1.5rem;
-        }
-
-        #touchControls {
-          display: grid;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="score">Score: 0 | Best: 0</div>
-    <div id="overlay">
-      <div class="panel">
-        <h1>Footy Run 3D</h1>
-        <p id="overlayMessage">
-          Dodge training cones, leap over tackle dummies, and stay on your lane as
-          the tempo rises. How long can you keep the drill alive?
-        </p>
-        <button id="startBtn">Start Run</button>
-        <p class="hint">
-          Desktop: ← → to move &nbsp;•&nbsp; ↑ / Space to jump &nbsp;•&nbsp; Mobile:
-          swipe to move or jump
-        </p>
+<head>
+  <meta charset="UTF-8" />
+  <title>Ultimate Striker Run</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-mark">USR</span>
+        <span class="brand-title">Ultimate Striker Run</span>
       </div>
-    </div>
-    <div id="touchControls" aria-label="Touch controls">
-      <button class="control" data-action="left" aria-label="Move left">◀</button>
-      <button class="control" data-action="jump" aria-label="Jump">⤒</button>
-      <button class="control" data-action="right" aria-label="Move right">▶</button>
-    </div>
-    <script type="module">
-      const ENGINE_SCRIPT_SOURCES = [
-        'https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js',
-        'https://unpkg.com/three@0.162.0/build/three.min.js',
-      ];
-
-      const ENGINE_MODULE_SOURCES = [
-        'https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js',
-        'https://unpkg.com/three@0.162.0/build/three.module.js',
-      ];
-
-      /** @type {typeof import('three')} */
-      let THREE;
-      let scene, camera, renderer, player;
-      const overlay = document.getElementById('overlay');
-      const startBtn = document.getElementById('startBtn');
-      const overlayMessage = document.getElementById('overlayMessage');
-      const scoreEl = document.getElementById('score');
-      const touchControls = document.getElementById('touchControls');
-      const controlButtons = Array.from(touchControls.querySelectorAll('.control'));
-
-      let useFallback = false;
-      let fallbackCanvas;
-      let fallbackCtx;
-      let fallbackAnimating = false;
-      let fallbackLastTime = 0;
-      const fallbackLaneMarkers = [];
-      const fallbackObstacles = [];
-
-      const obstacles = [];
-      const laneMarkers = [];
-      const laneX = [-2, 0, 2];
-
-      const PLAYER_Z = 0;
-      const LANE_MARKER_COUNT = 16;
-      const LANE_MARKER_SPACING = 5;
-      const BASE_SPEED = 7;
-      const MAX_SPEED = 18;
-      const MIN_SPAWN_INTERVAL = 0.45;
-
-      let currentLane = 1;
-      let speed = BASE_SPEED;
-      let gameOver = false;
-      let gameRunning = false;
-      let score = 0;
-      let jumpVelocity = 0;
-      let isJumping = false;
-      const gravity = 1.2;
-      const jumpStrength = 12;
-      let lastTime = 0;
-      let animationRunning = false;
-      let distanceTravelled = 0;
-      let highScore = 0;
-      let spawnTimer = 0;
-      let spawnInterval = 1;
-      let cameraBobTime = 0;
-      let engineReady = false;
-
-      function canUseWebGL() {
-        const canvas = document.createElement('canvas');
-        const context =
-          canvas.getContext('webgl2') ||
-          canvas.getContext('webgl') ||
-          canvas.getContext('experimental-webgl');
-        return Boolean(window.WebGLRenderingContext && context instanceof WebGLRenderingContext);
-      }
-
-      function requireEngine() {
-        if (engineReady) return true;
-        overlayMessage.innerHTML = 'Loading the field. Please try again in a moment.';
-        return false;
-      }
-
-      function loadScript(source) {
-        return new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = source;
-          script.crossOrigin = 'anonymous';
-          script.defer = true;
-          script.onload = () =>
-            window.THREE
-              ? resolve(window.THREE)
-              : reject(new Error('3D engine script loaded without THREE present.'));
-          script.onerror = () => reject(new Error(`Failed to load script ${source}`));
-          document.head.appendChild(script);
-        });
-      }
-
-      async function loadEngine() {
-        for (const source of ENGINE_SCRIPT_SOURCES) {
-          try {
-            const engine = await loadScript(source);
-            console.info(`Loaded 3D engine (script) from ${source}`);
-            return engine;
-          } catch (error) {
-            console.warn(`Could not load 3D engine script from ${source}`, error);
-          }
-        }
-
-        for (const source of ENGINE_MODULE_SOURCES) {
-          try {
-            const module = await import(source);
-            console.info(`Loaded 3D engine (module) from ${source}`);
-            return module;
-          } catch (error) {
-            console.warn(`Could not load 3D engine module from ${source}`, error);
-          }
-        }
-        throw new Error('Unable to load the 3D engine from any source.');
-      }
-
-      function showFatalError(message) {
-        overlayMessage.innerHTML = message;
-        startBtn.textContent = 'Unavailable';
-        startBtn.disabled = true;
-      }
-
-      async function bootstrap() {
-        startBtn.disabled = true;
-        overlayMessage.textContent = 'Loading the field...';
-
-        if (!canUseWebGL()) {
-          console.warn('WebGL context could not be created; enabling fallback.');
-          enableFallback(
-            'Your browser could not start WebGL. We loaded a simplified view so you can still play. Check that hardware acceleration is enabled and try again.'
-          );
-          return;
-        }
-
-        try {
-          THREE = await loadEngine();
-          init();
-          engineReady = true;
-          startBtn.disabled = false;
-        } catch (error) {
-          console.error('Game initialization failed', error);
-          enableFallback(
-            'We could not start the 3D view, so we loaded a simplified field. You can still play—press Start Run to begin!'
-          );
-        }
-      }
-
-      function enableFallback(message) {
-        useFallback = true;
-        engineReady = true;
-        startBtn.disabled = false;
-        startBtn.textContent = 'Start Run (2D fallback)';
-        overlayMessage.textContent =
-          message ||
-          'We could not start the 3D view, so we loaded a simplified field. You can still play—press Start Run to begin!';
-        initFallback();
-      }
-
-      function init() {
-        if (!THREE) {
-          throw new Error('3D engine not available.');
-        }
-        scene = new THREE.Scene();
-        scene.fog = new THREE.Fog(0x0b1121, 8, 55);
-
-        camera = new THREE.PerspectiveCamera(
-          75,
-          window.innerWidth / window.innerHeight,
-          0.1,
-          100
-        );
-        camera.position.set(0, 4, 8);
-        camera.lookAt(0, 1, 0);
-
-        try {
-          renderer = new THREE.WebGLRenderer({ antialias: true });
-          renderer.setSize(window.innerWidth, window.innerHeight);
-          renderer.setPixelRatio(window.devicePixelRatio);
-          renderer.shadowMap.enabled = true;
-          document.body.appendChild(renderer.domElement);
-        } catch (error) {
-          console.error('Failed to initialize WebGLRenderer, attempting WebGL1 fallback.', error);
-          if (THREE.WebGL1Renderer) {
-            renderer = new THREE.WebGL1Renderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.shadowMap.enabled = true;
-            document.body.appendChild(renderer.domElement);
-          } else {
-            throw error;
-          }
-        }
-
-        if (isTouch()) {
-          touchControls.classList.add('visible');
-        }
-
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(5, 10, 5);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.set(1024, 1024);
-        scene.add(dirLight);
-
-        const ambLight = new THREE.HemisphereLight(0xddeeff, 0x060910, 0.45);
-        scene.add(ambLight);
-
-        createEnvironment();
-        createLaneMarkers();
-
-        player = new THREE.Mesh(
-          new THREE.SphereGeometry(0.5, 24, 24),
-          new THREE.MeshStandardMaterial({
-            color: 0xffd166,
-            metalness: 0.15,
-            roughness: 0.3,
-            emissive: 0x291800,
-            emissiveIntensity: 0.3,
-          })
-        );
-        player.position.set(laneX[currentLane], 0.5, PLAYER_Z);
-        player.castShadow = true;
-        scene.add(player);
-
-        highScore = loadHighScore();
-        updateScoreboard();
-        setIntroMessage();
-
-        window.addEventListener('resize', () => {
-          camera.aspect = window.innerWidth / window.innerHeight;
-          camera.updateProjectionMatrix();
-          renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-      }
-
-      function createEnvironment() {
-        const ground = new THREE.Mesh(
-          new THREE.PlaneGeometry(400, 24),
-          new THREE.MeshStandardMaterial({ color: 0x045229, roughness: 0.8 })
-        );
-        ground.rotation.x = -Math.PI / 2;
-        ground.position.z = -120;
-        ground.receiveShadow = true;
-        scene.add(ground);
-
-        const midfieldLine = new THREE.Mesh(
-          new THREE.PlaneGeometry(400, 0.15),
-          new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25 })
-        );
-        midfieldLine.rotation.x = -Math.PI / 2;
-        midfieldLine.position.set(0, 0.02, -120);
-        scene.add(midfieldLine);
-
-        const crowdMaterial = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 1 });
-        const leftStand = new THREE.Mesh(new THREE.BoxGeometry(400, 10, 2), crowdMaterial);
-        leftStand.position.set(-8, 5, -60);
-        leftStand.rotation.y = Math.PI / 24;
-        scene.add(leftStand);
-
-        const rightStand = leftStand.clone();
-        rightStand.position.x = 8;
-        rightStand.rotation.y = -Math.PI / 24;
-        scene.add(rightStand);
-
-        const goalMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-        const crossbar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 4, 16), goalMaterial);
-        crossbar.rotation.z = Math.PI / 2;
-        crossbar.position.set(0, 2.5, -12);
-        scene.add(crossbar);
-
-        [-1.5, 1.5].forEach((offset) => {
-          const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3, 16), goalMaterial);
-          post.position.set(offset, 1.5, -12);
-          scene.add(post);
-        });
-
-        const spotLightLeft = new THREE.SpotLight(0xffffff, 0.8, 80, Math.PI / 4, 0.6, 1);
-        spotLightLeft.position.set(-8, 12, 10);
-        const leftTarget = new THREE.Object3D();
-        leftTarget.position.set(0, 0, -20);
-        spotLightLeft.target = leftTarget;
-        scene.add(leftTarget);
-        scene.add(spotLightLeft);
-
-        const spotLightRight = new THREE.SpotLight(0xffffff, 0.8, 80, Math.PI / 4, 0.6, 1);
-        spotLightRight.position.set(8, 12, 10);
-        const rightTarget = new THREE.Object3D();
-        rightTarget.position.set(0, 0, -20);
-        spotLightRight.target = rightTarget;
-        scene.add(rightTarget);
-        scene.add(spotLightRight);
-      }
-
-      function initFallback() {
-        fallbackCanvas = document.createElement('canvas');
-        fallbackCanvas.style.display = 'block';
-        fallbackCanvas.style.position = 'fixed';
-        fallbackCanvas.style.inset = '0';
-        fallbackCanvas.style.zIndex = '0';
-        fallbackCtx = fallbackCanvas.getContext('2d');
-        document.body.appendChild(fallbackCanvas);
-
-        const resize = () => {
-          fallbackCanvas.width = window.innerWidth;
-          fallbackCanvas.height = window.innerHeight;
-        };
-        resize();
-        window.addEventListener('resize', resize);
-
-        highScore = loadHighScore();
-        updateScoreboard();
-        setIntroMessage();
-      }
-
-      function isTouch() {
-        return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      }
-
-      function createLaneMarkers() {
-        const markerGeo = new THREE.PlaneGeometry(0.4, 1.5);
-        const markerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-        for (let i = 0; i < LANE_MARKER_COUNT; i++) {
-          const marker = new THREE.Mesh(markerGeo, markerMat);
-          marker.rotation.x = -Math.PI / 2;
-          marker.position.set(0, 0.015, -i * LANE_MARKER_SPACING);
-          laneMarkers.push(marker);
-          scene.add(marker);
-        }
-      }
-
-      function resetLaneMarkers() {
-        laneMarkers.forEach((marker, index) => {
-          marker.position.z = -index * LANE_MARKER_SPACING;
-        });
-      }
-
-      function scrollLaneMarkers(deltaSeconds) {
-        if (!laneMarkers.length) return;
-        const travel = speed * deltaSeconds;
-        const minZ = -LANE_MARKER_SPACING * (laneMarkers.length - 1);
-        laneMarkers.forEach((marker) => {
-          marker.position.z += travel;
-          if (marker.position.z > PLAYER_Z) {
-            marker.position.z = minZ;
-          }
-        });
-      }
-
-      function spawnObstacle() {
-        const idx = Math.floor(Math.random() * 3);
-        const isCone = Math.random() > 0.4;
-        const obstacle = new THREE.Mesh(
-          isCone
-            ? new THREE.ConeGeometry(0.35, 1.3, 18)
-            : new THREE.CylinderGeometry(0.25, 0.45, 1.4, 12),
-          new THREE.MeshStandardMaterial({
-            color: isCone ? 0xf97316 : 0xff4d6d,
-            roughness: 0.6,
-            emissive: 0x1f0a0a,
-            emissiveIntensity: 0.35,
-          })
-        );
-        obstacle.position.set(laneX[idx], 0.4, -50);
-        obstacle.laneIndex = idx;
-        obstacle.castShadow = true;
-        obstacle.userData.speedFactor = 1 + Math.random() * 0.35;
-        obstacle.userData.spin = (Math.random() * 0.4 + 0.2) * (Math.random() > 0.5 ? 1 : -1);
-        obstacles.push(obstacle);
-        scene.add(obstacle);
-      }
-
-      function updateObstacles(deltaSeconds) {
-        for (let i = obstacles.length - 1; i >= 0; i--) {
-          const obstacle = obstacles[i];
-          const travel = speed * obstacle.userData.speedFactor * deltaSeconds * 1.8;
-          obstacle.position.z += travel;
-          obstacle.rotation.y += deltaSeconds * obstacle.userData.spin;
-          if (obstacle.position.z > 5) {
-            scene.remove(obstacle);
-            obstacles.splice(i, 1);
-          } else if (
-            gameRunning &&
-            obstacle.laneIndex === currentLane &&
-            Math.abs(obstacle.position.z - PLAYER_Z) < 0.8 &&
-            player.position.y < 1
-          ) {
-            endGame(
-              `You clipped a defender! Final score: <strong>${score}</strong>.<br />Your best drill: <strong>${Math.max(
-                highScore,
-                score
-              )}</strong>.`
-            );
-          }
-        }
-      }
-
-      function animate(timestamp) {
-        requestAnimationFrame(animate);
-        const deltaSeconds = lastTime ? (timestamp - lastTime) / 1000 : 0;
-        lastTime = timestamp;
-
-        if (gameRunning && deltaSeconds) {
-          scrollLaneMarkers(deltaSeconds);
-          if (isJumping) {
-            player.position.y += jumpVelocity * deltaSeconds;
-            jumpVelocity -= gravity * deltaSeconds;
-            if (player.position.y <= 0.5) {
-              player.position.y = 0.5;
-              isJumping = false;
-              jumpVelocity = 0;
-            }
-          }
-
-          spawnTimer += deltaSeconds;
-          if (spawnTimer >= spawnInterval) {
-            spawnObstacle();
-            spawnTimer = 0;
-            spawnInterval = Math.max(MIN_SPAWN_INTERVAL, spawnInterval - 0.01);
-          }
-
-          updateObstacles(deltaSeconds);
-
-          speed = Math.min(MAX_SPEED, speed + deltaSeconds * 0.4);
-          distanceTravelled += speed * deltaSeconds * 0.5;
-          score = Math.floor(distanceTravelled);
-          updateScoreboard();
-        }
-
-        cameraBobTime += deltaSeconds * speed * 0.08;
-        camera.position.y = 4 + Math.sin(cameraBobTime) * 0.2;
-        camera.position.z = 8 + Math.sin(cameraBobTime * 0.5) * 0.4;
-
-        renderer.render(scene, camera);
-      }
-
-      function startGame() {
-        if (!requireEngine()) return;
-        if (useFallback) {
-          startFallbackGame();
-          return;
-        }
-        while (obstacles.length) {
-          const obstacle = obstacles.pop();
-          scene.remove(obstacle);
-        }
-        score = 0;
-        gameOver = false;
-        gameRunning = true;
-        currentLane = 1;
-        jumpVelocity = 0;
-        isJumping = false;
-        player.position.set(laneX[currentLane], 0.5, PLAYER_Z);
-        resetLaneMarkers();
-        lastTime = 0;
-        speed = BASE_SPEED;
-        spawnTimer = 0;
-        spawnInterval = 1;
-        distanceTravelled = 0;
-        updateScoreboard();
-        overlay.style.display = 'none';
-        setIntroMessage();
-
-        if (!animationRunning) {
-          animationRunning = true;
-          requestAnimationFrame(animate);
-        }
-      }
-
-      function startFallbackGame() {
-        fallbackObstacles.length = 0;
-        fallbackLaneMarkers.length = 0;
-        for (let i = 0; i < LANE_MARKER_COUNT; i++) {
-          fallbackLaneMarkers.push(-i * LANE_MARKER_SPACING);
-        }
-        score = 0;
-        gameOver = false;
-        gameRunning = true;
-        currentLane = 1;
-        jumpVelocity = 0;
-        isJumping = false;
-        player = { position: { x: laneX[currentLane], y: 0.5, z: PLAYER_Z } };
-        lastTime = 0;
-        speed = BASE_SPEED;
-        spawnTimer = 0;
-        spawnInterval = 1;
-        distanceTravelled = 0;
-        updateScoreboard();
-        overlay.style.display = 'none';
-        setIntroMessage();
-
-        if (!fallbackAnimating) {
-          fallbackAnimating = true;
-          requestAnimationFrame(fallbackAnimate);
-        }
-      }
-
-      function fallbackAnimate(timestamp) {
-        requestAnimationFrame(fallbackAnimate);
-        const deltaSeconds = fallbackLastTime ? (timestamp - fallbackLastTime) / 1000 : 0;
-        fallbackLastTime = timestamp;
-
-        if (!fallbackCtx) return;
-
-        fallbackCtx.clearRect(0, 0, fallbackCanvas.width, fallbackCanvas.height);
-        drawFallbackBackground();
-
-        if (gameRunning && deltaSeconds) {
-          if (isJumping) {
-            player.position.y += jumpVelocity * deltaSeconds;
-            jumpVelocity -= gravity * deltaSeconds;
-            if (player.position.y <= 0.5) {
-              player.position.y = 0.5;
-              isJumping = false;
-              jumpVelocity = 0;
-            }
-          }
-
-          scrollFallbackLaneMarkers(deltaSeconds);
-
-          spawnTimer += deltaSeconds;
-          if (spawnTimer >= spawnInterval) {
-            spawnFallbackObstacle();
-            spawnTimer = 0;
-            spawnInterval = Math.max(MIN_SPAWN_INTERVAL, spawnInterval - 0.01);
-          }
-
-          updateFallbackObstacles(deltaSeconds);
-
-          speed = Math.min(MAX_SPEED, speed + deltaSeconds * 0.4);
-          distanceTravelled += speed * deltaSeconds * 0.5;
-          score = Math.floor(distanceTravelled);
-          updateScoreboard();
-        }
-
-        drawFallbackLaneMarkers();
-        drawFallbackPlayer();
-        drawFallbackObstacles();
-      }
-
-      function drawFallbackBackground() {
-        const { width, height } = fallbackCanvas;
-        const gradient = fallbackCtx.createLinearGradient(0, 0, 0, height);
-        gradient.addColorStop(0, '#0b1120');
-        gradient.addColorStop(1, '#030712');
-        fallbackCtx.fillStyle = gradient;
-        fallbackCtx.fillRect(0, 0, width, height);
-
-        fallbackCtx.fillStyle = '#0f172a';
-        fallbackCtx.fillRect(0, height * 0.3, width, height * 0.7);
-
-        fallbackCtx.fillStyle = '#0d9488';
-        fallbackCtx.fillRect(width * 0.25, height * 0.3, width * 0.5, height * 0.7);
-      }
-
-      function mapLaneXToScreen(x) {
-        const laneWidth = (fallbackCanvas.width * 0.5) / 2;
-        return fallbackCanvas.width * 0.5 + x * laneWidth;
-      }
-
-      function mapZToScreen(z) {
-        return fallbackCanvas.height * 0.8 + z * 12;
-      }
-
-      function drawFallbackLaneMarkers() {
-        fallbackCtx.strokeStyle = 'rgba(255,255,255,0.9)';
-        fallbackCtx.lineWidth = 3;
-        fallbackLaneMarkers.forEach((z) => {
-          const y = mapZToScreen(z);
-          fallbackCtx.beginPath();
-          fallbackCtx.moveTo(mapLaneXToScreen(-2), y);
-          fallbackCtx.lineTo(mapLaneXToScreen(2), y);
-          fallbackCtx.stroke();
-        });
-      }
-
-      function drawFallbackPlayer() {
-        const radius = 18;
-        const x = mapLaneXToScreen(player.position.x);
-        const y = mapZToScreen(0) - player.position.y * 40;
-        fallbackCtx.fillStyle = '#ffd166';
-        fallbackCtx.beginPath();
-        fallbackCtx.arc(x, y, radius, 0, Math.PI * 2);
-        fallbackCtx.fill();
-        fallbackCtx.strokeStyle = 'rgba(0,0,0,0.35)';
-        fallbackCtx.lineWidth = 4;
-        fallbackCtx.stroke();
-      }
-
-      function drawFallbackObstacles() {
-        fallbackObstacles.forEach((obstacle) => {
-          const x = mapLaneXToScreen(laneX[obstacle.laneIndex]);
-          const y = mapZToScreen(obstacle.z);
-          const size = 26;
-          fallbackCtx.fillStyle = obstacle.isCone ? '#f97316' : '#ff4d6d';
-          fallbackCtx.strokeStyle = 'rgba(0,0,0,0.35)';
-          fallbackCtx.lineWidth = 3;
-          fallbackCtx.save();
-          fallbackCtx.translate(x, y);
-          fallbackCtx.rotate(obstacle.rotation || 0);
-          if (obstacle.isCone) {
-            fallbackCtx.beginPath();
-            fallbackCtx.moveTo(-size * 0.5, size * 0.5);
-            fallbackCtx.lineTo(size * 0.5, size * 0.5);
-            fallbackCtx.lineTo(0, -size * 0.6);
-            fallbackCtx.closePath();
-            fallbackCtx.fill();
-            fallbackCtx.stroke();
-          } else {
-            fallbackCtx.fillRect(-size * 0.35, -size * 0.6, size * 0.7, size * 1.2);
-            fallbackCtx.strokeRect(-size * 0.35, -size * 0.6, size * 0.7, size * 1.2);
-          }
-          fallbackCtx.restore();
-        });
-      }
-
-      function spawnFallbackObstacle() {
-        const laneIndex = Math.floor(Math.random() * 3);
-        const isCone = Math.random() > 0.4;
-        fallbackObstacles.push({
-          laneIndex,
-          z: -50,
-          isCone,
-          speedFactor: 1 + Math.random() * 0.35,
-          rotation: (Math.random() * 0.4 + 0.2) * (Math.random() > 0.5 ? 1 : -1),
-        });
-      }
-
-      function updateFallbackObstacles(deltaSeconds) {
-        for (let i = fallbackObstacles.length - 1; i >= 0; i--) {
-          const obstacle = fallbackObstacles[i];
-          const travel = speed * obstacle.speedFactor * deltaSeconds * 1.8;
-          obstacle.z += travel;
-          obstacle.rotation += deltaSeconds * obstacle.rotation * 0.5;
-          if (obstacle.z > 5) {
-            fallbackObstacles.splice(i, 1);
-          } else if (
-            gameRunning &&
-            obstacle.laneIndex === currentLane &&
-            Math.abs(obstacle.z - PLAYER_Z) < 0.8 &&
-            player.position.y < 1
-          ) {
-            endGame(
-              `You clipped a defender! Final score: <strong>${score}</strong>.<br />Your best drill: <strong>${Math.max(
-                highScore,
-                score
-              )}</strong>.`
-            );
-          }
-        }
-      }
-
-      function scrollFallbackLaneMarkers(deltaSeconds) {
-        const travel = speed * deltaSeconds;
-        const minZ = -LANE_MARKER_SPACING * (fallbackLaneMarkers.length - 1);
-        for (let i = 0; i < fallbackLaneMarkers.length; i++) {
-          fallbackLaneMarkers[i] += travel;
-          if (fallbackLaneMarkers[i] > PLAYER_Z) {
-            fallbackLaneMarkers[i] = minZ;
-          }
-        }
-      }
-
-      function endGame(message) {
-        gameRunning = false;
-        gameOver = true;
-        highScore = Math.max(highScore, score);
-        persistHighScore(highScore);
-        updateScoreboard();
-        overlayMessage.innerHTML = message;
-        overlay.style.display = 'flex';
-        startBtn.textContent = 'Play Again';
-      }
-
-      function updateScoreboard() {
-        scoreEl.textContent = `Score: ${score} | Best: ${highScore}`;
-      }
-
-      function setIntroMessage() {
-        const bestCopy = highScore > 0 ? `Your best drill so far: <strong>${highScore}</strong>.` : '';
-        overlayMessage.innerHTML = `Dodge training cones, leap over tackle dummies, and stay on your lane as the tempo rises. How long can you keep the drill alive? ${bestCopy}`;
-      }
-
-      function loadHighScore() {
-        try {
-          const stored = localStorage.getItem('footyHighScore');
-          const parsed = Number(stored);
-          return Number.isFinite(parsed) ? parsed : 0;
-        } catch (error) {
-          console.warn('Could not read score', error);
-          return 0;
-        }
-      }
-
-      function persistHighScore(value) {
-        try {
-          localStorage.setItem('footyHighScore', value);
-        } catch (error) {
-          console.warn('Could not persist score', error);
-        }
-      }
-
-      function moveLeft() {
-        if (!gameRunning) return;
-        if (currentLane > 0) {
-          currentLane--;
-          player.position.x = laneX[currentLane];
-        }
-      }
-
-      function moveRight() {
-        if (!gameRunning) return;
-        if (currentLane < 2) {
-          currentLane++;
-          player.position.x = laneX[currentLane];
-        }
-      }
-
-      function jump() {
-        if (!gameRunning) return;
-        if (!isJumping) {
-          isJumping = true;
-          jumpVelocity = jumpStrength;
-        }
-      }
-
-      function handleAction(action) {
-        switch (action) {
-          case 'left':
-            moveLeft();
-            break;
-          case 'right':
-            moveRight();
-            break;
-          case 'jump':
-            jump();
-            break;
-        }
-      }
-
-      startBtn.addEventListener('click', startGame);
-
-      window.addEventListener('keydown', (event) => {
-        if (!gameRunning) return;
-        if (event.key === 'ArrowLeft') {
-          moveLeft();
-        } else if (event.key === 'ArrowRight') {
-          moveRight();
-        } else if (event.key === 'ArrowUp' || event.key === ' ') {
-          jump();
-        }
-      });
-
-      controlButtons.forEach((button) => {
-        button.addEventListener('click', () => handleAction(button.dataset.action));
-      });
-
-      let touchStartX;
-      let touchStartY;
-
-      window.addEventListener('touchstart', (event) => {
-        const touch = event.changedTouches[0];
-        touchStartX = touch.screenX;
-        touchStartY = touch.screenY;
-      });
-
-      window.addEventListener('touchend', (event) => {
-        if (!gameRunning) return;
-        const touch = event.changedTouches[0];
-        const deltaX = touch.screenX - touchStartX;
-        const deltaY = touch.screenY - touchStartY;
-        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-          if (deltaX > 30) {
-            moveRight();
-          } else if (deltaX < -30) {
-            moveLeft();
-          }
-        } else if (deltaY < -30) {
-          jump();
-        }
-      });
-
-      bootstrap();
-    </script>
-  </body>
+      <div class="brand-meta">
+        <span class="pill pill--coins">
+          Coins:
+          <span id="headerCoinsValue">0</span>
+        </span>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="game-shell">
+        <canvas id="gameCanvas" width="540" height="960"></canvas>
+
+        <!-- HUD (in-game overlay) -->
+        <div id="hud" class="hud hidden">
+          <div class="hud-row">
+            <div class="hud-group">
+              <div class="hud-block">
+                <span class="hud-label">Distance</span>
+                <span class="hud-value" id="hudDistance">0 m</span>
+              </div>
+              <div class="hud-block">
+                <span class="hud-label">Goals</span>
+                <span class="hud-value" id="hudGoals">0</span>
+              </div>
+            </div>
+            <div class="hud-group hud-group--right">
+              <div class="hud-block">
+                <span class="hud-label">Best</span>
+                <span class="hud-value" id="hudBest">0 m</span>
+              </div>
+              <button id="btnPause" class="btn btn--small btn--ghost">Pause</button>
+            </div>
+          </div>
+          <div class="hud-bottom">
+            <div class="shot-meter">
+              <div class="shot-meter__label">Shot Meter</div>
+              <div class="shot-meter__bar">
+                <div id="shotMeterFill" class="shot-meter__fill"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main menu -->
+        <section id="mainMenu" class="screen screen--active">
+          <div class="screen-inner">
+            <h1 class="screen-title">Ultimate Striker Run</h1>
+            <p class="screen-subtitle">Temple-run style endless runner with a pro soccer twist.</p>
+            <button id="btnPlay" class="btn btn--primary">Play</button>
+            <button id="btnTeam" class="btn">Squad</button>
+            <button id="btnSettings" class="btn btn--ghost">Settings</button>
+            <p class="screen-help">
+              Mobile: swipe to move, jump &amp; slide.<br />
+              Desktop: arrow keys to move, jump &amp; slide.
+            </p>
+          </div>
+        </section>
+
+        <!-- Squad / player cards -->
+        <section id="teamScreen" class="screen">
+          <div class="screen-inner screen-inner--scrollable">
+            <div class="screen-header-row">
+              <h2>Squad</h2>
+              <button class="btn btn--small btn--ghost" data-nav="backMain">Back</button>
+            </div>
+            <p class="screen-subtitle">
+              Choose your striker. Different cards change speed, coin gain and shot meter fill.
+            </p>
+            <div id="cardList" class="card-list"></div>
+          </div>
+        </section>
+
+        <!-- Settings -->
+        <section id="settingsScreen" class="screen">
+          <div class="screen-inner">
+            <div class="screen-header-row">
+              <h2>Settings</h2>
+              <button class="btn btn--small btn--ghost" data-nav="backMain">Back</button>
+            </div>
+            <p class="screen-subtitle">
+              Local-only settings for this demo build.
+            </p>
+            <div class="settings-group">
+              <label class="setting-row">
+                <span>Show tutorial tips (not yet implemented)</span>
+                <input type="checkbox" id="settingTips" checked />
+              </label>
+              <label class="setting-row">
+                <span>Mute SFX (placeholder toggle)</span>
+                <input type="checkbox" id="settingMute" />
+              </label>
+              <button id="btnResetProgress" class="btn btn--danger btn--small">
+                Reset Local Progress
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Game over summary -->
+        <section id="gameOverScreen" class="screen">
+          <div class="screen-inner">
+            <h2>Full Time</h2>
+            <p class="screen-subtitle">Run complete – your stats for this match.</p>
+            <div class="stats-row">
+              <div class="stat">
+                <span class="stat-label">Distance</span>
+                <span class="stat-value" id="goDistance">0 m</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Goals</span>
+                <span class="stat-value" id="goGoals">0</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Coins</span>
+                <span class="stat-value" id="goCoins">0</span>
+              </div>
+            </div>
+            <p class="stat-note" id="goBestNote"></p>
+
+            <div class="button-row">
+              <button id="btnReplay" class="btn btn--primary">Play Again</button>
+              <button id="btnGoToTeam" class="btn">Edit Squad</button>
+              <button id="btnGoToMenu" class="btn btn--ghost">Main Menu</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Pause banner -->
+        <div id="pauseBanner" class="pause-banner hidden">Paused</div>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <span>Demo build – original IP only. No licensed clubs, logos or likenesses.</span>
+    </footer>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
 </html>
