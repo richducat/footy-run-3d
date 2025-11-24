@@ -140,6 +140,8 @@ function getKitColorsFromProfile(profile = playerData.profile || {}) {
     trim: profile.kitTrim || "#0bd3c7",
     ballAccent: profile.ballAccent || "#f2f4ff"
   };
+}
+
 function formatPercent(value) {
   return `${Math.round(value)}%`;
 }
