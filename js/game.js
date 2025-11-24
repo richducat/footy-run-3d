@@ -665,145 +665,139 @@ export class Game {
     ctx.strokeStyle = "rgba(0,0,0,0.35)";
     ctx.lineWidth = 2;
 
-    // Legs
-    const thighGradient = ctx.createLinearGradient(x, y, x, y + h);
-    thighGradient.addColorStop(0, "#f0d3b3");
-    thighGradient.addColorStop(1, "#d5b08a");
-    ctx.fillStyle = thighGradient;
-    ctx.fillRect(x + this.player.width * 0.27, y + h * 0.64, this.player.width * 0.14, h * 0.18);
-    ctx.fillRect(x + this.player.width * 0.59, y + h * 0.64, this.player.width * 0.14, h * 0.18);
+    // Legs with separated thigh and calf for more realistic proportions
+    const skinTone = ctx.createLinearGradient(x, y, x, y + h);
+    skinTone.addColorStop(0, "#f4d7b8");
+    skinTone.addColorStop(1, "#cfa579");
+    const leftLegX = x + this.player.width * 0.26;
+    const rightLegX = x + this.player.width * 0.6;
+    const thighH = h * 0.22;
+    const calfH = h * 0.16;
+    ctx.fillStyle = skinTone;
+    ctx.beginPath();
+    ctx.roundRect(leftLegX, y + h * 0.6, this.player.width * 0.15, thighH, 6);
+    ctx.roundRect(rightLegX, y + h * 0.6, this.player.width * 0.15, thighH, 6);
+    ctx.roundRect(leftLegX + this.player.width * 0.01, y + h * 0.6 + thighH, this.player.width * 0.13, calfH, 5);
+    ctx.roundRect(rightLegX + this.player.width * 0.01, y + h * 0.6 + thighH, this.player.width * 0.13, calfH, 5);
+    ctx.fill();
 
-    // Socks
+    // Socks with ribbing highlight
     const sockGradient = ctx.createLinearGradient(x, y + h * 0.78, x, y + h);
-    sockGradient.addColorStop(0, "#0f6df3");
+    sockGradient.addColorStop(0, "#0e55d8");
     sockGradient.addColorStop(1, "#083a9b");
     ctx.fillStyle = sockGradient;
-    ctx.fillRect(x + this.player.width * 0.27, y + h * 0.8, this.player.width * 0.14, h * 0.18);
-    ctx.fillRect(x + this.player.width * 0.59, y + h * 0.8, this.player.width * 0.14, h * 0.18);
-    ctx.fillStyle = "#0ad0ff";
-    ctx.fillRect(x + this.player.width * 0.27, y + h * 0.83, this.player.width * 0.14, h * 0.03);
-    ctx.fillRect(x + this.player.width * 0.59, y + h * 0.83, this.player.width * 0.14, h * 0.03);
+    ctx.fillRect(leftLegX, y + h * 0.78, this.player.width * 0.15, h * 0.18);
+    ctx.fillRect(rightLegX, y + h * 0.78, this.player.width * 0.15, h * 0.18);
+    ctx.fillStyle = "rgba(255,255,255,0.18)";
+    ctx.fillRect(leftLegX, y + h * 0.8, this.player.width * 0.15, h * 0.02);
+    ctx.fillRect(rightLegX, y + h * 0.8, this.player.width * 0.15, h * 0.02);
 
-    // Boots with laces
-    ctx.fillStyle = "#101010";
-    ctx.fillRect(x + this.player.width * 0.24, y + h * 0.96, this.player.width * 0.18, h * 0.06);
-    ctx.fillRect(x + this.player.width * 0.58, y + h * 0.96, this.player.width * 0.18, h * 0.06);
-    ctx.fillStyle = "#0ad0ff";
-    ctx.fillRect(x + this.player.width * 0.24, y + h, this.player.width * 0.18, h * 0.01);
-    ctx.fillRect(x + this.player.width * 0.58, y + h, this.player.width * 0.18, h * 0.01);
+    // Boots with more grounded shading and subtle lacing
+    const bootShine = ctx.createLinearGradient(x, y + h * 0.94, x, y + h * 1.02);
+    bootShine.addColorStop(0, "#1a1a1a");
+    bootShine.addColorStop(1, "#070707");
+    ctx.fillStyle = bootShine;
+    ctx.beginPath();
+    ctx.roundRect(leftLegX - this.player.width * 0.02, y + h * 0.94, this.player.width * 0.2, h * 0.08, 3);
+    ctx.roundRect(rightLegX - this.player.width * 0.02, y + h * 0.94, this.player.width * 0.2, h * 0.08, 3);
+    ctx.fill();
     ctx.strokeStyle = "rgba(255,255,255,0.6)";
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(x + this.player.width * 0.28, y + h * 0.99);
-    ctx.lineTo(x + this.player.width * 0.38, y + h * 0.99);
-    ctx.moveTo(x + this.player.width * 0.62, y + h * 0.99);
-    ctx.lineTo(x + this.player.width * 0.72, y + h * 0.99);
+    ctx.moveTo(leftLegX + this.player.width * 0.02, y + h * 0.98);
+    ctx.lineTo(leftLegX + this.player.width * 0.11, y + h * 0.98);
+    ctx.moveTo(rightLegX + this.player.width * 0.02, y + h * 0.98);
+    ctx.lineTo(rightLegX + this.player.width * 0.11, y + h * 0.98);
     ctx.stroke();
 
-    // Shorts
+    // Shorts with more depth and paneling
     const shorts = ctx.createLinearGradient(x, y + h * 0.52, x, y + h * 0.85);
-    shorts.addColorStop(0, "#1c2038");
-    shorts.addColorStop(1, "#0c0f1f");
+    shorts.addColorStop(0, "#151a2e");
+    shorts.addColorStop(1, "#090c17");
     ctx.fillStyle = shorts;
+    const shortsX = x + this.player.width * 0.14;
+    const shortsW = this.player.width * 0.72;
     ctx.beginPath();
-    ctx.roundRect(
-      x + this.player.width * 0.16,
-      y + h * 0.52,
-      this.player.width * 0.68,
-      h * 0.32,
-      6
-    );
+    ctx.roundRect(shortsX, y + h * 0.52, shortsW, h * 0.32, 6);
     ctx.fill();
     ctx.fillStyle = "#0ad0ff";
-    ctx.fillRect(x + this.player.width * 0.16, y + h * 0.64, this.player.width * 0.68, h * 0.03);
-
-    // Subtle lighting to make the shorts read more three-dimensionally
-    const shortsLight = ctx.createLinearGradient(
-      x + this.player.width * 0.16,
-      y + h * 0.52,
-      x + this.player.width * 0.84,
-      y + h * 0.84
-    );
-    shortsLight.addColorStop(0, "rgba(255,255,255,0.1)");
-    shortsLight.addColorStop(0.5, "rgba(255,255,255,0)");
-    shortsLight.addColorStop(1, "rgba(0,0,0,0.1)");
+    ctx.fillRect(shortsX, y + h * 0.62, shortsW, h * 0.025);
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    ctx.fillRect(shortsX + shortsW * 0.08, y + h * 0.54, shortsW * 0.12, h * 0.04);
+    ctx.fillRect(shortsX + shortsW * 0.76, y + h * 0.56, shortsW * 0.12, h * 0.04);
+    const shortsLight = ctx.createLinearGradient(shortsX, y + h * 0.52, shortsX, y + h * 0.84);
+    shortsLight.addColorStop(0, "rgba(255,255,255,0.14)");
+    shortsLight.addColorStop(0.5, "rgba(255,255,255,0.04)");
+    shortsLight.addColorStop(1, "rgba(0,0,0,0.15)");
     ctx.fillStyle = shortsLight;
-    ctx.fillRect(
-      x + this.player.width * 0.16,
-      y + h * 0.52,
-      this.player.width * 0.68,
-      h * 0.32
-    );
+    ctx.fillRect(shortsX, y + h * 0.52, shortsW, h * 0.32);
 
-    // Torso + jersey
+    // Torso + jersey with shoulder taper and subtle folds
     const jersey = ctx.createLinearGradient(x, y, x, y + h * 0.6);
-    jersey.addColorStop(0, "#0f6df3");
-    jersey.addColorStop(1, "#0a4ac9");
+    jersey.addColorStop(0, "#0e5dd6");
+    jersey.addColorStop(1, "#0a44b1");
     ctx.fillStyle = jersey;
+    const torsoX = x + this.player.width * 0.16;
+    const torsoW = this.player.width * 0.68;
     ctx.beginPath();
-    ctx.roundRect(
-      x + this.player.width * 0.18,
-      y + h * 0.08,
-      this.player.width * 0.64,
-      h * 0.46,
-      8
-    );
+    ctx.roundRect(torsoX, y + h * 0.07, torsoW, h * 0.48, 8);
     ctx.fill();
     ctx.fillStyle = "#0ad0ff";
-    ctx.fillRect(x + this.player.width * 0.18, y + h * 0.26, this.player.width * 0.64, h * 0.04);
+    ctx.fillRect(torsoX, y + h * 0.24, torsoW, h * 0.035);
 
     const jerseyLight = ctx.createLinearGradient(
-      x + this.player.width * 0.12,
-      y + h * 0.08,
-      x + this.player.width * 0.88,
-      y + h * 0.42
+      torsoX - this.player.width * 0.02,
+      y + h * 0.06,
+      torsoX + torsoW + this.player.width * 0.02,
+      y + h * 0.46
     );
-    jerseyLight.addColorStop(0, "rgba(255,255,255,0.12)");
-    jerseyLight.addColorStop(0.4, "rgba(255,255,255,0)");
-    jerseyLight.addColorStop(1, "rgba(0,0,0,0.12)");
+    jerseyLight.addColorStop(0, "rgba(255,255,255,0.16)");
+    jerseyLight.addColorStop(0.5, "rgba(255,255,255,0)");
+    jerseyLight.addColorStop(1, "rgba(0,0,0,0.18)");
     ctx.fillStyle = jerseyLight;
-    ctx.fillRect(
-      x + this.player.width * 0.18,
-      y + h * 0.08,
-      this.player.width * 0.64,
-      h * 0.46
-    );
+    ctx.fillRect(torsoX, y + h * 0.07, torsoW, h * 0.48);
+    ctx.strokeStyle = "rgba(0,0,0,0.22)";
+    ctx.beginPath();
+    ctx.moveTo(torsoX + torsoW * 0.5, y + h * 0.08);
+    ctx.lineTo(torsoX + torsoW * 0.44, y + h * 0.16);
+    ctx.lineTo(torsoX + torsoW * 0.5, y + h * 0.18);
+    ctx.stroke();
 
     // Neck
-    const skin = ctx.createLinearGradient(x, y, x, y + h * 0.2);
-    skin.addColorStop(0, "#f3d6b7");
-    skin.addColorStop(1, "#d9b48a");
+    const skin = ctx.createLinearGradient(x, y, x, y + h * 0.22);
+    skin.addColorStop(0, "#f1d2ae");
+    skin.addColorStop(1, "#cfa579");
     ctx.fillStyle = skin;
-    ctx.fillRect(x + this.player.width * 0.42, y + h * 0.01, this.player.width * 0.16, h * 0.08);
+    ctx.beginPath();
+    ctx.roundRect(x + this.player.width * 0.42, y, this.player.width * 0.16, h * 0.09, 3);
+    ctx.fill();
 
-    // Arms with bend and darker shadow underside
-    ctx.strokeStyle = "rgba(0,0,0,0.25)";
+    // Arms with muscle definition and shadowing
+    ctx.strokeStyle = "rgba(0,0,0,0.22)";
     const armWidth = this.player.width * 0.12;
-    const armHeight = h * 0.22;
-    const armY = y + h * 0.24;
-    const leftArmX = x + this.player.width * 0.04;
-    const rightArmX = x + this.player.width * 0.84 - armWidth;
+    const armHeight = h * 0.23;
+    const armY = y + h * 0.2;
+    const leftArmX = x + this.player.width * 0.05;
+    const rightArmX = x + this.player.width * 0.83 - armWidth;
     ctx.fillStyle = skin;
     ctx.beginPath();
     ctx.roundRect(leftArmX, armY, armWidth, armHeight, 6);
-    ctx.fill();
-    ctx.beginPath();
     ctx.roundRect(rightArmX, armY, armWidth, armHeight, 6);
     ctx.fill();
-    ctx.fillStyle = "rgba(0,0,0,0.1)";
-    ctx.fillRect(leftArmX, armY + armHeight - h * 0.04, armWidth, h * 0.05);
-    ctx.fillRect(rightArmX, armY + armHeight - h * 0.04, armWidth, h * 0.05);
+    ctx.fillStyle = "rgba(0,0,0,0.12)";
+    ctx.fillRect(leftArmX + armWidth * 0.08, armY + armHeight * 0.62, armWidth * 0.84, armHeight * 0.2);
+    ctx.fillRect(rightArmX + armWidth * 0.08, armY + armHeight * 0.62, armWidth * 0.84, armHeight * 0.2);
 
     // Sleeves hugging the arms
     const sleeve = ctx.createLinearGradient(x, y, x, y + h * 0.35);
-    sleeve.addColorStop(0, "#0f6df3");
-    sleeve.addColorStop(1, "#0a4ac9");
+    sleeve.addColorStop(0, "#0e5dd6");
+    sleeve.addColorStop(1, "#0a44b1");
     ctx.fillStyle = sleeve;
-    ctx.fillRect(leftArmX, y + h * 0.18, armWidth, h * 0.12);
-    ctx.fillRect(rightArmX, y + h * 0.18, armWidth, h * 0.12);
+    ctx.roundRect(leftArmX - this.player.width * 0.01, y + h * 0.16, armWidth + this.player.width * 0.02, h * 0.12, 5);
+    ctx.roundRect(rightArmX - this.player.width * 0.01, y + h * 0.16, armWidth + this.player.width * 0.02, h * 0.12, 5);
     ctx.fillStyle = "#0ad0ff";
-    ctx.fillRect(leftArmX, y + h * 0.26, armWidth, h * 0.03);
-    ctx.fillRect(rightArmX, y + h * 0.26, armWidth, h * 0.03);
+    ctx.fillRect(leftArmX - this.player.width * 0.01, y + h * 0.25, armWidth + this.player.width * 0.02, h * 0.028);
+    ctx.fillRect(rightArmX - this.player.width * 0.01, y + h * 0.25, armWidth + this.player.width * 0.02, h * 0.028);
 
     // Chest panel edges
     ctx.strokeStyle = "rgba(255,255,255,0.35)";
@@ -812,93 +806,99 @@ export class Game {
     ctx.lineTo(x + this.player.width * 0.82, y + h * 0.12);
     ctx.stroke();
 
-    // Head with facial features
+    // Head with more realistic proportions and facial definition
     const headCenterX = x + this.player.width * 0.5;
     const headCenterY = y - h * 0.02;
     const headRadius = this.player.width * 0.3;
     const face = ctx.createRadialGradient(
-      headCenterX - 4,
-      headCenterY - 8,
+      headCenterX - 3,
+      headCenterY - 6,
       4,
       headCenterX,
       headCenterY,
       headRadius
     );
-    face.addColorStop(0, "#ffdcb8");
-    face.addColorStop(1, "#d9b48a");
+    face.addColorStop(0, "#ffd8b0");
+    face.addColorStop(1, "#cfa579");
     ctx.beginPath();
     ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
     ctx.fillStyle = face;
     ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,0.35)";
+    ctx.strokeStyle = "rgba(0,0,0,0.3)";
     ctx.stroke();
 
     // Ears for better silhouette
-    ctx.fillStyle = "rgba(228,191,152,0.9)";
+    ctx.fillStyle = "rgba(225,190,150,0.92)";
     ctx.beginPath();
     ctx.ellipse(
       headCenterX - headRadius * 0.78,
-      headCenterY - headRadius * 0.08,
-      headRadius * 0.18,
-      headRadius * 0.24,
+      headCenterY - headRadius * 0.05,
+      headRadius * 0.16,
+      headRadius * 0.22,
       0,
       0,
       Math.PI * 2
     );
     ctx.ellipse(
       headCenterX + headRadius * 0.78,
-      headCenterY - headRadius * 0.08,
-      headRadius * 0.18,
-      headRadius * 0.24,
+      headCenterY - headRadius * 0.05,
+      headRadius * 0.16,
+      headRadius * 0.22,
       0,
       0,
       Math.PI * 2
     );
     ctx.fill();
 
-    // Eyes and brows
+    // Eyes, brows, and nose shading
     ctx.fillStyle = "#0f0f0f";
     ctx.beginPath();
-    ctx.arc(headCenterX - 6, headCenterY - 4, 2, 0, Math.PI * 2);
-    ctx.arc(headCenterX + 6, headCenterY - 4, 2, 0, Math.PI * 2);
+    ctx.arc(headCenterX - 6, headCenterY - 5, 2, 0, Math.PI * 2);
+    ctx.arc(headCenterX + 6, headCenterY - 5, 2, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "rgba(0,0,0,0.45)";
+    ctx.strokeStyle = "rgba(0,0,0,0.5)";
     ctx.beginPath();
-    ctx.moveTo(headCenterX - 9, headCenterY - 8);
-    ctx.lineTo(headCenterX - 3, headCenterY - 6);
-    ctx.moveTo(headCenterX + 9, headCenterY - 8);
-    ctx.lineTo(headCenterX + 3, headCenterY - 6);
+    ctx.moveTo(headCenterX - 8, headCenterY - 9);
+    ctx.lineTo(headCenterX - 2, headCenterY - 7);
+    ctx.moveTo(headCenterX + 8, headCenterY - 9);
+    ctx.lineTo(headCenterX + 2, headCenterY - 7);
     ctx.stroke();
-
-    // Nose and cheeks
     ctx.strokeStyle = "rgba(0,0,0,0.28)";
     ctx.beginPath();
-    ctx.moveTo(headCenterX, headCenterY + 2);
-    ctx.lineTo(headCenterX, headCenterY + 8);
+    ctx.moveTo(headCenterX, headCenterY - 2);
+    ctx.quadraticCurveTo(headCenterX + 1, headCenterY + 6, headCenterX - 1, headCenterY + 10);
     ctx.stroke();
-    ctx.fillStyle = "rgba(255,126,110,0.2)";
+    ctx.fillStyle = "rgba(255,120,110,0.22)";
     ctx.beginPath();
-    ctx.arc(headCenterX - headRadius * 0.28, headCenterY + headRadius * 0.05, 4, 0, Math.PI * 2);
-    ctx.arc(headCenterX + headRadius * 0.28, headCenterY + headRadius * 0.05, 4, 0, Math.PI * 2);
+    ctx.arc(headCenterX - headRadius * 0.28, headCenterY + headRadius * 0.04, 4, 0, Math.PI * 2);
+    ctx.arc(headCenterX + headRadius * 0.28, headCenterY + headRadius * 0.04, 4, 0, Math.PI * 2);
     ctx.fill();
 
-    // Mouth
-    ctx.strokeStyle = "rgba(0,0,0,0.45)";
+    // Mouth and jaw line
+    ctx.strokeStyle = "rgba(0,0,0,0.42)";
     ctx.beginPath();
-    ctx.arc(headCenterX, headCenterY + 6, 5, 0, Math.PI);
+    ctx.arc(headCenterX, headCenterY + 7, 5, 0, Math.PI);
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(0,0,0,0.18)";
+    ctx.beginPath();
+    ctx.arc(headCenterX, headCenterY + 10, headRadius * 0.7, Math.PI * 0.15, Math.PI * 0.85);
     ctx.stroke();
 
-    // Hair and headband
+    // Hair with subtle highlights and a thin headband
     ctx.fillStyle = "#1c1c1c";
     ctx.beginPath();
-    ctx.arc(headCenterX, headCenterY - 2, headRadius, Math.PI, Math.PI * 2);
+    ctx.arc(headCenterX, headCenterY - 1, headRadius, Math.PI, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    ctx.beginPath();
+    ctx.arc(headCenterX, headCenterY - headRadius * 0.4, headRadius * 0.8, Math.PI, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = "#0ad0ff";
     ctx.fillRect(
       headCenterX - headRadius,
-      headCenterY - headRadius * 0.35,
+      headCenterY - headRadius * 0.34,
       headRadius * 2,
-      headRadius * 0.16
+      headRadius * 0.14
     );
 
     // Ball at feet with soccer pattern
@@ -940,37 +940,39 @@ export class Game {
     ctx.fill();
     ctx.restore();
 
-    // Sliding tackle pose with leaner proportions
+    // Sliding tackle pose with leaner proportions and jersey shading
     const torsoX = x + width * 0.22;
     const torsoY = y + height * 0.24;
     const torsoW = width * 0.56;
     const torsoH = height * 0.44;
     const jersey = ctx.createLinearGradient(torsoX, torsoY, torsoX, torsoY + torsoH);
-    jersey.addColorStop(0, "#1b5edb");
-    jersey.addColorStop(1, "#0e3d9f");
+    jersey.addColorStop(0, "#1c6af0");
+    jersey.addColorStop(1, "#0c3f9f");
     ctx.fillStyle = jersey;
     ctx.beginPath();
     ctx.roundRect(torsoX, torsoY, torsoW, torsoH, 7);
     ctx.fill();
 
     // Number stripe
-    ctx.fillStyle = "rgba(255,255,255,0.78)";
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
     ctx.fillRect(torsoX + torsoW * 0.45, torsoY + torsoH * 0.12, torsoW * 0.1, torsoH * 0.68);
 
     // Arms reaching out
     const armGradient = ctx.createLinearGradient(x, torsoY, x, torsoY + torsoH * 0.8);
-    armGradient.addColorStop(0, "#f0d3b3");
-    armGradient.addColorStop(1, "#d5b08a");
+    armGradient.addColorStop(0, "#f1d2ae");
+    armGradient.addColorStop(1, "#cfa579");
     ctx.fillStyle = armGradient;
     ctx.beginPath();
     ctx.roundRect(x + width * 0.06, torsoY + torsoH * 0.22, width * 0.18, torsoH * 0.52, 6);
     ctx.roundRect(x + width * 0.72, torsoY + torsoH * 0.08, width * 0.18, torsoH * 0.38, 6);
     ctx.fill();
+    ctx.fillStyle = "rgba(0,0,0,0.12)";
+    ctx.fillRect(x + width * 0.08, torsoY + torsoH * 0.62, width * 0.14, torsoH * 0.12);
 
     // Legs sweeping across
     const legGradient = ctx.createLinearGradient(x, y + height * 0.45, x, y + height);
-    legGradient.addColorStop(0, "#f4d7b8");
-    legGradient.addColorStop(1, "#d6b08a");
+    legGradient.addColorStop(0, "#f1d2ae");
+    legGradient.addColorStop(1, "#cfa579");
     ctx.fillStyle = legGradient;
     ctx.beginPath();
     ctx.roundRect(x + width * 0.12, y + height * 0.56, width * 0.3, height * 0.3, 7);
@@ -992,8 +994,8 @@ export class Game {
       headCenterX,
       headCenterY + headRadius
     );
-    headGradient.addColorStop(0, "#f4d7b8");
-    headGradient.addColorStop(1, "#d6b08a");
+    headGradient.addColorStop(0, "#f1d2ae");
+    headGradient.addColorStop(1, "#cfa579");
     ctx.fillStyle = headGradient;
     ctx.beginPath();
     ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
@@ -1046,8 +1048,8 @@ export class Game {
 
     // Legs
     const legGradient = ctx.createLinearGradient(x, y + height * 0.55, x, y + height);
-    legGradient.addColorStop(0, "#f0d3b3");
-    legGradient.addColorStop(1, "#d5b08a");
+    legGradient.addColorStop(0, "#f1d2ae");
+    legGradient.addColorStop(1, "#cfa579");
     ctx.fillStyle = legGradient;
     ctx.beginPath();
     ctx.roundRect(x + width * 0.2, y + height * 0.56, width * 0.18, height * 0.36, 7);
@@ -1068,8 +1070,8 @@ export class Game {
     const torsoW = width * 0.6;
     const torsoH = height * 0.4;
     const jersey = ctx.createLinearGradient(torsoX, torsoY, torsoX, torsoY + torsoH);
-    jersey.addColorStop(0, "#1e7d3c");
-    jersey.addColorStop(1, "#0e5a2b");
+    jersey.addColorStop(0, "#1b8a3e");
+    jersey.addColorStop(1, "#0c4e24");
     ctx.fillStyle = jersey;
     ctx.beginPath();
     ctx.roundRect(torsoX, torsoY, torsoW, torsoH, 9);
@@ -1081,8 +1083,8 @@ export class Game {
 
     // Arms crossed for blocking
     const armGradient = ctx.createLinearGradient(x, torsoY, x, torsoY + torsoH);
-    armGradient.addColorStop(0, "#f4d7b8");
-    armGradient.addColorStop(1, "#d6b08a");
+    armGradient.addColorStop(0, "#f1d2ae");
+    armGradient.addColorStop(1, "#cfa579");
     ctx.fillStyle = armGradient;
     ctx.beginPath();
     ctx.roundRect(torsoX - width * 0.04, torsoY + torsoH * 0.12, width * 0.2, torsoH * 0.4, 6);
@@ -1104,8 +1106,8 @@ export class Game {
       headCenterX,
       headCenterY + headRadius
     );
-    headGradient.addColorStop(0, "#f4d7b8");
-    headGradient.addColorStop(1, "#d6b08a");
+    headGradient.addColorStop(0, "#f1d2ae");
+    headGradient.addColorStop(1, "#cfa579");
     ctx.fillStyle = headGradient;
     ctx.beginPath();
     ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
