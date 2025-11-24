@@ -69,6 +69,18 @@ const startButton = document.querySelector(
 const pauseTouchButton = document.querySelector(
   '.touch-controls [data-action="pauseToggle"]'
 );
+const builderOverlay = document.getElementById("playerBuilder");
+const builderSubtitle = document.getElementById("builderSubtitle");
+const builderNameInput = document.getElementById("builderName");
+const builderPrimaryInput = document.getElementById("builderPrimaryColor");
+const builderSecondaryInput = document.getElementById("builderSecondaryColor");
+const builderTrimInput = document.getElementById("builderTrimColor");
+const builderBallInput = document.getElementById("builderBallColor");
+const builderPreviewJersey = document.getElementById("builderPreviewJersey");
+const builderPreviewBall = document.getElementById("builderPreviewBall");
+const btnSaveBuilder = document.getElementById("btnSaveBuilder");
+const btnSkipBuilder = document.getElementById("btnSkipBuilder");
+const btnOpenBuilder = document.getElementById("btnOpenBuilder");
 
 // Login / save
 const loginEmailInput = document.getElementById("loginEmail");
@@ -119,6 +131,15 @@ function updateCoinsHeader() {
   headerCoinsValue.textContent = playerData.coins.toString();
 }
 
+function getKitColorsFromProfile(profile = playerData.profile || {}) {
+  return {
+    primary: profile.kitPrimary || "#1f3a74",
+    secondary: profile.kitSecondary || "#80223c",
+    trim: profile.kitTrim || "#0bd3c7",
+    ballAccent: profile.ballAccent || "#f2f4ff"
+  };
+}
+
 function buildGameInstance() {
   const selectedCard =
     getCardById(playerData.selectedCardId) ||
@@ -127,10 +148,13 @@ function buildGameInstance() {
 
   const level = getCardLevel(playerData, selectedCard.id);
   const multipliers = getEffectiveMultipliers(selectedCard, level);
+  const kitColors = getKitColorsFromProfile();
 
   game = new Game(canvas, {
     playerCard: selectedCard,
     multipliers,
+    kitColors,
+    ballAccent: kitColors.ballAccent,
     bestDistance: playerData.bestDistance,
     onStats: handleGameStats,
     onState: handleGameState,
@@ -147,6 +171,68 @@ function updateTouchControlsVisibility() {
   touchControlsContainer?.classList.toggle("touch-controls--hidden", inRun);
   startButton?.classList.toggle("hidden", inRun);
   pauseTouchButton?.classList.toggle("hidden", !inRun);
+}
+
+function updateBuilderPreview() {
+  const kit = getKitColorsFromProfile();
+  if (builderPreviewJersey) {
+    builderPreviewJersey.style.setProperty("--kit-primary", kit.primary);
+    builderPreviewJersey.style.setProperty("--kit-secondary", kit.secondary);
+    builderPreviewJersey.style.setProperty("--kit-trim", kit.trim);
+  }
+  if (builderPreviewBall) {
+    builderPreviewBall.style.background = `radial-gradient(circle at 30% 30%, #ffffff, ${
+      kit.ballAccent
+    })`;
+  }
+}
+
+function populateBuilderForm() {
+  const profile = playerData.profile || {};
+  if (builderNameInput) builderNameInput.value = profile.displayName || "";
+  if (builderPrimaryInput) builderPrimaryInput.value = profile.kitPrimary || "#1f3a74";
+  if (builderSecondaryInput)
+    builderSecondaryInput.value = profile.kitSecondary || "#80223c";
+  if (builderTrimInput) builderTrimInput.value = profile.kitTrim || "#0bd3c7";
+  if (builderBallInput) builderBallInput.value = profile.ballAccent || "#f2f4ff";
+  updateBuilderPreview();
+}
+
+function openPlayerBuilder(message = "") {
+  builderOverlay?.classList.add("builder-overlay--visible");
+  if (builderSubtitle) builderSubtitle.textContent = message || "Set your jersey and ball";
+  populateBuilderForm();
+}
+
+function closePlayerBuilder() {
+  builderOverlay?.classList.remove("builder-overlay--visible");
+}
+
+function ensureProfileSetup(reason = "") {
+  if (!playerData.profile?.builderCompleted) {
+    openPlayerBuilder(reason);
+    return false;
+  }
+  return true;
+}
+
+function saveBuilderChoices(markCompleted = true) {
+  const updatedProfile = {
+    ...playerData.profile,
+    displayName: builderNameInput?.value.trim() || playerData.profile.displayName || "",
+    kitPrimary: builderPrimaryInput?.value || "#1f3a74",
+    kitSecondary: builderSecondaryInput?.value || "#80223c",
+    kitTrim: builderTrimInput?.value || "#0bd3c7",
+    ballAccent: builderBallInput?.value || "#f2f4ff",
+    builderCompleted: markCompleted
+  };
+
+  playerData.profile = updatedProfile;
+  savePlayerData(playerData);
+  updateProfileUI("Look saved and applied.");
+  buildGameInstance();
+  updateBuilderPreview();
+  closePlayerBuilder();
 }
 
 function renderTeamScreen() {
@@ -371,6 +457,7 @@ function renderMissions() {
 }
 
 function startRun() {
+  if (!ensureProfileSetup("Customize your striker before the first run.")) return;
   setActiveScreen(null); // close menus
   pauseBanner.classList.add("hidden");
   resetContinueState();
@@ -585,6 +672,35 @@ btnPlay.addEventListener("click", () => {
   startRun();
 });
 
+btnOpenBuilder?.addEventListener("click", () => {
+  openPlayerBuilder("Claim your kit and ball look.");
+});
+
+btnSaveBuilder?.addEventListener("click", () => {
+  saveBuilderChoices(true);
+  startRun();
+});
+
+btnSkipBuilder?.addEventListener("click", () => {
+  saveBuilderChoices(true);
+  closePlayerBuilder();
+});
+
+[builderPrimaryInput, builderSecondaryInput, builderTrimInput, builderBallInput]
+  .filter(Boolean)
+  .forEach((input) => {
+    input.addEventListener("input", () => {
+      playerData.profile = {
+        ...playerData.profile,
+        kitPrimary: builderPrimaryInput?.value || playerData.profile.kitPrimary,
+        kitSecondary: builderSecondaryInput?.value || playerData.profile.kitSecondary,
+        kitTrim: builderTrimInput?.value || playerData.profile.kitTrim,
+        ballAccent: builderBallInput?.value || playerData.profile.ballAccent
+      };
+      updateBuilderPreview();
+    });
+  });
+
 btnTeam.addEventListener("click", () => {
   renderTeamScreen();
   setActiveScreen("teamScreen");
@@ -748,6 +864,11 @@ renderMissions();
 setActiveScreen("mainMenu");
 updateProfileUI();
 updateTouchControlsVisibility();
+updateBuilderPreview();
+
+if (!playerData.profile?.builderCompleted) {
+  openPlayerBuilder("Pick your kit colors to start your career.");
+}
 
 input = new InputManager(canvas, handleInputAction);
 input.attach();
