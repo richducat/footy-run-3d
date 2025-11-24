@@ -128,10 +128,13 @@ function buildGameInstance() {
 }
 
 function updateTouchControlsVisibility() {
-  // Keep the mobile controls hidden during gameplay.
-  touchControlsContainer?.classList.remove("touch-controls--visible");
-  startButton?.classList.add("hidden");
-  pauseTouchButton?.classList.add("hidden");
+  const inRun = currentScreenId === null;
+
+  // Show the mobile buttons while the run is active and swap the CTA based on
+  // whether we're running or waiting to start.
+  touchControlsContainer?.classList.toggle("touch-controls--hidden", inRun);
+  startButton?.classList.toggle("hidden", inRun);
+  pauseTouchButton?.classList.toggle("hidden", !inRun);
 }
 
 function renderTeamScreen() {
