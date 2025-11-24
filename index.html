@@ -52,23 +52,6 @@
   </script>
 </head>
 <body>
-  <div id="previewContainer" class="preview-container hidden">
-    <iframe
-      id="previewFrame"
-      title="Ultimate Striker Run 3D"
-      loading="eager"
-      allow="accelerometer; gyroscope; fullscreen; gamepad *; xr-spatial-tracking"
-      allowfullscreen
-      referrerpolicy="no-referrer-when-downgrade"
-    ></iframe>
-    <div class="preview-status" id="previewStatus">
-      <div class="preview-status__title">Loading 3D experience…</div>
-      <div class="preview-status__meta">
-        If the preview doesn't appear, <a href="https://richducat.github.io/footy-run-3d/" target="_blank" rel="noopener">open it in a new tab</a> while the local build loads as a fallback.
-      </div>
-    </div>
-  </div>
-
   <div class="app">
     <header class="app-header">
       <div class="brand">
@@ -610,58 +593,7 @@
   </div>
 
   <script type="module">
-    const previewContainer = document.getElementById("previewContainer");
-    const previewFrame = document.getElementById("previewFrame");
-    const previewStatus = document.getElementById("previewStatus");
-
-    const isEmbedded =
-      window.self !== window.top ||
-      new URLSearchParams(window.location.search).has("embed");
-
-    // When running inside the preview iframe, skip the nested iframe loop and
-    // boot the game directly.
-    const cacheBustedImport = () => import(bustUrl("./js/main.js"));
-
-    const loadLocalBuild = () =>
-      cacheBustedImport()
-        .then(() => {
-          previewContainer?.classList.add("hidden");
-          document.documentElement.classList.remove("remote-loaded");
-        })
-        .catch((error) => {
-          console.error("Failed to load local build", error);
-        });
-
-    if (isEmbedded) {
-      previewContainer.classList.add("hidden");
-      document.documentElement.classList.remove("remote-loaded");
-      cacheBustedImport();
-    } else {
-      const REMOTE_URL = bustUrl("https://richducat.github.io/footy-run-3d/?embed=1");
-      loadLocalBuild();
-
-      const startRemotePreview = () => {
-        previewContainer.classList.remove("hidden");
-        document.documentElement.classList.add("remote-loaded");
-        previewFrame.src = REMOTE_URL;
-      };
-
-      startRemotePreview();
-
-      previewFrame.addEventListener("load", () => {
-        previewContainer.classList.add("preview-container--ready");
-        previewStatus.classList.add("hidden");
-      });
-
-      previewFrame.addEventListener("error", (event) => {
-        console.error("Remote preview failed to load", event);
-      });
-
-      if (navigator.onLine === false) {
-        previewContainer.classList.add("hidden");
-        document.documentElement.classList.remove("remote-loaded");
-      }
-    }
+    import(bustUrl("./js/main.js"));
   </script>
 </body>
 </html>
