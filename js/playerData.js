@@ -326,6 +326,8 @@ export function getEffectivePerks(card, level = 1) {
     acc[key] = resolvePerkValue({ ...DEFAULT_PERKS[key], ...def }, level);
     return acc;
   }, {});
+}
+
 export function getLevelTuning(card, level = 1) {
   const rarityCfg = RARITY_CONFIG[card.rarity] || RARITY_CONFIG.common;
   const levelsAboveBase = Math.max(0, level - 1);

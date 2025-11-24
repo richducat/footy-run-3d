@@ -298,11 +298,11 @@
         </button>
       </div>
 
-      <div class="builder-grid">
-        <label class="form-field">
-          <span class="form-field__label">Striker name</span>
-          <input type="text" id="builderName" name="builderName" placeholder="Your legend name" />
-        </label>
+        <div class="builder-grid">
+          <label class="form-field">
+            <span class="form-field__label">Striker name</span>
+            <input type="text" id="builderName" name="builderName" placeholder="Your legend name" />
+          </label>
         <label class="form-field">
           <span class="form-field__label">Primary jersey</span>
           <input type="color" id="builderPrimaryColor" name="builderPrimaryColor" value="#1f3a74" />
@@ -315,16 +315,27 @@
           <span class="form-field__label">Trim &amp; piping</span>
           <input type="color" id="builderTrimColor" name="builderTrimColor" value="#0bd3c7" />
         </label>
-        <label class="form-field">
-          <span class="form-field__label">Ball accent</span>
-          <input type="color" id="builderBallColor" name="builderBallColor" value="#f2f4ff" />
-        </label>
-      </div>
+          <label class="form-field">
+            <span class="form-field__label">Ball accent</span>
+            <input type="color" id="builderBallColor" name="builderBallColor" value="#f2f4ff" />
+          </label>
+        </div>
 
-      <div class="builder-preview">
-        <div class="builder-preview__player" id="builderPreviewJersey">
-          <div class="builder-preview__body"></div>
-          <div class="builder-preview__shorts"></div>
+        <div class="builder-presets">
+          <div class="builder-presets__header">
+            <div>
+              <h4>Pick a starter kit</h4>
+              <p class="builder-presets__subtitle">Tap a preset to instantly set jersey &amp; ball colors.</p>
+            </div>
+            <button class="btn btn--ghost btn--small" id="btnShufflePreset">Shuffle</button>
+          </div>
+          <div class="builder-presets__grid" id="kitPresetGrid"></div>
+        </div>
+
+        <div class="builder-preview">
+          <div class="builder-preview__player" id="builderPreviewJersey">
+            <div class="builder-preview__body"></div>
+            <div class="builder-preview__shorts"></div>
           <div class="builder-preview__socks"></div>
           <div class="builder-preview__trim"></div>
         </div>

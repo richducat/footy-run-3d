@@ -80,6 +80,8 @@ const builderTrimInput = document.getElementById("builderTrimColor");
 const builderBallInput = document.getElementById("builderBallColor");
 const builderPreviewJersey = document.getElementById("builderPreviewJersey");
 const builderPreviewBall = document.getElementById("builderPreviewBall");
+const kitPresetGrid = document.getElementById("kitPresetGrid");
+const btnShufflePreset = document.getElementById("btnShufflePreset");
 const btnSaveBuilder = document.getElementById("btnSaveBuilder");
 const btnSkipBuilder = document.getElementById("btnSkipBuilder");
 const btnOpenBuilder = document.getElementById("btnOpenBuilder");
@@ -141,6 +143,41 @@ function getKitColorsFromProfile(profile = playerData.profile || {}) {
     ballAccent: profile.ballAccent || "#f2f4ff"
   };
 }
+
+const KIT_PRESETS = [
+  {
+    name: "Derby Classic",
+    description: "Deep blue with scarlet shorts",
+    primary: "#1f3a74",
+    secondary: "#7f1d3a",
+    trim: "#0bd3c7",
+    ballAccent: "#f2f4ff"
+  },
+  {
+    name: "Sunrise Away",
+    description: "Bright coral pop with aqua trim",
+    primary: "#f05365",
+    secondary: "#19212f",
+    trim: "#0bd3c7",
+    ballAccent: "#ffe082"
+  },
+  {
+    name: "Volt Night",
+    description: "Dark kit with neon volt trim",
+    primary: "#0c1428",
+    secondary: "#111827",
+    trim: "#94ff6a",
+    ballAccent: "#9ef0ff"
+  },
+  {
+    name: "Nordic Ice",
+    description: "Frosty whites with glacier blue",
+    primary: "#e9f1ff",
+    secondary: "#9eb3c9",
+    trim: "#1f76ff",
+    ballAccent: "#ffb347"
+  }
+];
 
 function formatPercent(value) {
   return `${Math.round(value)}%`;
@@ -244,6 +281,75 @@ function updateBuilderPreview() {
       kit.ballAccent
     })`;
   }
+}
+
+function presetMatchesProfile(preset, profile = playerData.profile || {}) {
+  return (
+    preset.primary?.toLowerCase() === profile.kitPrimary?.toLowerCase() &&
+    preset.secondary?.toLowerCase() === profile.kitSecondary?.toLowerCase() &&
+    preset.trim?.toLowerCase() === profile.kitTrim?.toLowerCase() &&
+    preset.ballAccent?.toLowerCase() === profile.ballAccent?.toLowerCase()
+  );
+}
+
+function applyKitPreset(preset) {
+  if (!preset) return;
+  if (builderPrimaryInput) builderPrimaryInput.value = preset.primary;
+  if (builderSecondaryInput) builderSecondaryInput.value = preset.secondary;
+  if (builderTrimInput) builderTrimInput.value = preset.trim;
+  if (builderBallInput) builderBallInput.value = preset.ballAccent;
+
+  playerData.profile = {
+    ...playerData.profile,
+    kitPrimary: preset.primary,
+    kitSecondary: preset.secondary,
+    kitTrim: preset.trim,
+    ballAccent: preset.ballAccent
+  };
+
+  updateBuilderPreview();
+  renderKitPresets();
+}
+
+function renderKitPresets() {
+  if (!kitPresetGrid) return;
+
+  const profile = playerData.profile || {};
+  kitPresetGrid.innerHTML = "";
+
+  KIT_PRESETS.forEach((preset) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "kit-preset";
+    if (presetMatchesProfile(preset, profile)) {
+      btn.classList.add("kit-preset--active");
+    }
+
+    const swatchWrap = document.createElement("div");
+    swatchWrap.className = "kit-preset__swatches";
+
+    [preset.primary, preset.secondary, preset.trim, preset.ballAccent].forEach((color) => {
+      const swatch = document.createElement("span");
+      swatch.className = "kit-preset__swatch";
+      swatch.style.background = color;
+      swatchWrap.appendChild(swatch);
+    });
+
+    const meta = document.createElement("div");
+    meta.className = "kit-preset__meta";
+    const name = document.createElement("span");
+    name.className = "kit-preset__name";
+    name.textContent = preset.name;
+    const desc = document.createElement("span");
+    desc.textContent = preset.description;
+    meta.appendChild(name);
+    meta.appendChild(desc);
+
+    btn.appendChild(swatchWrap);
+    btn.appendChild(meta);
+    btn.addEventListener("click", () => applyKitPreset(preset));
+    kitPresetGrid.appendChild(btn);
+  });
 }
 
 function populateBuilderForm() {
@@ -751,6 +857,11 @@ btnSkipBuilder?.addEventListener("click", () => {
   closePlayerBuilder();
 });
 
+btnShufflePreset?.addEventListener("click", () => {
+  const randomPreset = KIT_PRESETS[Math.floor(Math.random() * KIT_PRESETS.length)];
+  applyKitPreset(randomPreset);
+});
+
 [builderPrimaryInput, builderSecondaryInput, builderTrimInput, builderBallInput]
   .filter(Boolean)
   .forEach((input) => {
@@ -763,6 +874,7 @@ btnSkipBuilder?.addEventListener("click", () => {
         ballAccent: builderBallInput?.value || playerData.profile.ballAccent
       };
       updateBuilderPreview();
+      renderKitPresets();
     });
   });
 
@@ -930,6 +1042,7 @@ setActiveScreen("mainMenu");
 updateProfileUI();
 updateTouchControlsVisibility();
 updateBuilderPreview();
+renderKitPresets();
 
 if (!playerData.profile?.builderCompleted) {
   openPlayerBuilder("Pick your kit colors to start your career.");
