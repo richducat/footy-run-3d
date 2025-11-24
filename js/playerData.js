@@ -57,47 +57,47 @@ export const CARD_LEVEL_CAP = 5;
 
 export const RARITY_CONFIG = {
   common: {
-    speedBonusPerLevel: 0.03,
-    coinBonusPerLevel: 0.03,
-    shotBonusPerLevel: 0.03,
+    speedBonusPerLevel: 0.06,
+    coinBonusPerLevel: 0.04,
+    shotBonusPerLevel: 0.05,
     upgradeCosts: {
-      2: 150,
-      3: 250,
-      4: 350,
-      5: 500
+      2: 200,
+      3: 325,
+      4: 500,
+      5: 750
     }
   },
   rare: {
-    speedBonusPerLevel: 0.05,
-    coinBonusPerLevel: 0.02,
-    shotBonusPerLevel: 0.02,
+    speedBonusPerLevel: 0.08,
+    coinBonusPerLevel: 0.03,
+    shotBonusPerLevel: 0.05,
     upgradeCosts: {
-      2: 250,
-      3: 400,
-      4: 600,
-      5: 850
+      2: 325,
+      3: 525,
+      4: 775,
+      5: 1050
     }
   },
   epic: {
-    speedBonusPerLevel: 0.02,
-    coinBonusPerLevel: 0.02,
-    shotBonusPerLevel: 0.05,
+    speedBonusPerLevel: 0.05,
+    coinBonusPerLevel: 0.03,
+    shotBonusPerLevel: 0.08,
     upgradeCosts: {
-      2: 350,
-      3: 550,
-      4: 800,
-      5: 1100
+      2: 475,
+      3: 725,
+      4: 1000,
+      5: 1400
     }
   },
   legendary: {
-    speedBonusPerLevel: 0.02,
-    coinBonusPerLevel: 0.05,
-    shotBonusPerLevel: 0.02,
+    speedBonusPerLevel: 0.06,
+    coinBonusPerLevel: 0.08,
+    shotBonusPerLevel: 0.05,
     upgradeCosts: {
-      2: 500,
-      3: 800,
-      4: 1200,
-      5: 1600
+      2: 650,
+      3: 975,
+      4: 1350,
+      5: 1900
     }
   }
 };
@@ -261,17 +261,32 @@ export function getEffectiveMultipliers(card, level = 1) {
 
   const speed =
     card.speedMultiplier *
-    (1 + rarityCfg.speedBonusPerLevel * levelsAboveBase);
+    Math.pow(1 + rarityCfg.speedBonusPerLevel, levelsAboveBase);
   const coins =
-    card.coinMultiplier * (1 + rarityCfg.coinBonusPerLevel * levelsAboveBase);
+    card.coinMultiplier *
+    Math.pow(1 + rarityCfg.coinBonusPerLevel, levelsAboveBase);
   const shotGain =
     card.shotGainMultiplier *
-    (1 + rarityCfg.shotBonusPerLevel * levelsAboveBase);
+    Math.pow(1 + rarityCfg.shotBonusPerLevel, levelsAboveBase);
 
   return {
     speed,
     coins,
     shotGain
+  };
+}
+
+export function getLevelTuning(card, level = 1) {
+  const rarityCfg = RARITY_CONFIG[card.rarity] || RARITY_CONFIG.common;
+  const levelsAboveBase = Math.max(0, level - 1);
+
+  return {
+    sprintSpeed: 1 + rarityCfg.speedBonusPerLevel * 0.8 * levelsAboveBase,
+    shotGainRate: 1 + rarityCfg.shotBonusPerLevel * 1.2 * levelsAboveBase,
+    tackleDuration: Math.max(0.38, 0.55 - 0.035 * levelsAboveBase),
+    jukeDuration: Math.max(0.32, 0.42 - 0.02 * levelsAboveBase),
+    jukeCooldown: Math.max(0.5, 1 - 0.12 * levelsAboveBase),
+    reviveInvulnDuration: 0.9 + 0.12 * levelsAboveBase
   };
 }
 

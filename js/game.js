@@ -15,7 +15,14 @@ export class Game {
     this.height = canvas.height;
 
     this.lanes = 3;
-    this.baseSpeed = 220; // px/s
+    const tuning = options.tuning || {};
+    this.baseSpeed = 220 * (tuning.sprintSpeed || 1); // px/s
+    this.shotGainRate = tuning.shotGainRate || 1;
+    this.reviveInvulnDuration =
+      tuning.reviveInvulnDuration == null ? 0.9 : tuning.reviveInvulnDuration;
+    this.jukeCooldownDuration = tuning.jukeCooldown || 1;
+    this.tackleDurationBase = tuning.tackleDuration || 0.55;
+    this.jukeDurationBase = tuning.jukeDuration || 0.42;
     this.runState = RUN_STATE.IDLE;
 
     // Player card tuning
@@ -41,10 +48,11 @@ export class Game {
       isJuking: false,
       tackleTime: 0,
       jukeTime: 0,
-      tackleDuration: 0.55,
-      jukeDuration: 0.42,
+      tackleDuration: this.tackleDurationBase,
+      jukeDuration: this.jukeDurationBase,
       jukeDirection: 1,
-      tackleDirection: 1
+      tackleDirection: 1,
+      jukeCooldownTimer: 0
     };
 
     // Run stats
@@ -137,10 +145,13 @@ export class Game {
     this.player.isJuking = false;
     this.player.tackleTime = 0;
     this.player.jukeTime = 0;
+    this.player.tackleDuration = this.tackleDurationBase;
+    this.player.jukeDuration = this.jukeDurationBase;
     this.player.tackleDirection = 1;
     this.player.jukeDirection = 1;
     this.player.laneOffset = 0;
     this.player.yOffset = 0;
+    this.player.jukeCooldownTimer = 0;
     this.reviveInvulnTime = 0;
     this.onState(this.runState);
   }
@@ -158,7 +169,7 @@ export class Game {
 
     // Clear out any nearby obstacles so the player is not immediately hit again.
     this.obstacles = this.obstacles.filter((o) => o.y < this.height * 0.45);
-    this.reviveInvulnTime = 0.9;
+    this.reviveInvulnTime = this.reviveInvulnDuration;
     this.onState(this.runState);
     return true;
   }
@@ -207,7 +218,11 @@ export class Game {
         this.player.yOffset = 0;
       }
     } else if (action === "juke") {
-      if (!this.player.isJuking && !this.player.isTackling) {
+      if (
+        !this.player.isJuking &&
+        !this.player.isTackling &&
+        this.player.jukeCooldownTimer <= 0
+      ) {
         this.player.isJuking = true;
         this.player.jukeTime = 0;
         this.player.jukeDirection = Math.random() < 0.5 ? -1 : 1;
@@ -349,6 +364,11 @@ export class Game {
     this.timeSincePickup += dt;
     if (this.goalFlashTime > 0) this.goalFlashTime -= dt;
     if (this.shotResultFlash > 0) this.shotResultFlash -= dt;
+    if (this.player.jukeCooldownTimer > 0)
+      this.player.jukeCooldownTimer = Math.max(
+        0,
+        this.player.jukeCooldownTimer - dt
+      );
 
     // Player animation: tackle & juke
     this.player.laneOffset = 0;
@@ -372,6 +392,7 @@ export class Game {
         this.player.isJuking = false;
         this.player.laneOffset = 0;
         this.player.yOffset = 0;
+        this.player.jukeCooldownTimer = this.jukeCooldownDuration;
       }
     } else {
       this.player.yOffset = 0;
@@ -451,7 +472,7 @@ export class Game {
         const recovering = this.reviveInvulnTime > 0;
 
         if (isBallCarrier && tackling) {
-          this.shotMeter += 20 * this.shotGainMultiplier;
+          this.shotMeter += 20 * this.shotGainMultiplier * this.shotGainRate;
           this.coinsThisRun += Math.max(1, Math.round(this.coinMultiplier));
           this.obstacles.splice(i, 1);
           i -= 1;
@@ -493,9 +514,9 @@ export class Game {
         if (p.type === "coin") {
           const gain = Math.max(1, Math.round(this.coinMultiplier));
           this.coinsThisRun += gain;
-          this.shotMeter += 10 * this.shotGainMultiplier;
+          this.shotMeter += 10 * this.shotGainMultiplier * this.shotGainRate;
         } else if (p.type === "ball") {
-          this.shotMeter += 25 * this.shotGainMultiplier;
+          this.shotMeter += 25 * this.shotGainMultiplier * this.shotGainRate;
         }
 
         this.pickups.splice(i, 1);
