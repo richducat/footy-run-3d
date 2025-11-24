@@ -92,6 +92,14 @@ const authStatus = document.getElementById("authStatus");
 const saveStatus = document.getElementById("saveStatus");
 const btnLogin = document.getElementById("btnLogin");
 const btnSaveProgress = document.getElementById("btnSaveProgress");
+const btnStayGuest = document.getElementById("btnStayGuest");
+const profileButton = document.getElementById("profileButton");
+const profileNameLabel = document.getElementById("profileNameLabel");
+const profileStatusLabel = document.getElementById("profileStatusLabel");
+const profileAvatar = document.getElementById("profileAvatar");
+const authSheet = document.getElementById("authSheet");
+const authSheetBackdrop = document.getElementById("authSheetBackdrop");
+const btnCloseAuthSheet = document.getElementById("btnCloseAuthSheet");
 
 // Team screen
 const cardListEl = document.getElementById("cardList");
@@ -108,6 +116,7 @@ let missionHasClaimable = false;
 let missionCelebrateTimeout = null;
 
 let playerData = loadPlayerData();
+ensureGuestProfile();
 updateCoinsHeader();
 
 let game = null;
@@ -207,6 +216,50 @@ function updateMissionCelebrationState(hasClaimable) {
 
 function updateCoinsHeader() {
   headerCoinsValue.textContent = playerData.coins.toString();
+}
+
+function generateGuestId() {
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
+function ensureGuestProfile() {
+  const profile = playerData.profile || {};
+  let changed = false;
+
+  if (!profile.guestId) {
+    profile.guestId = generateGuestId();
+    changed = true;
+  }
+  if (profile.isGuest === undefined) {
+    profile.isGuest = true;
+    changed = true;
+  }
+  if (!profile.guestCreatedAt) {
+    profile.guestCreatedAt = new Date().toISOString();
+    changed = true;
+  }
+  if (!profile.displayName) {
+    const suffix = profile.guestId?.slice(-4) || "Runner";
+    profile.displayName = `Guest ${suffix}`;
+    changed = true;
+  }
+
+  playerData.profile = profile;
+  if (changed) {
+    savePlayerData(playerData);
+  }
+}
+
+function getProfileLabel(profile = {}) {
+  if (profile.displayName) return profile.displayName;
+  const suffix = profile.guestId?.slice(-4) || "Runner";
+  return `Guest ${suffix}`;
+}
+
+function getProfileAvatarGlyph(profile = {}) {
+  if (profile.avatarEmoji) return profile.avatarEmoji;
+  if (profile.displayName) return profile.displayName.charAt(0).toUpperCase() || "🏃";
+  return "🏃";
 }
 
 function getKitColorsFromProfile(profile = playerData.profile || {}) {
@@ -954,16 +1007,30 @@ touchControls.forEach((btn) => {
   );
 });
 
+function openAuthSheet() {
+  authSheet?.classList.add("auth-sheet--visible");
+  authSheet?.setAttribute("aria-hidden", "false");
+}
+
+function closeAuthSheet() {
+  authSheet?.classList.remove("auth-sheet--visible");
+  authSheet?.setAttribute("aria-hidden", "true");
+}
+
 // Login / save UI
 function updateProfileUI(message) {
   const profile = playerData.profile || {};
   if (loginEmailInput) loginEmailInput.value = profile.email || "";
   if (loginNameInput) loginNameInput.value = profile.displayName || "";
 
-  const statusLabel = profile.displayName
-    ? `Signed in as ${profile.displayName}`
-    : "Not logged in";
-  if (authStatus) authStatus.textContent = statusLabel;
+  const isGuest = profile.isGuest !== false;
+  const profileLabel = getProfileLabel(profile);
+  if (authStatus) authStatus.textContent = isGuest ? "Guest profile" : "Linked profile";
+  if (profileNameLabel) profileNameLabel.textContent = profileLabel;
+  if (profileStatusLabel)
+    profileStatusLabel.textContent = isGuest ? "💾 Save progress" : "Profile linked";
+  if (profileAvatar) profileAvatar.textContent = getProfileAvatarGlyph(profile);
+  profileButton?.classList.toggle("profile-button--guest", isGuest);
 
   const saveLabel = profile.lastAutoSave
     ? `Auto-saved after last match on ${new Date(profile.lastAutoSave).toLocaleString()}`
@@ -975,7 +1042,7 @@ function updateProfileUI(message) {
 
 btnLogin?.addEventListener("click", () => {
   const email = loginEmailInput?.value.trim();
-  const displayName = loginNameInput?.value.trim();
+  const displayName = loginNameInput?.value.trim() || getProfileLabel(playerData.profile);
 
   if (!email || !displayName) {
     alert("Enter a display name and email to log in.");
@@ -985,10 +1052,14 @@ btnLogin?.addEventListener("click", () => {
   playerData.profile = {
     ...playerData.profile,
     email,
-    displayName
+    displayName,
+    isGuest: false,
+    linkedAt: new Date().toISOString(),
+    lastManualSave: new Date().toISOString()
   };
   savePlayerData(playerData);
-  updateProfileUI("Profile updated and saved.");
+  updateProfileUI("Account linked – progress will sync on this device.");
+  closeAuthSheet();
 });
 
 btnSaveProgress?.addEventListener("click", () => {
@@ -998,6 +1069,26 @@ btnSaveProgress?.addEventListener("click", () => {
   };
   savePlayerData(playerData);
   updateProfileUI("Progress saved to this device.");
+  closeAuthSheet();
+});
+
+btnStayGuest?.addEventListener("click", () => {
+  playerData.profile = {
+    ...playerData.profile,
+    isGuest: true
+  };
+  savePlayerData(playerData);
+  updateProfileUI("Staying in guest mode. We'll keep saving locally.");
+  closeAuthSheet();
+});
+
+profileButton?.addEventListener("click", openAuthSheet);
+btnCloseAuthSheet?.addEventListener("click", closeAuthSheet);
+authSheetBackdrop?.addEventListener("click", closeAuthSheet);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeAuthSheet();
+  }
 });
 
 // Back buttons with data-nav
@@ -1029,6 +1120,7 @@ buildGameInstance();
 renderTeamScreen();
 renderMissions();
 setActiveScreen("mainMenu");
+closeAuthSheet();
 updateProfileUI();
 updateTouchControlsVisibility();
 updateBuilderPreview();
