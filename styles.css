@@ -823,11 +823,36 @@ canvas {
   margin-bottom: 10px;
 }
 
+.continue-panel {
+  margin-top: 10px;
+}
+
+.continue-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.continue-cost {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0e5dd6;
+  background: rgba(14, 93, 214, 0.12);
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
 .button-row {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-top: 8px;
+}
+
+.button-row--compact {
+  gap: 6px;
 }
 
 .button-row--inline {
