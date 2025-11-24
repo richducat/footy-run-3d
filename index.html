@@ -96,7 +96,13 @@
           <div class="screen-inner screen-inner--scrollable">
             <h1 class="screen-title">Ultimate Striker Run</h1>
             <p class="screen-subtitle">Temple-run style endless runner with a pro soccer twist.</p>
-            <button id="btnPlay" class="btn btn--primary">Start run</button>
+            <div class="start-cta" aria-live="polite">
+              <button id="btnPlay" class="start-button" aria-label="Start run">
+                <span class="start-button__glow"></span>
+                <span class="start-button__label">Play</span>
+                <span class="start-button__hint">Start Run</span>
+              </button>
+            </div>
             <button id="btnOpenBuilder" class="btn btn--ghost">Build your striker</button>
             <button id="btnTeam" class="btn">Squad</button>
             <button id="btnSettings" class="btn btn--ghost">Settings</button>
