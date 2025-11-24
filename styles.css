@@ -816,8 +816,9 @@ canvas {
   gap: 6px;
   transition: background 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease, border-color 0.15s ease;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 var(--press-depth) 0 rgba(255, 255, 255, 0.05),
-    0 calc(var(--press-depth) * 2.4) calc(var(--press-depth) * 2) rgba(0, 0, 0, 0.6);
+  box-shadow: 0 calc(var(--press-depth) * 0.3) 0 rgba(255, 255, 255, 0.08),
+    0 calc(var(--press-depth) * 1.4) calc(var(--press-depth) * 1.2) rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
   transform-style: preserve-3d;
 }
 
@@ -826,10 +827,11 @@ canvas {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.48), rgba(0, 0, 0, 0.7));
-  transform: translateY(var(--press-depth));
-  transition: transform 0.12s ease, opacity 0.16s ease;
-  opacity: 0.9;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.55));
+  transform: translateY(calc(var(--press-depth) * 0.9));
+  transition: transform 0.12s ease, opacity 0.16s ease, filter 0.16s ease;
+  opacity: 0.85;
+  filter: blur(0.2px);
   z-index: -1;
 }
 
@@ -854,9 +856,9 @@ canvas {
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  box-shadow: 0 var(--press-depth) 0 rgba(255, 255, 255, 0.1),
-    0 calc(var(--press-depth) * 2.6) calc(var(--press-depth) * 2.4) rgba(0, 0, 0, 0.8),
-    0 0 22px rgba(255, 94, 196, 0.55);
+  box-shadow: 0 calc(var(--press-depth) * 0.35) 0 rgba(255, 255, 255, 0.12),
+    0 calc(var(--press-depth) * 1.8) calc(var(--press-depth) * 1.6) rgba(0, 0, 0, 0.78),
+    0 12px 34px color-mix(in srgb, var(--accent) 26%, transparent);
   cursor: pointer;
   overflow: visible;
   isolation: isolate;
@@ -868,10 +870,11 @@ canvas {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0.6));
-  transform: translateY(var(--press-depth));
-  transition: transform 0.12s ease, opacity 0.18s ease;
-  opacity: 0.85;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.5));
+  transform: translateY(calc(var(--press-depth) * 0.95));
+  transition: transform 0.12s ease, opacity 0.18s ease, filter 0.18s ease;
+  opacity: 0.82;
+  filter: blur(0.2px);
   z-index: -1;
 }
 
@@ -922,18 +925,18 @@ canvas {
 
 .start-button:hover {
   transform: translateY(-2px) scale(1.01);
-  box-shadow: 0 calc(var(--press-depth) * 1.4) 0 rgba(255, 255, 255, 0.1),
-    0 calc(var(--press-depth) * 3.2) calc(var(--press-depth) * 2.6) rgba(0, 0, 0, 0.85),
-    0 0 28px rgba(255, 94, 196, 0.7);
+  box-shadow: 0 calc(var(--press-depth) * 0.9) 0 rgba(255, 255, 255, 0.12),
+    0 calc(var(--press-depth) * 2.6) calc(var(--press-depth) * 2.2) rgba(0, 0, 0, 0.85),
+    0 16px 40px color-mix(in srgb, var(--accent) 32%, transparent);
   filter: saturate(1.05);
 }
 
 .start-button:active,
 .start-button.is-pressed {
   transform: translateY(calc(var(--press-depth) * 0.32)) scale(0.995);
-  box-shadow: 0 calc(var(--press-depth) * 0.6) 0 rgba(255, 255, 255, 0.12),
-    0 calc(var(--press-depth) * 1.8) calc(var(--press-depth) * 1.4) rgba(0, 0, 0, 0.7),
-    0 0 18px rgba(255, 94, 196, 0.55);
+  box-shadow: 0 calc(var(--press-depth) * 0.45) 0 rgba(255, 255, 255, 0.14),
+    0 calc(var(--press-depth) * 1.4) calc(var(--press-depth) * 1.2) rgba(0, 0, 0, 0.72),
+    0 10px 24px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .start-button:active::before,
