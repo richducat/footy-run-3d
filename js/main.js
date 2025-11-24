@@ -56,6 +56,7 @@ const continueCostLabel = document.getElementById("continueCostLabel");
 const btnPlay = document.getElementById("btnPlay");
 const btnTeam = document.getElementById("btnTeam");
 const btnSettings = document.getElementById("btnSettings");
+const btnMissions = document.getElementById("btnMissions");
 const btnPause = document.getElementById("btnPause");
 const btnReplay = document.getElementById("btnReplay");
 const btnGoToTeam = document.getElementById("btnGoToTeam");
@@ -80,8 +81,7 @@ const builderTrimInput = document.getElementById("builderTrimColor");
 const builderBallInput = document.getElementById("builderBallColor");
 const builderPreviewJersey = document.getElementById("builderPreviewJersey");
 const builderPreviewBall = document.getElementById("builderPreviewBall");
-const kitPresetGrid = document.getElementById("kitPresetGrid");
-const btnShufflePreset = document.getElementById("btnShufflePreset");
+const kitPresetList = document.getElementById("kitPresetList");
 const btnSaveBuilder = document.getElementById("btnSaveBuilder");
 const btnSkipBuilder = document.getElementById("btnSkipBuilder");
 const btnOpenBuilder = document.getElementById("btnOpenBuilder");
@@ -93,6 +93,14 @@ const authStatus = document.getElementById("authStatus");
 const saveStatus = document.getElementById("saveStatus");
 const btnLogin = document.getElementById("btnLogin");
 const btnSaveProgress = document.getElementById("btnSaveProgress");
+const btnStayGuest = document.getElementById("btnStayGuest");
+const profileButton = document.getElementById("profileButton");
+const profileNameLabel = document.getElementById("profileNameLabel");
+const profileStatusLabel = document.getElementById("profileStatusLabel");
+const profileAvatar = document.getElementById("profileAvatar");
+const authSheet = document.getElementById("authSheet");
+const authSheetBackdrop = document.getElementById("authSheetBackdrop");
+const btnCloseAuthSheet = document.getElementById("btnCloseAuthSheet");
 
 // Team screen
 const cardListEl = document.getElementById("cardList");
@@ -100,9 +108,18 @@ const cardListEl = document.getElementById("cardList");
 // Missions
 const dailyMissionsEl = document.getElementById("dailyMissions");
 const weeklyMissionsEl = document.getElementById("weeklyMissions");
+const missionsPanel = document.getElementById("missionsPanel");
+const missionsIcon = document.getElementById("missionsIcon");
+
+const activePressables = new Set();
+
+let missionHasClaimable = false;
+let missionCelebrateTimeout = null;
 
 let playerData = loadPlayerData();
+ensureGuestProfile();
 updateCoinsHeader();
+renderKitPresets();
 
 let game = null;
 let input = null;
@@ -131,8 +148,120 @@ function setActiveScreen(id) {
   updateTouchControlsVisibility();
 }
 
+function focusMissionsPanel() {
+  if (!missionsPanel) return;
+  missionsPanel.classList.add("panel--highlight");
+  missionsPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+  window.setTimeout(() => missionsPanel.classList.remove("panel--highlight"), 1500);
+}
+
+function handlePressableDown(event) {
+  const target = event.target?.closest?.(".btn, .start-button, .touch-btn");
+  if (!target) return;
+  target.classList.add("is-pressed");
+  activePressables.add(target);
+}
+
+function clearPressedState() {
+  activePressables.forEach((el) => el.classList.remove("is-pressed"));
+  activePressables.clear();
+}
+
+function spawnTapParticles(target, count = 9) {
+  if (!target) return;
+  const { width, height } = target.getBoundingClientRect();
+
+  for (let i = 0; i < count; i += 1) {
+    const particle = document.createElement("span");
+    particle.className = "tap-particle";
+    particle.textContent = "⚽";
+
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 26 + Math.random() * 24;
+    const duration = 420 + Math.random() * 240;
+    const offsetX = Math.cos(angle) * distance;
+    const offsetY = Math.sin(angle) * distance;
+
+    particle.style.setProperty("--dx", `${offsetX}px`);
+    particle.style.setProperty("--dy", `${offsetY}px`);
+    particle.style.setProperty("--travel-time", `${duration}ms`);
+    particle.style.left = `${width / 2 + (Math.random() - 0.5) * 10}px`;
+    particle.style.top = `${height / 2 + (Math.random() - 0.5) * 10}px`;
+
+    target.appendChild(particle);
+    particle.addEventListener("animationend", () => particle.remove());
+  }
+}
+
+function updateMissionCelebrationState(hasClaimable) {
+  if (!missionsIcon) return;
+
+  missionsIcon.classList.toggle("mission-icon--active", hasClaimable);
+
+  if (hasClaimable && !missionHasClaimable) {
+    missionsIcon.classList.remove("is-celebrating");
+    // restart animation
+    void missionsIcon.offsetWidth;
+    missionsIcon.classList.add("is-celebrating");
+    clearTimeout(missionCelebrateTimeout);
+    missionCelebrateTimeout = window.setTimeout(() => {
+      missionsIcon?.classList.remove("is-celebrating");
+    }, 1400);
+  }
+
+  if (!hasClaimable) {
+    missionsIcon.classList.remove("is-celebrating");
+  }
+
+  missionHasClaimable = hasClaimable;
+}
+
 function updateCoinsHeader() {
   headerCoinsValue.textContent = playerData.coins.toString();
+}
+
+function generateGuestId() {
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
+function ensureGuestProfile() {
+  const profile = playerData.profile || {};
+  let changed = false;
+
+  if (!profile.guestId) {
+    profile.guestId = generateGuestId();
+    changed = true;
+  }
+  if (profile.isGuest === undefined) {
+    profile.isGuest = true;
+    changed = true;
+  }
+  if (!profile.guestCreatedAt) {
+    profile.guestCreatedAt = new Date().toISOString();
+    changed = true;
+  }
+  if (!profile.displayName) {
+    const suffix = profile.guestId?.slice(-4) || "Runner";
+    profile.displayName = `Guest ${suffix}`;
+    changed = true;
+  }
+
+  playerData.profile = profile;
+  if (changed) {
+    savePlayerData(playerData);
+  }
+}
+
+function getProfileLabel(profile = {}) {
+  if (profile.displayName) return profile.displayName;
+  const suffix = profile.guestId?.slice(-4) || "Runner";
+  return `Guest ${suffix}`;
+}
+
+function getProfileAvatarGlyph(profile = {}) {
+  if (profile.avatarEmoji) return profile.avatarEmoji;
+  if (profile.displayName) return profile.displayName.charAt(0).toUpperCase() || "🏃";
+  return "🏃";
 }
 
 function getKitColorsFromProfile(profile = playerData.profile || {}) {
@@ -146,38 +275,95 @@ function getKitColorsFromProfile(profile = playerData.profile || {}) {
 
 const KIT_PRESETS = [
   {
-    name: "Derby Classic",
-    description: "Deep blue with scarlet shorts",
-    primary: "#1f3a74",
-    secondary: "#7f1d3a",
-    trim: "#0bd3c7",
-    ballAccent: "#f2f4ff"
+    name: "Manchester City",
+    tagline: "Sky blue dominance",
+    primary: "#6cabdd",
+    secondary: "#1c2c5b",
+    trim: "#a6d8ff",
+    ballAccent: "#f6fbff"
   },
   {
-    name: "Sunrise Away",
-    description: "Bright coral pop with aqua trim",
-    primary: "#f05365",
-    secondary: "#19212f",
-    trim: "#0bd3c7",
-    ballAccent: "#ffe082"
+    name: "Real Madrid",
+    tagline: "Classic blancos",
+    primary: "#f7f7f7",
+    secondary: "#2e2a5e",
+    trim: "#f0b90b",
+    ballAccent: "#ffffff"
   },
   {
-    name: "Volt Night",
-    description: "Dark kit with neon volt trim",
-    primary: "#0c1428",
-    secondary: "#111827",
-    trim: "#94ff6a",
-    ballAccent: "#9ef0ff"
+    name: "FC Barcelona",
+    tagline: "Blaugrana stripes",
+    primary: "#a50044",
+    secondary: "#004d98",
+    trim: "#f9a01b",
+    ballAccent: "#f7f4ef"
   },
   {
-    name: "Nordic Ice",
-    description: "Frosty whites with glacier blue",
-    primary: "#e9f1ff",
-    secondary: "#9eb3c9",
-    trim: "#1f76ff",
-    ballAccent: "#ffb347"
+    name: "Bayern Munich",
+    tagline: "Bavarian power",
+    primary: "#d00027",
+    secondary: "#0b142b",
+    trim: "#f5f5f5",
+    ballAccent: "#fef6f6"
+  },
+  {
+    name: "Liverpool",
+    tagline: "Anfield energy",
+    primary: "#c8102e",
+    secondary: "#0b1418",
+    trim: "#f0c75e",
+    ballAccent: "#ffffff"
+  },
+  {
+    name: "Paris Saint-Germain",
+    tagline: "Capital flair",
+    primary: "#001e36",
+    secondary: "#e30613",
+    trim: "#ffffff",
+    ballAccent: "#e6ecff"
+  },
+  {
+    name: "Juventus",
+    tagline: "Black & white strength",
+    primary: "#f9f9f9",
+    secondary: "#0a0a0a",
+    trim: "#d2b04c",
+    ballAccent: "#f2f2f2"
+  },
+  {
+    name: "Arsenal",
+    tagline: "North London pride",
+    primary: "#da1e36",
+    secondary: "#f4f4f4",
+    trim: "#1a2d59",
+    ballAccent: "#f0f6ff"
+  },
+  {
+    name: "Inter Milan",
+    tagline: "Nerazzurri stripes",
+    primary: "#004d98",
+    secondary: "#000000",
+    trim: "#ffd800",
+    ballAccent: "#e2f0ff"
+  },
+  {
+    name: "Chelsea",
+    tagline: "Stamford Bridge blue",
+    primary: "#034694",
+    secondary: "#d1d5da",
+    trim: "#e8b500",
+    ballAccent: "#f1f6ff"
   }
 ];
+
+function getKitColorsFromInputs() {
+  return {
+    primary: builderPrimaryInput?.value || playerData.profile?.kitPrimary || "#1f3a74",
+    secondary: builderSecondaryInput?.value || playerData.profile?.kitSecondary || "#80223c",
+    trim: builderTrimInput?.value || playerData.profile?.kitTrim || "#0bd3c7",
+    ballAccent: builderBallInput?.value || playerData.profile?.ballAccent || "#f2f4ff"
+  };
+}
 
 function formatPercent(value) {
   return `${Math.round(value)}%`;
@@ -270,7 +456,7 @@ function updateTouchControlsVisibility() {
 }
 
 function updateBuilderPreview() {
-  const kit = getKitColorsFromProfile();
+  const kit = getKitColorsFromInputs();
   if (builderPreviewJersey) {
     builderPreviewJersey.style.setProperty("--kit-primary", kit.primary);
     builderPreviewJersey.style.setProperty("--kit-secondary", kit.secondary);
@@ -283,17 +469,34 @@ function updateBuilderPreview() {
   }
 }
 
-function presetMatchesProfile(preset, profile = playerData.profile || {}) {
-  return (
-    preset.primary?.toLowerCase() === profile.kitPrimary?.toLowerCase() &&
-    preset.secondary?.toLowerCase() === profile.kitSecondary?.toLowerCase() &&
-    preset.trim?.toLowerCase() === profile.kitTrim?.toLowerCase() &&
-    preset.ballAccent?.toLowerCase() === profile.ballAccent?.toLowerCase()
+const normalizeHex = (value = "") => value.toLowerCase();
+
+function syncPresetSelection() {
+  if (!kitPresetList) return;
+
+  const current = getKitColorsFromInputs();
+  const activePreset = KIT_PRESETS.find(
+    (preset) =>
+      normalizeHex(preset.primary) === normalizeHex(current.primary) &&
+      normalizeHex(preset.secondary) === normalizeHex(current.secondary) &&
+      normalizeHex(preset.trim) === normalizeHex(current.trim) &&
+      normalizeHex(preset.ballAccent) === normalizeHex(current.ballAccent)
   );
+
+  const presetButtons = kitPresetList.querySelectorAll(".kit-preset");
+  presetButtons.forEach((btn) => {
+    const isMatch =
+      btn.dataset.primary === normalizeHex(current.primary) &&
+      btn.dataset.secondary === normalizeHex(current.secondary) &&
+      btn.dataset.trim === normalizeHex(current.trim) &&
+      btn.dataset.ball === normalizeHex(current.ballAccent);
+    btn.classList.toggle("is-active", Boolean(activePreset) && isMatch);
+  });
 }
 
 function applyKitPreset(preset) {
   if (!preset) return;
+
   if (builderPrimaryInput) builderPrimaryInput.value = preset.primary;
   if (builderSecondaryInput) builderSecondaryInput.value = preset.secondary;
   if (builderTrimInput) builderTrimInput.value = preset.trim;
@@ -308,48 +511,48 @@ function applyKitPreset(preset) {
   };
 
   updateBuilderPreview();
-  renderKitPresets();
+  syncPresetSelection();
 }
 
 function renderKitPresets() {
-  if (!kitPresetGrid) return;
+  if (!kitPresetList) return;
 
-  const profile = playerData.profile || {};
-  kitPresetGrid.innerHTML = "";
+  kitPresetList.innerHTML = "";
 
   KIT_PRESETS.forEach((preset) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "kit-preset";
-    if (presetMatchesProfile(preset, profile)) {
-      btn.classList.add("kit-preset--active");
-    }
+    btn.dataset.primary = normalizeHex(preset.primary);
+    btn.dataset.secondary = normalizeHex(preset.secondary);
+    btn.dataset.trim = normalizeHex(preset.trim);
+    btn.dataset.ball = normalizeHex(preset.ballAccent);
 
-    const swatchWrap = document.createElement("div");
-    swatchWrap.className = "kit-preset__swatches";
+    btn.innerHTML = `
+      <div class="kit-preset__heading">
+        <p class="kit-preset__name">${preset.name}</p>
+        <span class="pill pill--soft">Preset</span>
+      </div>
+      <p class="kit-preset__tagline">${preset.tagline}</p>
+      <div class="kit-preset__swatches">
+        <span class="kit-preset__swatch" style="background:${preset.primary}"></span>
+        <span class="kit-preset__swatch" style="background:${preset.secondary}"></span>
+        <span class="kit-preset__swatch" style="background:${preset.trim}"></span>
+        <span class="kit-preset__swatch" style="background:${preset.ballAccent}"></span>
+      </div>
+      <div class="kit-preset__labels">
+        <span>Primary</span>
+        <span>Secondary</span>
+        <span>Trim</span>
+        <span>Ball</span>
+      </div>
+    `;
 
-    [preset.primary, preset.secondary, preset.trim, preset.ballAccent].forEach((color) => {
-      const swatch = document.createElement("span");
-      swatch.className = "kit-preset__swatch";
-      swatch.style.background = color;
-      swatchWrap.appendChild(swatch);
-    });
-
-    const meta = document.createElement("div");
-    meta.className = "kit-preset__meta";
-    const name = document.createElement("span");
-    name.className = "kit-preset__name";
-    name.textContent = preset.name;
-    const desc = document.createElement("span");
-    desc.textContent = preset.description;
-    meta.appendChild(name);
-    meta.appendChild(desc);
-
-    btn.appendChild(swatchWrap);
-    btn.appendChild(meta);
     btn.addEventListener("click", () => applyKitPreset(preset));
-    kitPresetGrid.appendChild(btn);
+    kitPresetList.appendChild(btn);
   });
+
+  syncPresetSelection();
 }
 
 function populateBuilderForm() {
@@ -361,6 +564,7 @@ function populateBuilderForm() {
   if (builderTrimInput) builderTrimInput.value = profile.kitTrim || "#0bd3c7";
   if (builderBallInput) builderBallInput.value = profile.ballAccent || "#f2f4ff";
   updateBuilderPreview();
+  syncPresetSelection();
 }
 
 function openPlayerBuilder(message = "") {
@@ -614,7 +818,10 @@ function renderMissionList(container, missions, cadence) {
 }
 
 function renderMissions() {
-  if (!playerData.missions) return;
+  if (!playerData.missions) {
+    updateMissionCelebrationState(false);
+    return;
+  }
   renderMissionList(
     dailyMissionsEl,
     playerData.missions.daily?.missions || [],
@@ -625,6 +832,15 @@ function renderMissions() {
     playerData.missions.weekly?.missions || [],
     "weekly"
   );
+
+  const allMissions = [
+    ...(playerData.missions.daily?.missions || []),
+    ...(playerData.missions.weekly?.missions || [])
+  ];
+  const hasClaimableMission = allMissions.some(
+    (mission) => mission.progress >= mission.goal && !mission.claimed
+  );
+  updateMissionCelebrationState(hasClaimableMission);
 }
 
 function startRun() {
@@ -839,7 +1055,13 @@ function handleInputAction(action) {
 
 // Button wiring
 
+document.addEventListener("pointerdown", handlePressableDown, { passive: true });
+window.addEventListener("pointerup", clearPressedState, { passive: true });
+window.addEventListener("pointercancel", clearPressedState, { passive: true });
+window.addEventListener("blur", clearPressedState, { passive: true });
+
 btnPlay.addEventListener("click", () => {
+  spawnTapParticles(btnPlay);
   startRun();
 });
 
@@ -874,13 +1096,18 @@ btnShufflePreset?.addEventListener("click", () => {
         ballAccent: builderBallInput?.value || playerData.profile.ballAccent
       };
       updateBuilderPreview();
-      renderKitPresets();
+      syncPresetSelection();
     });
   });
 
 btnTeam.addEventListener("click", () => {
   renderTeamScreen();
   setActiveScreen("teamScreen");
+});
+
+btnMissions?.addEventListener("click", () => {
+  setActiveScreen("mainMenu");
+  focusMissionsPanel();
 });
 
 btnSettings.addEventListener("click", () => {
@@ -958,11 +1185,24 @@ touchControls.forEach((btn) => {
     (event) => {
       event.preventDefault();
       const action = btn.dataset.action;
+      if (action === "startRun") {
+        spawnTapParticles(btn, 7);
+      }
       if (action) handleInputAction({ type: action });
     },
     { passive: false }
   );
 });
+
+function openAuthSheet() {
+  authSheet?.classList.add("auth-sheet--visible");
+  authSheet?.setAttribute("aria-hidden", "false");
+}
+
+function closeAuthSheet() {
+  authSheet?.classList.remove("auth-sheet--visible");
+  authSheet?.setAttribute("aria-hidden", "true");
+}
 
 // Login / save UI
 function updateProfileUI(message) {
@@ -970,10 +1210,14 @@ function updateProfileUI(message) {
   if (loginEmailInput) loginEmailInput.value = profile.email || "";
   if (loginNameInput) loginNameInput.value = profile.displayName || "";
 
-  const statusLabel = profile.displayName
-    ? `Signed in as ${profile.displayName}`
-    : "Not logged in";
-  if (authStatus) authStatus.textContent = statusLabel;
+  const isGuest = profile.isGuest !== false;
+  const profileLabel = getProfileLabel(profile);
+  if (authStatus) authStatus.textContent = isGuest ? "Guest profile" : "Linked profile";
+  if (profileNameLabel) profileNameLabel.textContent = profileLabel;
+  if (profileStatusLabel)
+    profileStatusLabel.textContent = isGuest ? "💾 Save progress" : "Profile linked";
+  if (profileAvatar) profileAvatar.textContent = getProfileAvatarGlyph(profile);
+  profileButton?.classList.toggle("profile-button--guest", isGuest);
 
   const saveLabel = profile.lastAutoSave
     ? `Auto-saved after last match on ${new Date(profile.lastAutoSave).toLocaleString()}`
@@ -985,7 +1229,7 @@ function updateProfileUI(message) {
 
 btnLogin?.addEventListener("click", () => {
   const email = loginEmailInput?.value.trim();
-  const displayName = loginNameInput?.value.trim();
+  const displayName = loginNameInput?.value.trim() || getProfileLabel(playerData.profile);
 
   if (!email || !displayName) {
     alert("Enter a display name and email to log in.");
@@ -995,10 +1239,14 @@ btnLogin?.addEventListener("click", () => {
   playerData.profile = {
     ...playerData.profile,
     email,
-    displayName
+    displayName,
+    isGuest: false,
+    linkedAt: new Date().toISOString(),
+    lastManualSave: new Date().toISOString()
   };
   savePlayerData(playerData);
-  updateProfileUI("Profile updated and saved.");
+  updateProfileUI("Account linked – progress will sync on this device.");
+  closeAuthSheet();
 });
 
 btnSaveProgress?.addEventListener("click", () => {
@@ -1008,6 +1256,26 @@ btnSaveProgress?.addEventListener("click", () => {
   };
   savePlayerData(playerData);
   updateProfileUI("Progress saved to this device.");
+  closeAuthSheet();
+});
+
+btnStayGuest?.addEventListener("click", () => {
+  playerData.profile = {
+    ...playerData.profile,
+    isGuest: true
+  };
+  savePlayerData(playerData);
+  updateProfileUI("Staying in guest mode. We'll keep saving locally.");
+  closeAuthSheet();
+});
+
+profileButton?.addEventListener("click", openAuthSheet);
+btnCloseAuthSheet?.addEventListener("click", closeAuthSheet);
+authSheetBackdrop?.addEventListener("click", closeAuthSheet);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeAuthSheet();
+  }
 });
 
 // Back buttons with data-nav
@@ -1039,6 +1307,7 @@ buildGameInstance();
 renderTeamScreen();
 renderMissions();
 setActiveScreen("mainMenu");
+closeAuthSheet();
 updateProfileUI();
 updateTouchControlsVisibility();
 updateBuilderPreview();
