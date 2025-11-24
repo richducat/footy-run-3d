@@ -100,6 +100,12 @@ const cardListEl = document.getElementById("cardList");
 const dailyMissionsEl = document.getElementById("dailyMissions");
 const weeklyMissionsEl = document.getElementById("weeklyMissions");
 const missionsPanel = document.getElementById("missionsPanel");
+const missionsIcon = document.getElementById("missionsIcon");
+
+const activePressables = new Set();
+
+let missionHasClaimable = false;
+let missionCelebrateTimeout = null;
 
 let playerData = loadPlayerData();
 updateCoinsHeader();
@@ -136,6 +142,67 @@ function focusMissionsPanel() {
   missionsPanel.classList.add("panel--highlight");
   missionsPanel.scrollIntoView({ behavior: "smooth", block: "center" });
   window.setTimeout(() => missionsPanel.classList.remove("panel--highlight"), 1500);
+}
+
+function handlePressableDown(event) {
+  const target = event.target?.closest?.(".btn, .start-button, .touch-btn");
+  if (!target) return;
+  target.classList.add("is-pressed");
+  activePressables.add(target);
+}
+
+function clearPressedState() {
+  activePressables.forEach((el) => el.classList.remove("is-pressed"));
+  activePressables.clear();
+}
+
+function spawnTapParticles(target, count = 9) {
+  if (!target) return;
+  const { width, height } = target.getBoundingClientRect();
+
+  for (let i = 0; i < count; i += 1) {
+    const particle = document.createElement("span");
+    particle.className = "tap-particle";
+    particle.textContent = "⚽";
+
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 26 + Math.random() * 24;
+    const duration = 420 + Math.random() * 240;
+    const offsetX = Math.cos(angle) * distance;
+    const offsetY = Math.sin(angle) * distance;
+
+    particle.style.setProperty("--dx", `${offsetX}px`);
+    particle.style.setProperty("--dy", `${offsetY}px`);
+    particle.style.setProperty("--travel-time", `${duration}ms`);
+    particle.style.left = `${width / 2 + (Math.random() - 0.5) * 10}px`;
+    particle.style.top = `${height / 2 + (Math.random() - 0.5) * 10}px`;
+
+    target.appendChild(particle);
+    particle.addEventListener("animationend", () => particle.remove());
+  }
+}
+
+function updateMissionCelebrationState(hasClaimable) {
+  if (!missionsIcon) return;
+
+  missionsIcon.classList.toggle("mission-icon--active", hasClaimable);
+
+  if (hasClaimable && !missionHasClaimable) {
+    missionsIcon.classList.remove("is-celebrating");
+    // restart animation
+    void missionsIcon.offsetWidth;
+    missionsIcon.classList.add("is-celebrating");
+    clearTimeout(missionCelebrateTimeout);
+    missionCelebrateTimeout = window.setTimeout(() => {
+      missionsIcon?.classList.remove("is-celebrating");
+    }, 1400);
+  }
+
+  if (!hasClaimable) {
+    missionsIcon.classList.remove("is-celebrating");
+  }
+
+  missionHasClaimable = hasClaimable;
 }
 
 function updateCoinsHeader() {
@@ -517,7 +584,10 @@ function renderMissionList(container, missions, cadence) {
 }
 
 function renderMissions() {
-  if (!playerData.missions) return;
+  if (!playerData.missions) {
+    updateMissionCelebrationState(false);
+    return;
+  }
   renderMissionList(
     dailyMissionsEl,
     playerData.missions.daily?.missions || [],
@@ -528,6 +598,15 @@ function renderMissions() {
     playerData.missions.weekly?.missions || [],
     "weekly"
   );
+
+  const allMissions = [
+    ...(playerData.missions.daily?.missions || []),
+    ...(playerData.missions.weekly?.missions || [])
+  ];
+  const hasClaimableMission = allMissions.some(
+    (mission) => mission.progress >= mission.goal && !mission.claimed
+  );
+  updateMissionCelebrationState(hasClaimableMission);
 }
 
 function startRun() {
@@ -742,7 +821,13 @@ function handleInputAction(action) {
 
 // Button wiring
 
+document.addEventListener("pointerdown", handlePressableDown, { passive: true });
+window.addEventListener("pointerup", clearPressedState, { passive: true });
+window.addEventListener("pointercancel", clearPressedState, { passive: true });
+window.addEventListener("blur", clearPressedState, { passive: true });
+
 btnPlay.addEventListener("click", () => {
+  spawnTapParticles(btnPlay);
   startRun();
 });
 
@@ -860,6 +945,9 @@ touchControls.forEach((btn) => {
     (event) => {
       event.preventDefault();
       const action = btn.dataset.action;
+      if (action === "startRun") {
+        spawnTapParticles(btn, 7);
+      }
       if (action) handleInputAction({ type: action });
     },
     { passive: false }
