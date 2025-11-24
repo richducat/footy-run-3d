@@ -297,54 +297,84 @@
       <div class="builder-card__header">
         <div>
           <p class="pill pill--soft">First-time setup</p>
-          <h2>Build your striker</h2>
+          <h2>Build your striker look</h2>
           <p class="screen-subtitle" id="builderSubtitle">
-            Lock in your jersey colors and ball accent before your debut run.
+            Pick a club-inspired kit in one tap, then fine-tune your colors and ball accent.
           </p>
         </div>
-        <button class="btn btn--ghost btn--small" id="btnSkipBuilder" aria-label="Skip customisation">
-          Use defaults
-        </button>
-      </div>
-
-      <div class="builder-grid">
-        <label class="form-field">
-          <span class="form-field__label">Striker name</span>
-          <input type="text" id="builderName" name="builderName" placeholder="Your legend name" />
-        </label>
-        <label class="form-field">
-          <span class="form-field__label">Primary jersey</span>
-          <input type="color" id="builderPrimaryColor" name="builderPrimaryColor" value="#1f3a74" />
-        </label>
-        <label class="form-field">
-          <span class="form-field__label">Shorts &amp; socks</span>
-          <input type="color" id="builderSecondaryColor" name="builderSecondaryColor" value="#80223c" />
-        </label>
-        <label class="form-field">
-          <span class="form-field__label">Trim &amp; piping</span>
-          <input type="color" id="builderTrimColor" name="builderTrimColor" value="#0bd3c7" />
-        </label>
-        <label class="form-field">
-          <span class="form-field__label">Ball accent</span>
-          <input type="color" id="builderBallColor" name="builderBallColor" value="#f2f4ff" />
-        </label>
-      </div>
-
-      <div class="builder-preview">
-        <div class="builder-preview__player" id="builderPreviewJersey">
-          <div class="builder-preview__body"></div>
-          <div class="builder-preview__shorts"></div>
-          <div class="builder-preview__socks"></div>
-          <div class="builder-preview__trim"></div>
+        <div class="builder-card__actions">
+          <button class="btn btn--ghost btn--small" id="btnSkipBuilder" aria-label="Skip customisation">
+            Use defaults
+          </button>
         </div>
-        <div class="builder-preview__ball" id="builderPreviewBall" aria-hidden="true"></div>
-        <p class="builder-preview__note">
-          Kits will carry over to future cosmetics like premium jerseys or ball skins.
-        </p>
       </div>
 
-      <div class="button-row">
-        <button class="btn btn--primary" id="btnSaveBuilder">Save look &amp; play</button>
+      <div class="builder-layout">
+        <div class="builder-sections">
+          <div class="builder-panel">
+            <div class="builder-panel__header">
+              <div>
+                <p class="pill pill--soft">Manual tweak</p>
+                <h3>Dial in your palette</h3>
+                <p class="builder-panel__hint">Hex friendly. Adjust after picking a preset.</p>
+              </div>
+            </div>
+            <div class="builder-grid">
+              <label class="form-field">
+                <span class="form-field__label">Striker name</span>
+                <input type="text" id="builderName" name="builderName" placeholder="Your legend name" />
+              </label>
+              <label class="form-field">
+                <span class="form-field__label">Primary jersey</span>
+                <input type="color" id="builderPrimaryColor" name="builderPrimaryColor" value="#1f3a74" />
+              </label>
+              <label class="form-field">
+                <span class="form-field__label">Shorts &amp; socks</span>
+                <input type="color" id="builderSecondaryColor" name="builderSecondaryColor" value="#80223c" />
+              </label>
+              <label class="form-field">
+                <span class="form-field__label">Trim &amp; piping</span>
+                <input type="color" id="builderTrimColor" name="builderTrimColor" value="#0bd3c7" />
+              </label>
+              <label class="form-field">
+                <span class="form-field__label">Ball accent</span>
+                <input type="color" id="builderBallColor" name="builderBallColor" value="#f2f4ff" />
+              </label>
+            </div>
+          </div>
+
+          <div class="builder-panel builder-panel--presets">
+            <div class="builder-panel__header">
+              <div>
+                <p class="pill pill--soft">1-tap options</p>
+                <h3>Club-inspired kits</h3>
+                <p class="builder-panel__hint">
+                  Ten presets echoing world-class clubs. Colors are inspirations only—no official marks.
+                </p>
+              </div>
+            </div>
+            <div class="kit-preset-list" id="kitPresetList"></div>
+          </div>
+        </div>
+
+        <div class="builder-panel builder-panel--preview">
+          <div class="builder-preview">
+            <div class="builder-preview__player" id="builderPreviewJersey">
+              <div class="builder-preview__body"></div>
+              <div class="builder-preview__shorts"></div>
+              <div class="builder-preview__socks"></div>
+              <div class="builder-preview__trim"></div>
+            </div>
+            <div class="builder-preview__ball" id="builderPreviewBall" aria-hidden="true"></div>
+            <p class="builder-preview__note">
+              Kits will carry over to future cosmetics like premium jerseys or ball skins.
+            </p>
+          </div>
+
+          <div class="button-row">
+            <button class="btn btn--primary" id="btnSaveBuilder">Save look &amp; play</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
