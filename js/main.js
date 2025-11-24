@@ -81,6 +81,7 @@ const builderTrimInput = document.getElementById("builderTrimColor");
 const builderBallInput = document.getElementById("builderBallColor");
 const builderPreviewJersey = document.getElementById("builderPreviewJersey");
 const builderPreviewBall = document.getElementById("builderPreviewBall");
+const kitPresetList = document.getElementById("kitPresetList");
 const btnSaveBuilder = document.getElementById("btnSaveBuilder");
 const btnSkipBuilder = document.getElementById("btnSkipBuilder");
 const btnOpenBuilder = document.getElementById("btnOpenBuilder");
@@ -109,6 +110,7 @@ let missionCelebrateTimeout = null;
 
 let playerData = loadPlayerData();
 updateCoinsHeader();
+renderKitPresets();
 
 let game = null;
 let input = null;
@@ -218,6 +220,98 @@ function getKitColorsFromProfile(profile = playerData.profile || {}) {
   };
 }
 
+const KIT_PRESETS = [
+  {
+    name: "Manchester City",
+    tagline: "Sky blue dominance",
+    primary: "#6cabdd",
+    secondary: "#1c2c5b",
+    trim: "#a6d8ff",
+    ballAccent: "#f6fbff"
+  },
+  {
+    name: "Real Madrid",
+    tagline: "Classic blancos",
+    primary: "#f7f7f7",
+    secondary: "#2e2a5e",
+    trim: "#f0b90b",
+    ballAccent: "#ffffff"
+  },
+  {
+    name: "FC Barcelona",
+    tagline: "Blaugrana stripes",
+    primary: "#a50044",
+    secondary: "#004d98",
+    trim: "#f9a01b",
+    ballAccent: "#f7f4ef"
+  },
+  {
+    name: "Bayern Munich",
+    tagline: "Bavarian power",
+    primary: "#d00027",
+    secondary: "#0b142b",
+    trim: "#f5f5f5",
+    ballAccent: "#fef6f6"
+  },
+  {
+    name: "Liverpool",
+    tagline: "Anfield energy",
+    primary: "#c8102e",
+    secondary: "#0b1418",
+    trim: "#f0c75e",
+    ballAccent: "#ffffff"
+  },
+  {
+    name: "Paris Saint-Germain",
+    tagline: "Capital flair",
+    primary: "#001e36",
+    secondary: "#e30613",
+    trim: "#ffffff",
+    ballAccent: "#e6ecff"
+  },
+  {
+    name: "Juventus",
+    tagline: "Black & white strength",
+    primary: "#f9f9f9",
+    secondary: "#0a0a0a",
+    trim: "#d2b04c",
+    ballAccent: "#f2f2f2"
+  },
+  {
+    name: "Arsenal",
+    tagline: "North London pride",
+    primary: "#da1e36",
+    secondary: "#f4f4f4",
+    trim: "#1a2d59",
+    ballAccent: "#f0f6ff"
+  },
+  {
+    name: "Inter Milan",
+    tagline: "Nerazzurri stripes",
+    primary: "#004d98",
+    secondary: "#000000",
+    trim: "#ffd800",
+    ballAccent: "#e2f0ff"
+  },
+  {
+    name: "Chelsea",
+    tagline: "Stamford Bridge blue",
+    primary: "#034694",
+    secondary: "#d1d5da",
+    trim: "#e8b500",
+    ballAccent: "#f1f6ff"
+  }
+];
+
+function getKitColorsFromInputs() {
+  return {
+    primary: builderPrimaryInput?.value || playerData.profile?.kitPrimary || "#1f3a74",
+    secondary: builderSecondaryInput?.value || playerData.profile?.kitSecondary || "#80223c",
+    trim: builderTrimInput?.value || playerData.profile?.kitTrim || "#0bd3c7",
+    ballAccent: builderBallInput?.value || playerData.profile?.ballAccent || "#f2f4ff"
+  };
+}
+
 function formatPercent(value) {
   return `${Math.round(value)}%`;
 }
@@ -309,7 +403,7 @@ function updateTouchControlsVisibility() {
 }
 
 function updateBuilderPreview() {
-  const kit = getKitColorsFromProfile();
+  const kit = getKitColorsFromInputs();
   if (builderPreviewJersey) {
     builderPreviewJersey.style.setProperty("--kit-primary", kit.primary);
     builderPreviewJersey.style.setProperty("--kit-secondary", kit.secondary);
@@ -322,6 +416,92 @@ function updateBuilderPreview() {
   }
 }
 
+const normalizeHex = (value = "") => value.toLowerCase();
+
+function syncPresetSelection() {
+  if (!kitPresetList) return;
+
+  const current = getKitColorsFromInputs();
+  const activePreset = KIT_PRESETS.find(
+    (preset) =>
+      normalizeHex(preset.primary) === normalizeHex(current.primary) &&
+      normalizeHex(preset.secondary) === normalizeHex(current.secondary) &&
+      normalizeHex(preset.trim) === normalizeHex(current.trim) &&
+      normalizeHex(preset.ballAccent) === normalizeHex(current.ballAccent)
+  );
+
+  const presetButtons = kitPresetList.querySelectorAll(".kit-preset");
+  presetButtons.forEach((btn) => {
+    const isMatch =
+      btn.dataset.primary === normalizeHex(current.primary) &&
+      btn.dataset.secondary === normalizeHex(current.secondary) &&
+      btn.dataset.trim === normalizeHex(current.trim) &&
+      btn.dataset.ball === normalizeHex(current.ballAccent);
+    btn.classList.toggle("is-active", Boolean(activePreset) && isMatch);
+  });
+}
+
+function applyKitPreset(preset) {
+  if (!preset) return;
+
+  if (builderPrimaryInput) builderPrimaryInput.value = preset.primary;
+  if (builderSecondaryInput) builderSecondaryInput.value = preset.secondary;
+  if (builderTrimInput) builderTrimInput.value = preset.trim;
+  if (builderBallInput) builderBallInput.value = preset.ballAccent;
+
+  playerData.profile = {
+    ...playerData.profile,
+    kitPrimary: preset.primary,
+    kitSecondary: preset.secondary,
+    kitTrim: preset.trim,
+    ballAccent: preset.ballAccent
+  };
+
+  updateBuilderPreview();
+  syncPresetSelection();
+}
+
+function renderKitPresets() {
+  if (!kitPresetList) return;
+
+  kitPresetList.innerHTML = "";
+
+  KIT_PRESETS.forEach((preset) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "kit-preset";
+    btn.dataset.primary = normalizeHex(preset.primary);
+    btn.dataset.secondary = normalizeHex(preset.secondary);
+    btn.dataset.trim = normalizeHex(preset.trim);
+    btn.dataset.ball = normalizeHex(preset.ballAccent);
+
+    btn.innerHTML = `
+      <div class="kit-preset__heading">
+        <p class="kit-preset__name">${preset.name}</p>
+        <span class="pill pill--soft">Preset</span>
+      </div>
+      <p class="kit-preset__tagline">${preset.tagline}</p>
+      <div class="kit-preset__swatches">
+        <span class="kit-preset__swatch" style="background:${preset.primary}"></span>
+        <span class="kit-preset__swatch" style="background:${preset.secondary}"></span>
+        <span class="kit-preset__swatch" style="background:${preset.trim}"></span>
+        <span class="kit-preset__swatch" style="background:${preset.ballAccent}"></span>
+      </div>
+      <div class="kit-preset__labels">
+        <span>Primary</span>
+        <span>Secondary</span>
+        <span>Trim</span>
+        <span>Ball</span>
+      </div>
+    `;
+
+    btn.addEventListener("click", () => applyKitPreset(preset));
+    kitPresetList.appendChild(btn);
+  });
+
+  syncPresetSelection();
+}
+
 function populateBuilderForm() {
   const profile = playerData.profile || {};
   if (builderNameInput) builderNameInput.value = profile.displayName || "";
@@ -331,6 +511,7 @@ function populateBuilderForm() {
   if (builderTrimInput) builderTrimInput.value = profile.kitTrim || "#0bd3c7";
   if (builderBallInput) builderBallInput.value = profile.ballAccent || "#f2f4ff";
   updateBuilderPreview();
+  syncPresetSelection();
 }
 
 function openPlayerBuilder(message = "") {
@@ -857,6 +1038,7 @@ btnSkipBuilder?.addEventListener("click", () => {
         ballAccent: builderBallInput?.value || playerData.profile.ballAccent
       };
       updateBuilderPreview();
+      syncPresetSelection();
     });
   });
 
