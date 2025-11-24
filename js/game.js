@@ -175,12 +175,12 @@ export class Game {
   spawnObstacle() {
     const lane = Math.floor(Math.random() * this.lanes);
     const high = Math.random() < 0.35;
-    const type = high ? "high" : "ground"; // high = overhead rig/banner; ground = sliding tackle
-    const width = 54;
-    const height = high ? 65 : 38;
+    const type = high ? "high" : "ground"; // high = upright defender to slide under; ground = sliding tackle
+    const width = 58;
+    const height = high ? 118 : 78;
     this.obstacles.push({
       lane,
-      y: -80,
+      y: -120,
       width,
       height,
       type
@@ -820,9 +820,9 @@ export class Game {
     ctx.beginPath();
     ctx.ellipse(
       x + width / 2,
-      y + height * 0.9,
-      width * 0.55,
-      height * 0.35,
+      y + height * 0.92,
+      width * 0.6,
+      height * 0.4,
       0,
       0,
       Math.PI * 2
@@ -830,51 +830,52 @@ export class Game {
     ctx.fill();
     ctx.restore();
 
-    // Base jersey
+    // Sliding tackle pose
     const torsoX = x + width * 0.18;
-    const torsoY = y + height * 0.15;
+    const torsoY = y + height * 0.22;
     const torsoW = width * 0.64;
-    const torsoH = height * 0.55;
+    const torsoH = height * 0.48;
     const jersey = ctx.createLinearGradient(torsoX, torsoY, torsoX, torsoY + torsoH);
     jersey.addColorStop(0, "#2a3b84");
-    jersey.addColorStop(1, "#1a2654");
+    jersey.addColorStop(1, "#0f1b45");
     ctx.fillStyle = jersey;
-    ctx.fillRect(torsoX, torsoY, torsoW, torsoH);
+    ctx.beginPath();
+    ctx.roundRect(torsoX, torsoY, torsoW, torsoH, 8);
+    ctx.fill();
 
-    // Shoulder stripes
-    ctx.fillStyle = "#d9e3ff";
-    ctx.fillRect(torsoX, torsoY + torsoH * 0.08, torsoW, torsoH * 0.1);
-    ctx.fillRect(torsoX, torsoY + torsoH * 0.3, torsoW, torsoH * 0.08);
+    // Number stripe
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    ctx.fillRect(torsoX + torsoW * 0.44, torsoY + torsoH * 0.12, torsoW * 0.12, torsoH * 0.7);
 
-    // Arms
-    const armGradient = ctx.createLinearGradient(x, torsoY, x, torsoY + torsoH * 0.6);
+    // Arms reaching out
+    const armGradient = ctx.createLinearGradient(x, torsoY, x, torsoY + torsoH * 0.8);
     armGradient.addColorStop(0, "#f0d3b3");
     armGradient.addColorStop(1, "#d5b08a");
     ctx.fillStyle = armGradient;
     ctx.beginPath();
-    ctx.roundRect(x + width * 0.05, torsoY + torsoH * 0.15, width * 0.22, torsoH * 0.45, 6);
-    ctx.roundRect(x + width * 0.73, torsoY + torsoH * 0.05, width * 0.22, torsoH * 0.35, 6);
+    ctx.roundRect(x + width * 0.02, torsoY + torsoH * 0.25, width * 0.22, torsoH * 0.55, 7);
+    ctx.roundRect(x + width * 0.76, torsoY + torsoH * 0.05, width * 0.22, torsoH * 0.42, 7);
     ctx.fill();
 
-    // Legs (sliding pose)
-    const legGradient = ctx.createLinearGradient(x, y + height * 0.5, x, y + height);
-    legGradient.addColorStop(0, "#f0d3b3");
-    legGradient.addColorStop(1, "#d5b08a");
+    // Legs sweeping across
+    const legGradient = ctx.createLinearGradient(x, y + height * 0.45, x, y + height);
+    legGradient.addColorStop(0, "#f4d7b8");
+    legGradient.addColorStop(1, "#d6b08a");
     ctx.fillStyle = legGradient;
     ctx.beginPath();
-    ctx.roundRect(x + width * 0.1, y + height * 0.55, width * 0.3, height * 0.3, 6);
-    ctx.roundRect(x + width * 0.45, y + height * 0.6, width * 0.4, height * 0.26, 6);
+    ctx.roundRect(x + width * 0.06, y + height * 0.55, width * 0.34, height * 0.32, 8);
+    ctx.roundRect(x + width * 0.46, y + height * 0.62, width * 0.42, height * 0.26, 8);
     ctx.fill();
 
     // Cleats
     ctx.fillStyle = "#0f9b4c";
-    ctx.fillRect(x + width * 0.08, y + height * 0.82, width * 0.22, height * 0.12);
-    ctx.fillRect(x + width * 0.7, y + height * 0.82, width * 0.18, height * 0.12);
+    ctx.roundRect(x + width * 0.02, y + height * 0.84, width * 0.24, height * 0.12, 3);
+    ctx.roundRect(x + width * 0.72, y + height * 0.84, width * 0.24, height * 0.12, 3);
 
     // Head
-    const headRadius = width * 0.18;
-    const headCenterX = x + width / 2;
-    const headCenterY = y + height * 0.2;
+    const headRadius = width * 0.2;
+    const headCenterX = x + width * 0.5;
+    const headCenterY = y + height * 0.18;
     const headGradient = ctx.createLinearGradient(
       headCenterX,
       headCenterY - headRadius,
@@ -895,31 +896,136 @@ export class Game {
     ctx.arc(headCenterX, headCenterY + headRadius * 0.35, headRadius * 0.45, 0, Math.PI);
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(headCenterX - headRadius * 0.45, headCenterY - headRadius * 0.1, headRadius * 0.18, 0, Math.PI * 2);
+    ctx.arc(headCenterX - headRadius * 0.45, headCenterY - headRadius * 0.05, headRadius * 0.18, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(headCenterX + headRadius * 0.45, headCenterY - headRadius * 0.1, headRadius * 0.18, 0, Math.PI * 2);
+    ctx.arc(headCenterX + headRadius * 0.45, headCenterY - headRadius * 0.05, headRadius * 0.18, 0, Math.PI * 2);
     ctx.fill();
 
-    // Hair and headband
+    // Hairband detail
     ctx.fillStyle = "#1c1c1c";
     ctx.beginPath();
-    ctx.arc(headCenterX, headCenterY - headRadius * 0.15, headRadius, Math.PI, Math.PI * 2);
+    ctx.arc(headCenterX, headCenterY - headRadius * 0.2, headRadius, Math.PI, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = "#ff6b6b";
     ctx.fillRect(
       headCenterX - headRadius,
-      headCenterY - headRadius * 0.25,
+      headCenterY - headRadius * 0.3,
       headRadius * 2,
-      headRadius * 0.16
+      headRadius * 0.14
     );
 
     // Gloves
     ctx.fillStyle = "#0f9b4c";
     ctx.beginPath();
-    ctx.roundRect(x + width * 0.06, torsoY + torsoH * 0.52, width * 0.12, width * 0.14, 4);
-    ctx.roundRect(x + width * 0.82, torsoY + torsoH * 0.12, width * 0.1, width * 0.14, 4);
+    ctx.roundRect(x + width * 0.02, torsoY + torsoH * 0.72, width * 0.16, width * 0.14, 4);
+    ctx.roundRect(x + width * 0.86, torsoY + torsoH * 0.1, width * 0.12, width * 0.14, 4);
     ctx.fill();
+  }
+
+  drawStandingDefender(ctx, x, y, width, height) {
+    ctx.save();
+
+    // Shadow
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.filter = "blur(2px)";
+    ctx.beginPath();
+    ctx.ellipse(x + width / 2, y + height, width * 0.45, height * 0.12, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Legs
+    const legGradient = ctx.createLinearGradient(x, y + height * 0.55, x, y + height);
+    legGradient.addColorStop(0, "#f0d3b3");
+    legGradient.addColorStop(1, "#d5b08a");
+    ctx.fillStyle = legGradient;
+    ctx.beginPath();
+    ctx.roundRect(x + width * 0.16, y + height * 0.55, width * 0.24, height * 0.38, 8);
+    ctx.roundRect(x + width * 0.54, y + height * 0.52, width * 0.22, height * 0.42, 8);
+    ctx.fill();
+
+    // Socks and cleats
+    ctx.fillStyle = "#ffffff";
+    ctx.roundRect(x + width * 0.16, y + height * 0.82, width * 0.24, height * 0.08, 3);
+    ctx.roundRect(x + width * 0.54, y + height * 0.8, width * 0.22, height * 0.08, 3);
+    ctx.fillStyle = "#0f9b4c";
+    ctx.roundRect(x + width * 0.12, y + height * 0.9, width * 0.28, height * 0.08, 3);
+    ctx.roundRect(x + width * 0.5, y + height * 0.88, width * 0.26, height * 0.08, 3);
+
+    // Torso
+    const torsoX = x + width * 0.16;
+    const torsoY = y + height * 0.18;
+    const torsoW = width * 0.68;
+    const torsoH = height * 0.42;
+    const jersey = ctx.createLinearGradient(torsoX, torsoY, torsoX, torsoY + torsoH);
+    jersey.addColorStop(0, "#1e7d3c");
+    jersey.addColorStop(1, "#0e5a2b");
+    ctx.fillStyle = jersey;
+    ctx.beginPath();
+    ctx.roundRect(torsoX, torsoY, torsoW, torsoH, 10);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    ctx.fillRect(torsoX + torsoW * 0.38, torsoY + torsoH * 0.08, torsoW * 0.2, torsoH * 0.12);
+    ctx.fillRect(torsoX + torsoW * 0.2, torsoY + torsoH * 0.32, torsoW * 0.6, torsoH * 0.12);
+
+    // Arms crossed for blocking
+    const armGradient = ctx.createLinearGradient(x, torsoY, x, torsoY + torsoH);
+    armGradient.addColorStop(0, "#f4d7b8");
+    armGradient.addColorStop(1, "#d6b08a");
+    ctx.fillStyle = armGradient;
+    ctx.beginPath();
+    ctx.roundRect(torsoX - width * 0.06, torsoY + torsoH * 0.1, width * 0.22, torsoH * 0.42, 7);
+    ctx.roundRect(torsoX + torsoW - width * 0.16, torsoY + torsoH * 0.12, width * 0.22, torsoH * 0.42, 7);
+    ctx.fill();
+
+    // Gloves
+    ctx.fillStyle = "#ffd447";
+    ctx.roundRect(torsoX - width * 0.06, torsoY + torsoH * 0.42, width * 0.22, width * 0.12, 4);
+    ctx.roundRect(torsoX + torsoW - width * 0.16, torsoY + torsoH * 0.44, width * 0.22, width * 0.12, 4);
+
+    // Head
+    const headRadius = width * 0.18;
+    const headCenterX = x + width * 0.5;
+    const headCenterY = y + height * 0.12 + headRadius;
+    const headGradient = ctx.createLinearGradient(
+      headCenterX,
+      headCenterY - headRadius,
+      headCenterX,
+      headCenterY + headRadius
+    );
+    headGradient.addColorStop(0, "#f4d7b8");
+    headGradient.addColorStop(1, "#d6b08a");
+    ctx.fillStyle = headGradient;
+    ctx.beginPath();
+    ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Facial features
+    ctx.strokeStyle = "rgba(0,0,0,0.35)";
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.arc(headCenterX, headCenterY + headRadius * 0.34, headRadius * 0.44, 0, Math.PI);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(headCenterX - headRadius * 0.42, headCenterY - headRadius * 0.08, headRadius * 0.16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(headCenterX + headRadius * 0.42, headCenterY - headRadius * 0.08, headRadius * 0.16, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hair
+    ctx.fillStyle = "#2a1d11";
+    ctx.beginPath();
+    ctx.arc(headCenterX, headCenterY - headRadius * 0.1, headRadius, Math.PI, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffe27a";
+    ctx.fillRect(
+      headCenterX - headRadius,
+      headCenterY - headRadius * 0.22,
+      headRadius * 2,
+      headRadius * 0.12
+    );
   }
 
   drawObstacles(ctx) {
@@ -930,15 +1036,7 @@ export class Game {
       if (o.type === "ground") {
         this.drawDefender(ctx, x, y, o.width, o.height);
       } else {
-        // Overhead camera rig / banner
-        const rig = ctx.createLinearGradient(x, y, x + o.width, y + o.height);
-        rig.addColorStop(0, "#ffe27a");
-        rig.addColorStop(1, "#d4a600");
-        ctx.fillStyle = rig;
-        ctx.fillRect(x, y, o.width, o.height);
-
-        ctx.fillStyle = "rgba(0,0,0,0.25)";
-        ctx.fillRect(x, y + o.height - 6, o.width, 6);
+        this.drawStandingDefender(ctx, x, y, o.width, o.height);
       }
     }
   }
@@ -1036,33 +1134,100 @@ export class Game {
     const y = g.y;
 
     ctx.save();
-    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
     ctx.filter = "blur(2px)";
     ctx.beginPath();
-    ctx.ellipse(g.x, y + g.height, g.width * 0.45, g.height * 0.25, 0, 0, Math.PI * 2);
+    ctx.ellipse(g.x, y + g.height, g.width * 0.5, g.height * 0.25, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
-    const jersey = ctx.createLinearGradient(x, y, x, y + g.height);
-    jersey.addColorStop(0, "#e0503c");
-    jersey.addColorStop(1, "#9b1f1f");
+    // Legs in stance
+    const legGradient = ctx.createLinearGradient(x, y + g.height * 0.5, x, y + g.height);
+    legGradient.addColorStop(0, "#f0d3b3");
+    legGradient.addColorStop(1, "#d5b08a");
+    ctx.fillStyle = legGradient;
+    ctx.beginPath();
+    ctx.roundRect(x + g.width * 0.12, y + g.height * 0.52, g.width * 0.28, g.height * 0.46, 8);
+    ctx.roundRect(x + g.width * 0.6, y + g.height * 0.48, g.width * 0.26, g.height * 0.5, 8);
+    ctx.fill();
 
+    ctx.fillStyle = "#1f6f3f";
+    ctx.roundRect(x + g.width * 0.1, y + g.height * 0.86, g.width * 0.32, g.height * 0.14, 4);
+    ctx.roundRect(x + g.width * 0.58, y + g.height * 0.84, g.width * 0.3, g.height * 0.14, 4);
+
+    // Torso and arms
+    const torsoX = x + g.width * 0.12;
+    const torsoY = y + g.height * 0.12;
+    const torsoW = g.width * 0.76;
+    const torsoH = g.height * 0.46;
+    const jersey = ctx.createLinearGradient(torsoX, torsoY, torsoX, torsoY + torsoH);
+    jersey.addColorStop(0, "#ff9f43");
+    jersey.addColorStop(1, "#e1701a");
     ctx.fillStyle = jersey;
     ctx.beginPath();
-    ctx.roundRect(x, y, g.width, g.height, 10);
+    ctx.roundRect(torsoX, torsoY, torsoW, torsoH, 12);
     ctx.fill();
 
-    ctx.fillStyle = "#f5d7b2";
+    ctx.fillStyle = "rgba(255,255,255,0.75)";
+    ctx.fillRect(torsoX + torsoW * 0.38, torsoY + torsoH * 0.1, torsoW * 0.18, torsoH * 0.16);
+    ctx.fillRect(torsoX + torsoW * 0.18, torsoY + torsoH * 0.34, torsoW * 0.64, torsoH * 0.12);
+
+    // Arms reaching wide
+    const armGradient = ctx.createLinearGradient(x, torsoY, x, torsoY + torsoH);
+    armGradient.addColorStop(0, "#f5d7b2");
+    armGradient.addColorStop(1, "#d6b08a");
+    ctx.fillStyle = armGradient;
     ctx.beginPath();
-    ctx.arc(g.x, y + g.height * 0.25, g.width * 0.18, 0, Math.PI * 2);
+    ctx.roundRect(torsoX - g.width * 0.18, torsoY + torsoH * 0.08, g.width * 0.26, torsoH * 0.55, 8);
+    ctx.roundRect(torsoX + torsoW - g.width * 0.08, torsoY + torsoH * 0.04, g.width * 0.26, torsoH * 0.6, 8);
     ctx.fill();
 
-    ctx.strokeStyle = "rgba(255,255,255,0.5)";
-    ctx.lineWidth = 3;
+    ctx.fillStyle = "#2f9e44";
+    ctx.roundRect(torsoX - g.width * 0.2, torsoY + torsoH * 0.5, g.width * 0.28, g.width * 0.14, 6);
+    ctx.roundRect(torsoX + torsoW - g.width * 0.06, torsoY + torsoH * 0.48, g.width * 0.28, g.width * 0.14, 6);
+
+    // Head
+    const headRadius = g.width * 0.2;
+    const headCenterX = g.x;
+    const headCenterY = y + g.height * 0.14 + headRadius;
+    const headGradient = ctx.createLinearGradient(
+      headCenterX,
+      headCenterY - headRadius,
+      headCenterX,
+      headCenterY + headRadius
+    );
+    headGradient.addColorStop(0, "#f5d7b2");
+    headGradient.addColorStop(1, "#d6b08a");
+    ctx.fillStyle = headGradient;
     ctx.beginPath();
-    ctx.moveTo(g.x - g.width * 0.6, y + g.height * 0.6);
-    ctx.lineTo(g.x + g.width * 0.6, y + g.height * 0.6);
+    ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Facial features
+    ctx.strokeStyle = "rgba(0,0,0,0.35)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(headCenterX, headCenterY + headRadius * 0.36, headRadius * 0.46, 0, Math.PI);
     ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(headCenterX - headRadius * 0.42, headCenterY - headRadius * 0.06, headRadius * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(headCenterX + headRadius * 0.42, headCenterY - headRadius * 0.06, headRadius * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hair and headband
+    ctx.fillStyle = "#1c1c1c";
+    ctx.beginPath();
+    ctx.arc(headCenterX, headCenterY - headRadius * 0.08, headRadius, Math.PI, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#2f9e44";
+    ctx.fillRect(
+      headCenterX - headRadius,
+      headCenterY - headRadius * 0.24,
+      headRadius * 2,
+      headRadius * 0.14
+    );
   }
 
   drawActiveShot(ctx) {
