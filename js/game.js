@@ -57,6 +57,25 @@ export class Game {
     this.goalFlashTime = 0;
 
     this.shotMeterMax = 100;
+    this.shotReady = false;
+    this.activeShot = null;
+    this.shotResultFlash = 0;
+    this.shotResultLabel = "";
+
+    this.goal = {
+      x: this.width / 2,
+      y: this.height * 0.12,
+      width: this.width * 0.7,
+      height: 110
+    };
+    this.goalie = {
+      x: this.goal.x,
+      y: this.goal.y + 40,
+      width: 70,
+      height: 70,
+      direction: 1,
+      speed: 110
+    };
 
     // Callbacks for UI / meta
     this.onStats = options.onStats || (() => {});
@@ -71,6 +90,10 @@ export class Game {
     this.coinsThisRun = 0;
     this.goalsThisRun = 0;
     this.shotMeter = 0;
+    this.shotReady = false;
+    this.activeShot = null;
+    this.shotResultFlash = 0;
+    this.shotResultLabel = "";
   }
 
   getRunState() {
@@ -89,6 +112,8 @@ export class Game {
     this.timeSinceObstacle = 0;
     this.timeSincePickup = 0;
     this.goalFlashTime = 0;
+    this.shotReady = false;
+    this.activeShot = null;
     this.resetRunStats();
     this.player.lane = 1;
     this.player.isJumping = false;
@@ -101,6 +126,8 @@ export class Game {
   endRun() {
     if (this.runState === RUN_STATE.ENDED) return;
     this.runState = RUN_STATE.ENDED;
+    this.shotReady = false;
+    this.activeShot = null;
     if (this.distance > this.bestDistance) {
       this.bestDistance = this.distance;
     }
@@ -194,6 +221,55 @@ export class Game {
     this.onGoal(this.goalsThisRun);
   }
 
+  isShotReady() {
+    return this.shotReady && this.runState === RUN_STATE.RUNNING;
+  }
+
+  attemptShot(aimBias = 0) {
+    if (!this.isShotReady() || this.activeShot) return false;
+
+    const playerX = this.laneX(this.player.lane);
+    const playerY = this.player.baseY + this.player.height * 0.8;
+    const clampedBias = Math.max(-1, Math.min(1, aimBias || 0));
+    const targetSpread = (this.goal.width * 0.35) / 2;
+    const targetX = this.goal.x + clampedBias * targetSpread;
+    const targetY = this.goal.y + this.goal.height * 0.3;
+
+    this.activeShot = {
+      startX: playerX,
+      startY: playerY,
+      targetX,
+      targetY,
+      t: 0,
+      duration: 0.72,
+      arcHeight: 140
+    };
+
+    this.shotReady = false;
+    this.shotMeter = 0;
+    return true;
+  }
+
+  resolveShot() {
+    if (!this.activeShot) return;
+
+    const keeperLeft = this.goalie.x - this.goalie.width * 0.45;
+    const keeperRight = this.goalie.x + this.goalie.width * 0.45;
+    const shotX = this.activeShot.targetX;
+    const blocked = shotX >= keeperLeft && shotX <= keeperRight;
+
+    if (blocked) {
+      this.shotResultLabel = "Saved";
+      this.shotResultFlash = 0.8;
+    } else {
+      this.shotResultLabel = "GOAL";
+      this.shotResultFlash = 0.8;
+      this.scoreGoal();
+    }
+
+    this.activeShot = null;
+  }
+
   update(dt) {
     // Always push last known stats so HUD can show IDLE state too
     this.onStats({
@@ -201,12 +277,14 @@ export class Game {
       coins: this.coinsThisRun,
       goals: this.goalsThisRun,
       shotMeter: this.shotMeter,
+      shotReady: this.shotReady,
       bestDistance: Math.floor(this.bestDistance),
       runState: this.runState
     });
 
     if (this.runState !== RUN_STATE.RUNNING) {
       if (this.goalFlashTime > 0) this.goalFlashTime -= dt;
+      if (this.shotResultFlash > 0) this.shotResultFlash -= dt;
       return;
     }
 
@@ -224,6 +302,7 @@ export class Game {
     this.timeSinceObstacle += dt;
     this.timeSincePickup += dt;
     if (this.goalFlashTime > 0) this.goalFlashTime -= dt;
+    if (this.shotResultFlash > 0) this.shotResultFlash -= dt;
 
     // Player animation: jump
     if (this.player.isJumping) {
@@ -342,18 +421,48 @@ export class Game {
           this.shotMeter += 25 * this.shotGainMultiplier;
         }
 
-        if (this.shotMeter >= this.shotMeterMax) {
-          this.shotMeter = 0;
-          this.scoreGoal();
-        }
-
         this.pickups.splice(i, 1);
       }
     }
 
     // Clamp shot meter
     if (this.shotMeter < 0) this.shotMeter = 0;
-    if (this.shotMeter > this.shotMeterMax) this.shotMeter = this.shotMeterMax;
+    if (this.shotMeter >= this.shotMeterMax) {
+      this.shotMeter = this.shotMeterMax;
+      this.shotReady = true;
+    }
+
+    // Goalie pacing between posts
+    const goalLeft = this.goal.x - this.goal.width * 0.35;
+    const goalRight = this.goal.x + this.goal.width * 0.35;
+    this.goalie.x += this.goalie.direction * this.goalie.speed * dt;
+    if (this.goalie.x < goalLeft) {
+      this.goalie.x = goalLeft;
+      this.goalie.direction = 1;
+    } else if (this.goalie.x > goalRight) {
+      this.goalie.x = goalRight;
+      this.goalie.direction = -1;
+    }
+
+    // Active shot flight
+    if (this.activeShot) {
+      this.activeShot.t += dt;
+      const t = Math.min(1, this.activeShot.t / this.activeShot.duration);
+      const ease = t * (2 - t);
+      const x =
+        this.activeShot.startX +
+        (this.activeShot.targetX - this.activeShot.startX) * ease;
+      const straightY =
+        this.activeShot.startY +
+        (this.activeShot.targetY - this.activeShot.startY) * ease;
+      const arcOffset = Math.sin(Math.PI * ease) * this.activeShot.arcHeight;
+      this.activeShot.currentX = x;
+      this.activeShot.currentY = straightY - arcOffset;
+
+      if (t >= 1) {
+        this.resolveShot();
+      }
+    }
 
     // Update stats (again after changes)
     this.onStats({
@@ -361,6 +470,7 @@ export class Game {
       coins: this.coinsThisRun,
       goals: this.goalsThisRun,
       shotMeter: this.shotMeter,
+      shotReady: this.shotReady,
       bestDistance: Math.floor(this.bestDistance),
       runState: this.runState
     });
@@ -875,13 +985,119 @@ export class Game {
     }
   }
 
+  drawGoalArea(ctx) {
+    // Goal box
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(
+      this.goal.x - this.goal.width / 2,
+      this.goal.y,
+      this.goal.width,
+      this.goal.height
+    );
+
+    // Netting
+    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+    ctx.lineWidth = 1;
+    const rows = 5;
+    const cols = 10;
+    for (let i = 1; i < rows; i++) {
+      const y = this.goal.y + (this.goal.height / rows) * i;
+      ctx.beginPath();
+      ctx.moveTo(this.goal.x - this.goal.width / 2, y);
+      ctx.lineTo(this.goal.x + this.goal.width / 2, y);
+      ctx.stroke();
+    }
+    for (let i = 1; i < cols; i++) {
+      const x = this.goal.x - this.goal.width / 2 + (this.goal.width / cols) * i;
+      ctx.beginPath();
+      ctx.moveTo(x, this.goal.y);
+      ctx.lineTo(x, this.goal.y + this.goal.height);
+      ctx.stroke();
+    }
+
+    // Goalie shadow and body
+    this.drawGoalie(ctx);
+
+    if (this.shotResultFlash > 0 && this.shotResultLabel) {
+      const alpha = Math.min(1, this.shotResultFlash / 0.8);
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.font = "bold 26px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(this.shotResultLabel, this.width / 2, this.goal.y - 12);
+    }
+    ctx.restore();
+  }
+
+  drawGoalie(ctx) {
+    const g = this.goalie;
+    const x = g.x - g.width / 2;
+    const y = g.y;
+
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.filter = "blur(2px)";
+    ctx.beginPath();
+    ctx.ellipse(g.x, y + g.height, g.width * 0.45, g.height * 0.25, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    const jersey = ctx.createLinearGradient(x, y, x, y + g.height);
+    jersey.addColorStop(0, "#e0503c");
+    jersey.addColorStop(1, "#9b1f1f");
+
+    ctx.fillStyle = jersey;
+    ctx.beginPath();
+    ctx.roundRect(x, y, g.width, g.height, 10);
+    ctx.fill();
+
+    ctx.fillStyle = "#f5d7b2";
+    ctx.beginPath();
+    ctx.arc(g.x, y + g.height * 0.25, g.width * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(255,255,255,0.5)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(g.x - g.width * 0.6, y + g.height * 0.6);
+    ctx.lineTo(g.x + g.width * 0.6, y + g.height * 0.6);
+    ctx.stroke();
+  }
+
+  drawActiveShot(ctx) {
+    if (!this.activeShot) return;
+    this.drawSoccerBall(
+      ctx,
+      this.activeShot.currentX,
+      this.activeShot.currentY,
+      12
+    );
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(this.activeShot.startX, this.activeShot.startY);
+    ctx.quadraticCurveTo(
+      (this.activeShot.startX + this.activeShot.targetX) / 2,
+      this.activeShot.startY - this.activeShot.arcHeight,
+      this.activeShot.targetX,
+      this.activeShot.targetY
+    );
+    ctx.stroke();
+    ctx.restore();
+  }
+
   render() {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.width, this.height);
 
     this.drawPitch(ctx);
+    this.drawGoalArea(ctx);
     this.drawObstacles(ctx);
     this.drawPickups(ctx);
     this.drawPlayer(ctx);
+    this.drawActiveShot(ctx);
   }
 }

@@ -370,6 +370,7 @@ function handleGameStats(stats) {
   hudBest.textContent = `${stats.bestDistance} m`;
   const pct = (stats.shotMeter / 100) * 100;
   shotMeterFill.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+  shotMeterFill.classList.toggle("shot-meter__fill--ready", !!stats.shotReady);
 }
 
 function handleGameState(state) {
@@ -437,11 +438,14 @@ function handleGameOver(payload) {
 }
 
 function handleInputAction(action) {
+  const actionType = typeof action === "string" ? action : action?.type;
+  const detail = typeof action === "object" ? action.detail || {} : {};
+
   // While a menu screen is open
   if (currentScreenId === "mainMenu") {
-    if (action === "startRun") {
+    if (actionType === "startRun") {
       startRun();
-    } else if (action === "pauseToggle") {
+    } else if (actionType === "pauseToggle") {
       // ignore
     }
     return;
@@ -452,9 +456,12 @@ function handleInputAction(action) {
     currentScreenId === "settingsScreen" ||
     currentScreenId === "gameOverScreen"
   ) {
-    if (action === "pauseToggle") {
+    if (actionType === "pauseToggle") {
       setActiveScreen("mainMenu");
-    } else if (currentScreenId === "gameOverScreen" && action === "startRun") {
+    } else if (
+      currentScreenId === "gameOverScreen" &&
+      actionType === "startRun"
+    ) {
       setActiveScreen(null);
       game.startRun();
     }
@@ -465,22 +472,28 @@ function handleInputAction(action) {
   if (!game) return;
   const state = game.getRunState();
 
-  if (action === "pauseToggle") {
+  if (actionType === "pauseToggle") {
     togglePause();
     return;
   }
 
   if (state !== "running") {
-    if (action === "startRun") {
+    if (actionType === "startRun") {
       startRun();
     }
     return;
   }
 
-  if (action === "moveLeft") game.handleMove("left");
-  else if (action === "moveRight") game.handleMove("right");
-  else if (action === "jump") game.handleMove("jump");
-  else if (action === "slide") game.handleMove("slide");
+  if (actionType === "primary" && game.isShotReady()) {
+    const aimBias = Math.max(-1, Math.min(1, (detail.dx || 0) / 140));
+    game.attemptShot(aimBias);
+    return;
+  }
+
+  if (actionType === "moveLeft") game.handleMove("left");
+  else if (actionType === "moveRight") game.handleMove("right");
+  else if (actionType === "jump") game.handleMove("jump");
+  else if (actionType === "slide") game.handleMove("slide");
 }
 
 // Button wiring
@@ -539,7 +552,7 @@ touchControls.forEach((btn) => {
     (event) => {
       event.preventDefault();
       const action = btn.dataset.action;
-      if (action) handleInputAction(action);
+      if (action) handleInputAction({ type: action });
     },
     { passive: false }
   );

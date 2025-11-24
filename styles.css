@@ -270,6 +270,11 @@ canvas {
   transition: width 0.08s linear;
 }
 
+.shot-meter__fill--ready {
+  background: linear-gradient(90deg, #f2da5a, #ff8f42);
+  box-shadow: 0 0 14px rgba(255, 177, 66, 0.55), 0 0 0 1px #ffb142;
+}
+
 .shot-meter-wrapper {
   display: flex;
   justify-content: center;
