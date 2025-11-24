@@ -7,6 +7,7 @@ export class InputManager {
 
     this._keyDown = this._handleKeyDown.bind(this);
     this._touchStart = this._handleTouchStart.bind(this);
+    this._touchMove = this._handleTouchMove.bind(this);
     this._touchEnd = this._handleTouchEnd.bind(this);
 
     this.touchStart = null;
@@ -17,6 +18,9 @@ export class InputManager {
     this.canvas.addEventListener("touchstart", this._touchStart, {
       passive: false
     });
+    this.canvas.addEventListener("touchmove", this._touchMove, {
+      passive: false
+    });
     this.canvas.addEventListener("touchend", this._touchEnd, {
       passive: false
     });
@@ -25,6 +29,7 @@ export class InputManager {
   detach() {
     window.removeEventListener("keydown", this._keyDown);
     this.canvas.removeEventListener("touchstart", this._touchStart);
+    this.canvas.removeEventListener("touchmove", this._touchMove);
     this.canvas.removeEventListener("touchend", this._touchEnd);
   }
 
@@ -57,12 +62,18 @@ export class InputManager {
 
   _handleTouchStart(e) {
     if (e.touches.length === 0) return;
+    e.preventDefault();
     const t = e.touches[0];
     this.touchStart = {
       x: t.clientX,
       y: t.clientY,
       time: performance.now()
     };
+  }
+
+  _handleTouchMove(e) {
+    // Prevent the browser from scrolling while swiping on the canvas
+    e.preventDefault();
   }
 
   _handleTouchEnd(e) {
