@@ -1736,17 +1736,6 @@ canvas {
   color: #f7f8fc;
 }
 
-.builder-card--customizer {
-  width: min(1100px, 100%);
-  padding: 18px;
-  background: linear-gradient(135deg, #0d1228, #090f22);
-}
-
-.builder-card--customizer usr-kit-customizer {
-  display: block;
-  margin-top: 8px;
-}
-
 .builder-card__header {
   display: flex;
   align-items: flex-start;
