@@ -56,6 +56,7 @@ const continueCostLabel = document.getElementById("continueCostLabel");
 const btnPlay = document.getElementById("btnPlay");
 const btnTeam = document.getElementById("btnTeam");
 const btnSettings = document.getElementById("btnSettings");
+const btnMissions = document.getElementById("btnMissions");
 const btnPause = document.getElementById("btnPause");
 const btnReplay = document.getElementById("btnReplay");
 const btnGoToTeam = document.getElementById("btnGoToTeam");
@@ -96,18 +97,9 @@ const btnSaveProgress = document.getElementById("btnSaveProgress");
 const cardListEl = document.getElementById("cardList");
 
 // Missions
-const missionTitleEl = document.getElementById("missionTitle");
-const missionDescriptionEl = document.getElementById("missionDescription");
-const missionCadenceEl = document.getElementById("missionCadence");
-const missionProgressFill = document.getElementById("missionProgressFill");
-const missionProgressTextEl = document.getElementById("missionProgressText");
-const missionRewardEl = document.getElementById("missionReward");
-const missionStepperEl = document.getElementById("missionStepper");
-const btnMissionAction = document.getElementById("btnMissionAction");
-const btnPrevMission = document.getElementById("btnPrevMission");
-const btnNextMission = document.getElementById("btnNextMission");
-let missionCycle = [];
-let missionIndex = 0;
+const dailyMissionsEl = document.getElementById("dailyMissions");
+const weeklyMissionsEl = document.getElementById("weeklyMissions");
+const missionsPanel = document.getElementById("missionsPanel");
 
 let playerData = loadPlayerData();
 updateCoinsHeader();
@@ -137,6 +129,13 @@ function setActiveScreen(id) {
   const inRun = id === null;
   hudEl.classList.toggle("hidden", !inRun);
   updateTouchControlsVisibility();
+}
+
+function focusMissionsPanel() {
+  if (!missionsPanel) return;
+  missionsPanel.classList.add("panel--highlight");
+  missionsPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+  window.setTimeout(() => missionsPanel.classList.remove("panel--highlight"), 1500);
 }
 
 function updateCoinsHeader() {
@@ -775,6 +774,11 @@ btnSkipBuilder?.addEventListener("click", () => {
 btnTeam.addEventListener("click", () => {
   renderTeamScreen();
   setActiveScreen("teamScreen");
+});
+
+btnMissions?.addEventListener("click", () => {
+  setActiveScreen("mainMenu");
+  focusMissionsPanel();
 });
 
 btnSettings.addEventListener("click", () => {
