@@ -132,7 +132,7 @@ function updateTouchControlsVisibility() {
 
   // Show the mobile buttons while the run is active and swap the CTA based on
   // whether we're running or waiting to start.
-  touchControlsContainer?.classList.toggle("touch-controls--visible", inRun);
+  touchControlsContainer?.classList.toggle("touch-controls--hidden", inRun);
   startButton?.classList.toggle("hidden", inRun);
   pauseTouchButton?.classList.toggle("hidden", !inRun);
 }
