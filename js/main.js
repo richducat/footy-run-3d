@@ -128,11 +128,13 @@ function buildGameInstance() {
 }
 
 function updateTouchControlsVisibility() {
-  // Hide on-screen buttons during gameplay so they don't overlay the action.
-  // Players can still use swipe gestures on mobile or keyboard controls on desktop.
-  touchControlsContainer?.classList.remove("touch-controls--visible");
-  startButton?.classList.add("hidden");
-  pauseTouchButton?.classList.add("hidden");
+  const inRun = currentScreenId === null;
+
+  // Show the mobile buttons while the run is active and swap the CTA based on
+  // whether we're running or waiting to start.
+  touchControlsContainer?.classList.toggle("touch-controls--visible", inRun);
+  startButton?.classList.toggle("hidden", inRun);
+  pauseTouchButton?.classList.toggle("hidden", !inRun);
 }
 
 function renderTeamScreen() {
@@ -616,7 +618,8 @@ let lastTimestamp = 0;
 
 function loop(timestamp) {
   if (!lastTimestamp) lastTimestamp = timestamp;
-  const dt = (timestamp - lastTimestamp) / 1000;
+  const rawDt = (timestamp - lastTimestamp) / 1000;
+  const dt = Math.min(0.05, Math.max(0, rawDt));
   lastTimestamp = timestamp;
 
   if (game) {
