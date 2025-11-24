@@ -56,6 +56,7 @@ const continueCostLabel = document.getElementById("continueCostLabel");
 const btnPlay = document.getElementById("btnPlay");
 const btnTeam = document.getElementById("btnTeam");
 const btnSettings = document.getElementById("btnSettings");
+const btnMissions = document.getElementById("btnMissions");
 const btnPause = document.getElementById("btnPause");
 const btnReplay = document.getElementById("btnReplay");
 const btnGoToTeam = document.getElementById("btnGoToTeam");
@@ -98,6 +99,7 @@ const cardListEl = document.getElementById("cardList");
 // Missions
 const dailyMissionsEl = document.getElementById("dailyMissions");
 const weeklyMissionsEl = document.getElementById("weeklyMissions");
+const missionsPanel = document.getElementById("missionsPanel");
 
 let playerData = loadPlayerData();
 updateCoinsHeader();
@@ -127,6 +129,13 @@ function setActiveScreen(id) {
   const inRun = id === null;
   hudEl.classList.toggle("hidden", !inRun);
   updateTouchControlsVisibility();
+}
+
+function focusMissionsPanel() {
+  if (!missionsPanel) return;
+  missionsPanel.classList.add("panel--highlight");
+  missionsPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+  window.setTimeout(() => missionsPanel.classList.remove("panel--highlight"), 1500);
 }
 
 function updateCoinsHeader() {
@@ -769,6 +778,11 @@ btnSkipBuilder?.addEventListener("click", () => {
 btnTeam.addEventListener("click", () => {
   renderTeamScreen();
   setActiveScreen("teamScreen");
+});
+
+btnMissions?.addEventListener("click", () => {
+  setActiveScreen("mainMenu");
+  focusMissionsPanel();
 });
 
 btnSettings.addEventListener("click", () => {
