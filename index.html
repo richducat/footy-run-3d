@@ -56,11 +56,20 @@
         <span class="brand-mark">USR</span>
         <span class="brand-title">Ultimate Striker Run</span>
       </div>
-      <div class="brand-meta">
-        <span class="pill pill--coins">
-          Coins:
-          <span id="headerCoinsValue">0</span>
-        </span>
+      <div class="header-actions">
+        <div class="brand-meta">
+          <span class="pill pill--coins">
+            Coins:
+            <span id="headerCoinsValue">0</span>
+          </span>
+        </div>
+        <button id="profileButton" class="profile-button" aria-label="Profile and saves">
+          <span id="profileAvatar" class="profile-avatar" aria-hidden="true">🏃</span>
+          <span class="profile-copy">
+            <span id="profileNameLabel" class="profile-name">Guest Runner</span>
+            <span id="profileStatusLabel" class="profile-status">💾 Save progress</span>
+          </span>
+        </button>
       </div>
     </header>
 
@@ -110,30 +119,6 @@
               Mobile: swipe or use the on-screen controls to move, tackle &amp; juke.<br />
               Desktop: arrow keys to move, tackle &amp; juke.
             </p>
-
-            <div class="panel">
-              <div class="panel__header">
-                <h3>Login &amp; save</h3>
-                <span class="pill pill--soft" id="authStatus">Not logged in</span>
-              </div>
-              <div class="form-grid">
-                <label class="form-field">
-                  <span class="form-field__label">Display name</span>
-                  <input type="text" id="loginName" name="loginName" placeholder="Striker handle" />
-                </label>
-                <label class="form-field">
-                  <span class="form-field__label">Email</span>
-                  <input type="email" id="loginEmail" name="loginEmail" placeholder="you@example.com" />
-                </label>
-              </div>
-              <div class="button-row button-row--inline">
-                <button id="btnLogin" class="btn btn--primary btn--small">Log in</button>
-                <button id="btnSaveProgress" class="btn btn--ghost btn--small">Save progress</button>
-              </div>
-              <p class="screen-subtitle" id="saveStatus">
-                Progress auto-saves locally on this device.
-              </p>
-            </div>
 
             <div class="panel" id="missionsPanel">
               <div class="panel__header">
@@ -376,6 +361,40 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div id="authSheet" class="auth-sheet" aria-hidden="true">
+    <div id="authSheetBackdrop" class="auth-sheet__backdrop" aria-hidden="true"></div>
+    <div class="auth-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="authSheetTitle">
+      <div class="auth-sheet__header">
+        <div>
+          <p class="pill pill--soft" id="authStatus">Guest profile</p>
+          <h3 id="authSheetTitle">Keep your progress</h3>
+        </div>
+        <button id="btnCloseAuthSheet" class="btn btn--ghost btn--small" aria-label="Close login dialog">Close</button>
+      </div>
+      <p class="screen-subtitle">
+        You're playing as a guest. Link an email to sync runs across devices, or keep playing anonymously.
+      </p>
+      <div class="form-grid">
+        <label class="form-field">
+          <span class="form-field__label">Display name</span>
+          <input type="text" id="loginName" name="loginName" placeholder="Striker handle" />
+        </label>
+        <label class="form-field">
+          <span class="form-field__label">Email</span>
+          <input type="email" id="loginEmail" name="loginEmail" placeholder="you@example.com" />
+        </label>
+      </div>
+      <div class="button-row button-row--inline">
+        <button id="btnLogin" class="btn btn--primary btn--small">Link account</button>
+        <button id="btnSaveProgress" class="btn btn--ghost btn--small">Save locally</button>
+        <button id="btnStayGuest" class="btn btn--ghost btn--small">Keep playing as guest</button>
+      </div>
+      <p class="screen-subtitle" id="saveStatus">
+        Progress auto-saves locally on this device.
+      </p>
     </div>
   </div>
 
