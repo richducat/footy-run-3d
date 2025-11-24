@@ -556,18 +556,34 @@ export class Game {
   drawPitch(ctx) {
     const horizon = this.height * 0.12;
     const pitchGradient = ctx.createLinearGradient(0, horizon, 0, this.height);
-    pitchGradient.addColorStop(0, "#0c6138");
-    pitchGradient.addColorStop(0.5, "#0a7a41");
-    pitchGradient.addColorStop(1, "#05562c");
+    pitchGradient.addColorStop(0, "#0a5632");
+    pitchGradient.addColorStop(0.4, "#0b6b3b");
+    pitchGradient.addColorStop(1, "#034424");
     ctx.fillStyle = pitchGradient;
     ctx.fillRect(0, 0, this.width, this.height);
 
-    // Stadium glow above the pitch
-    const crowdGradient = ctx.createLinearGradient(0, 0, 0, horizon + 60);
-    crowdGradient.addColorStop(0, "rgba(0,0,0,0.8)");
-    crowdGradient.addColorStop(1, "rgba(0,0,0,0)");
+    // Slightly darker sideline to mimic worn turf and camera vignette
+    const edgeShade = ctx.createLinearGradient(0, 0, this.width, 0);
+    edgeShade.addColorStop(0, "rgba(0,0,0,0.32)");
+    edgeShade.addColorStop(0.1, "rgba(0,0,0,0.12)");
+    edgeShade.addColorStop(0.9, "rgba(0,0,0,0.12)");
+    edgeShade.addColorStop(1, "rgba(0,0,0,0.32)");
+    ctx.fillStyle = edgeShade;
+    ctx.fillRect(0, horizon, this.width, this.height - horizon);
+
+    // Stadium glow above the pitch and a cool-tinted light haze near the horizon
+    const crowdGradient = ctx.createLinearGradient(0, 0, 0, horizon + 100);
+    crowdGradient.addColorStop(0, "rgba(4,8,16,0.95)");
+    crowdGradient.addColorStop(0.5, "rgba(4,8,16,0.55)");
+    crowdGradient.addColorStop(1, "rgba(4,8,16,0)");
     ctx.fillStyle = crowdGradient;
-    ctx.fillRect(0, 0, this.width, horizon + 60);
+    ctx.fillRect(0, 0, this.width, horizon + 100);
+
+    const lightHaze = ctx.createLinearGradient(0, horizon, 0, horizon + 180);
+    lightHaze.addColorStop(0, "rgba(255,255,255,0.16)");
+    lightHaze.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = lightHaze;
+    ctx.fillRect(0, horizon, this.width, 180);
 
     // Perspective stripes
     const stripeCount = 10;
@@ -586,6 +602,34 @@ export class Game {
         i % 2 === 0 ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.08)";
       ctx.fill();
     }
+
+    // Fine grass texture painted in the direction of play
+    ctx.save();
+    ctx.globalAlpha = 0.4;
+    ctx.strokeStyle = "rgba(255,255,255,0.05)";
+    ctx.lineWidth = 1;
+    const bladeRows = 75;
+    for (let i = 0; i < bladeRows; i++) {
+      const t = i / bladeRows;
+      const y = horizon + t * (this.height - horizon);
+      const sway = Math.sin(i * 0.35) * 6;
+      ctx.beginPath();
+      ctx.moveTo(this.width * 0.08 + sway, y);
+      ctx.lineTo(this.width * 0.92 + sway, y + this.height * 0.02);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 0.28;
+    ctx.strokeStyle = "rgba(0,0,0,0.24)";
+    for (let i = 0; i < bladeRows; i++) {
+      const t = i / bladeRows;
+      const y = horizon + t * (this.height - horizon);
+      const sway = Math.cos(i * 0.22) * 5;
+      ctx.beginPath();
+      ctx.moveTo(this.width * 0.1 + sway, y + this.height * 0.01);
+      ctx.lineTo(this.width * 0.9 + sway, y + this.height * 0.03);
+      ctx.stroke();
+    }
+    ctx.restore();
 
     // Vignette for focus
     const vignette = ctx.createRadialGradient(
@@ -641,6 +685,43 @@ export class Game {
     ctx.strokeStyle = "rgba(255,255,255,0.28)";
     ctx.arc(this.width / 2, this.height * 0.45, 70, 0, Math.PI * 2);
     ctx.stroke();
+
+    // Penalty area markings taper toward the horizon for depth
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.32)";
+    ctx.lineWidth = 2.4;
+    const boxTop = this.goal.y + this.goal.height * 1.05;
+    const boxBottom = this.height * 0.82;
+    const boxLeftTop = this.width * 0.28;
+    const boxRightTop = this.width * 0.72;
+    const boxLeftBottom = this.width * 0.16;
+    const boxRightBottom = this.width * 0.84;
+    ctx.beginPath();
+    ctx.moveTo(boxLeftBottom, boxBottom);
+    ctx.lineTo(boxLeftTop, boxTop);
+    ctx.lineTo(boxRightTop, boxTop);
+    ctx.lineTo(boxRightBottom, boxBottom);
+    ctx.stroke();
+
+    // Six-yard box
+    const smallBoxTop = boxTop + (boxBottom - boxTop) * 0.16;
+    ctx.beginPath();
+    ctx.moveTo(this.width * 0.36, boxBottom);
+    ctx.lineTo(this.width * 0.42, smallBoxTop);
+    ctx.lineTo(this.width * 0.58, smallBoxTop);
+    ctx.lineTo(this.width * 0.64, boxBottom);
+    ctx.stroke();
+
+    // Penalty arc and spot
+    ctx.beginPath();
+    const arcRadius = 36;
+    ctx.arc(this.goal.x, boxTop + 36, arcRadius, Math.PI * 0.2, Math.PI * 0.8);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.75)";
+    ctx.beginPath();
+    ctx.arc(this.goal.x, boxTop + 16, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
   drawSoccerBall(ctx, x, y, radius) {
@@ -1302,7 +1383,23 @@ export class Game {
   drawGoalArea(ctx) {
     // Goal box
     ctx.save();
-    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    const mouthGradient = ctx.createLinearGradient(
+      this.goal.x,
+      this.goal.y,
+      this.goal.x,
+      this.goal.y + this.goal.height
+    );
+    mouthGradient.addColorStop(0, "rgba(0,0,0,0.35)");
+    mouthGradient.addColorStop(1, "rgba(0,0,0,0.05)");
+    ctx.fillStyle = mouthGradient;
+    ctx.fillRect(
+      this.goal.x - this.goal.width / 2,
+      this.goal.y,
+      this.goal.width,
+      this.goal.height
+    );
+
+    ctx.strokeStyle = "rgba(255,255,255,0.65)";
     ctx.lineWidth = 3;
     ctx.strokeRect(
       this.goal.x - this.goal.width / 2,
@@ -1311,25 +1408,65 @@ export class Game {
       this.goal.height
     );
 
-    // Netting
-    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+    // Posts and crossbar with subtle bevel
+    const postWidth = 7;
+    const postGradient = ctx.createLinearGradient(0, this.goal.y, 0, this.goal.y + this.goal.height);
+    postGradient.addColorStop(0, "#f8fbff");
+    postGradient.addColorStop(1, "#d3d9e4");
+    ctx.fillStyle = postGradient;
+    ctx.fillRect(this.goal.x - this.goal.width / 2 - postWidth / 2, this.goal.y, postWidth, this.goal.height);
+    ctx.fillRect(this.goal.x + this.goal.width / 2 - postWidth / 2, this.goal.y, postWidth, this.goal.height);
+    const barGradient = ctx.createLinearGradient(
+      this.goal.x - this.goal.width / 2,
+      this.goal.y,
+      this.goal.x + this.goal.width / 2,
+      this.goal.y
+    );
+    barGradient.addColorStop(0, "#f7fbff");
+    barGradient.addColorStop(1, "#cdd4df");
+    ctx.fillStyle = barGradient;
+    ctx.fillRect(
+      this.goal.x - this.goal.width / 2 - postWidth / 2,
+      this.goal.y - postWidth,
+      this.goal.width + postWidth,
+      postWidth
+    );
+
+    // Netting with gentle sag for realism
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
     ctx.lineWidth = 1;
-    const rows = 5;
-    const cols = 10;
+    const rows = 6;
+    const cols = 11;
     for (let i = 1; i < rows; i++) {
-      const y = this.goal.y + (this.goal.height / rows) * i;
+      const t = i / rows;
+      const y = this.goal.y + (this.goal.height * t + Math.sin(t * Math.PI) * 6);
       ctx.beginPath();
       ctx.moveTo(this.goal.x - this.goal.width / 2, y);
-      ctx.lineTo(this.goal.x + this.goal.width / 2, y);
+      ctx.lineTo(this.goal.x + this.goal.width / 2, y + 2);
       ctx.stroke();
     }
     for (let i = 1; i < cols; i++) {
-      const x = this.goal.x - this.goal.width / 2 + (this.goal.width / cols) * i;
+      const t = i / cols;
+      const x = this.goal.x - this.goal.width / 2 + this.goal.width * t;
       ctx.beginPath();
       ctx.moveTo(x, this.goal.y);
-      ctx.lineTo(x, this.goal.y + this.goal.height);
+      ctx.lineTo(x + (t - 0.5) * 6, this.goal.y + this.goal.height);
       ctx.stroke();
     }
+
+    // Ground wear and goalmouth shadow
+    const mouthShadow = ctx.createRadialGradient(
+      this.goal.x,
+      this.goal.y + this.goal.height + 40,
+      20,
+      this.goal.x,
+      this.goal.y + this.goal.height + 20,
+      160
+    );
+    mouthShadow.addColorStop(0, "rgba(0,0,0,0.22)");
+    mouthShadow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = mouthShadow;
+    ctx.fillRect(0, this.goal.y + this.goal.height - 6, this.width, this.height * 0.25);
 
     // Goalie shadow and body
     this.drawGoalie(ctx);
@@ -1470,6 +1607,47 @@ export class Game {
     ctx.restore();
   }
 
+  drawLightingOverlay(ctx) {
+    ctx.save();
+
+    // Floodlight beams
+    const beamY = this.height * 0.02;
+    const beamGradient = (anchorX) => {
+      const grad = ctx.createLinearGradient(anchorX, beamY, anchorX, this.height * 0.65);
+      grad.addColorStop(0, "rgba(255,255,255,0.28)");
+      grad.addColorStop(0.2, "rgba(255,255,255,0.12)");
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      return grad;
+    };
+
+    [this.width * 0.2, this.width * 0.8].forEach((x) => {
+      ctx.fillStyle = beamGradient(x);
+      ctx.beginPath();
+      ctx.moveTo(x - 40, beamY);
+      ctx.lineTo(x + 40, beamY);
+      ctx.lineTo(x + this.width * 0.14, this.height * 0.65);
+      ctx.lineTo(x - this.width * 0.14, this.height * 0.65);
+      ctx.closePath();
+      ctx.fill();
+    });
+
+    // Foreground vignette for broadcast-style depth
+    const vignette = ctx.createRadialGradient(
+      this.width / 2,
+      this.height * 0.9,
+      this.height * 0.2,
+      this.width / 2,
+      this.height * 0.9,
+      this.height * 0.65
+    );
+    vignette.addColorStop(0, "rgba(0,0,0,0)");
+    vignette.addColorStop(1, "rgba(0,0,0,0.45)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, this.width, this.height);
+
+    ctx.restore();
+  }
+
   render() {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.width, this.height);
@@ -1480,5 +1658,6 @@ export class Game {
     this.drawGoalArea(ctx);
     this.drawPlayer(ctx);
     this.drawActiveShot(ctx);
+    this.drawLightingOverlay(ctx);
   }
 }
