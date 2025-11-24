@@ -150,6 +150,7 @@ function renderTeamScreen() {
 
     const el = document.createElement("article");
     el.className = "player-card";
+    el.classList.add(`player-card--${card.rarity}`);
     if (!isUnlocked) el.classList.add("player-card--locked");
     if (isSelected) el.classList.add("player-card--selected");
     el.dataset.cardId = card.id;
@@ -162,6 +163,15 @@ function renderTeamScreen() {
         <div class="player-card__pos">${card.position}</div>
       </div>
       <div style="font-size:9px; text-transform:uppercase; letter-spacing:0.07em;">Core</div>
+    `;
+
+    const portrait = document.createElement("div");
+    portrait.className = "player-card__portrait";
+    portrait.setAttribute("aria-hidden", "true");
+    portrait.innerHTML = `
+      <div class="player-card__portrait-highlight"></div>
+      <div class="player-card__portrait-lines"></div>
+      <div class="player-card__portrait-glow"></div>
     `;
 
     const info = document.createElement("div");
@@ -256,6 +266,7 @@ function renderTeamScreen() {
     }
 
     el.appendChild(badge);
+    el.appendChild(portrait);
     el.appendChild(info);
     el.appendChild(actions);
 
