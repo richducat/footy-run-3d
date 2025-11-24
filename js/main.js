@@ -446,84 +446,88 @@ function renderTeamScreen() {
   });
 }
 
-function getActiveMission() {
-  if (!missionCycle.length) return null;
-  if (missionIndex >= missionCycle.length) missionIndex = 0;
-  if (missionIndex < 0) missionIndex = missionCycle.length - 1;
-  return missionCycle[missionIndex];
-}
+function renderMissionList(container, missions, cadence) {
+  container.innerHTML = "";
+  missions.forEach((mission) => {
+    const progressPct = Math.min(100, (mission.progress / mission.goal) * 100);
+    const isComplete = mission.progress >= mission.goal;
 
-function renderMissionSpotlight() {
-  const active = getActiveMission();
+    const card = document.createElement("div");
+    card.className = "mission-card";
+    if (isComplete) card.classList.add("mission-card--complete");
+    if (mission.claimed) card.classList.add("mission-card--claimed");
 
-  if (!active) {
-    missionTitleEl.textContent = "No missions yet";
-    missionDescriptionEl.textContent = "Complete a run to unlock your first challenge.";
-    missionCadenceEl.textContent = "Locked";
-    missionProgressFill.style.width = "0%";
-    missionProgressTextEl.textContent = "0/0";
-    missionRewardEl.textContent = "Rewards paused";
-    missionStepperEl.textContent = "0/0";
-    if (btnMissionAction) {
-      btnMissionAction.textContent = "Stay tuned";
-      btnMissionAction.disabled = true;
-    }
-    return;
-  }
+    const header = document.createElement("div");
+    header.className = "mission-card__header";
+    const title = document.createElement("p");
+    title.className = "mission-card__title";
+    title.textContent = mission.name;
+    const reward = document.createElement("span");
+    reward.className = "mission-card__reward pill pill--soft";
+    reward.textContent = `+${mission.reward} coins`;
+    header.appendChild(title);
+    header.appendChild(reward);
 
-  const { mission, cadence } = active;
-  const progressPct = Math.min(100, (mission.progress / mission.goal) * 100);
-  const isComplete = mission.progress >= mission.goal;
+    const desc = document.createElement("p");
+    desc.className = "mission-card__desc";
+    desc.textContent = mission.description;
 
-  missionTitleEl.textContent = mission.name;
-  missionDescriptionEl.textContent = mission.description;
-  missionCadenceEl.textContent = `${cadence === "daily" ? "Daily" : "Weekly"} mission`;
-  missionRewardEl.textContent = `+${mission.reward} coins`;
-  missionProgressFill.style.width = `${progressPct}%`;
-  missionProgressTextEl.textContent = `${mission.progress}/${mission.goal} · ${Math.round(progressPct)}%`;
-  missionStepperEl.textContent = `${missionIndex + 1}/${missionCycle.length}`;
+    const meta = document.createElement("div");
+    meta.className = "mission-card__meta";
+    meta.textContent = `${mission.progress}/${mission.goal}`;
 
-  if (btnMissionAction) {
-    btnMissionAction.disabled = false;
-    btnMissionAction.classList.toggle("btn--ghost", !isComplete && !mission.claimed);
-    btnMissionAction.classList.toggle("btn--primary", isComplete && !mission.claimed);
-    btnMissionAction.onclick = null;
+    const progressBar = document.createElement("div");
+    progressBar.className = "progress-bar";
+    const fill = document.createElement("div");
+    fill.className = "progress-bar__fill";
+    fill.style.width = `${progressPct}%`;
+    progressBar.appendChild(fill);
+
+    const actions = document.createElement("div");
+    actions.className = "mission-card__actions";
+    const claimBtn = document.createElement("button");
+    claimBtn.className = "btn btn--small";
     if (mission.claimed) {
-      btnMissionAction.textContent = "Reward collected";
-      btnMissionAction.disabled = true;
+      claimBtn.textContent = "Claimed";
+      claimBtn.disabled = true;
     } else if (isComplete) {
-      btnMissionAction.textContent = "Collect reward";
-      btnMissionAction.onclick = () => {
+      claimBtn.classList.add("btn--primary");
+      claimBtn.textContent = "Claim";
+      claimBtn.addEventListener("click", () => {
         const rewardCoins = claimMissionReward(playerData, cadence, mission.id);
         if (rewardCoins > 0) {
           savePlayerData(playerData);
           updateCoinsHeader();
           renderMissions();
         }
-      };
+      });
     } else {
-      btnMissionAction.textContent = "Track mission";
-      btnMissionAction.onclick = null;
-      btnMissionAction.disabled = true;
+      claimBtn.textContent = "In progress";
+      claimBtn.disabled = true;
     }
-  }
+    actions.appendChild(claimBtn);
+
+    card.appendChild(header);
+    card.appendChild(desc);
+    card.appendChild(progressBar);
+    card.appendChild(meta);
+    card.appendChild(actions);
+    container.appendChild(card);
+  });
 }
 
 function renderMissions() {
   if (!playerData.missions) return;
-  missionCycle = [
-    ...(playerData.missions.daily?.missions || []).map((mission) => ({
-      cadence: "daily",
-      mission
-    })),
-    ...(playerData.missions.weekly?.missions || []).map((mission) => ({
-      cadence: "weekly",
-      mission
-    }))
-  ];
-
-  missionIndex = Math.min(missionIndex, Math.max(0, missionCycle.length - 1));
-  renderMissionSpotlight();
+  renderMissionList(
+    dailyMissionsEl,
+    playerData.missions.daily?.missions || [],
+    "daily"
+  );
+  renderMissionList(
+    weeklyMissionsEl,
+    playerData.missions.weekly?.missions || [],
+    "weekly"
+  );
 }
 
 function startRun() {
@@ -783,18 +787,6 @@ btnMissions?.addEventListener("click", () => {
 
 btnSettings.addEventListener("click", () => {
   setActiveScreen("settingsScreen");
-});
-
-btnPrevMission?.addEventListener("click", () => {
-  if (!missionCycle.length) return;
-  missionIndex = (missionIndex - 1 + missionCycle.length) % missionCycle.length;
-  renderMissionSpotlight();
-});
-
-btnNextMission?.addEventListener("click", () => {
-  if (!missionCycle.length) return;
-  missionIndex = (missionIndex + 1) % missionCycle.length;
-  renderMissionSpotlight();
 });
 
 btnPause.addEventListener("click", () => {
