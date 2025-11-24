@@ -27,6 +27,14 @@ export class Game {
       multipliers.coins || playerCard.coinMultiplier || 1.0;
     this.shotGainMultiplier =
       multipliers.shotGain || playerCard.shotGainMultiplier || 1.0;
+    this.perks = {
+      laneChangeSpeed: 1,
+      jukeDistance: 1,
+      tackleDefenseBonus: 1,
+      goalieFreezeChance: 0,
+      coinMagnetRange: 1,
+      ...(options.perks || {})
+    };
     this.playerCardMeta = playerCard;
 
     // Player
@@ -42,7 +50,8 @@ export class Game {
       tackleTime: 0,
       jukeTime: 0,
       tackleDuration: 0.55,
-      jukeDuration: 0.42,
+      jukeDuration: 0.42 / Math.max(0.65, this.perks.laneChangeSpeed),
+      jukeDistance: 22 * (this.perks.jukeDistance || 1),
       jukeDirection: 1,
       tackleDirection: 1
     };
@@ -77,7 +86,9 @@ export class Game {
       width: 70,
       height: 70,
       direction: 1,
-      speed: 110
+      speed: 110,
+      baseSpeed: 110,
+      freezeTime: 0
     };
 
     // Callbacks for UI / meta
@@ -291,6 +302,11 @@ export class Game {
       arcHeight: 140
     };
 
+    const freezeChance = Math.max(0, Math.min(1, this.perks.goalieFreezeChance || 0));
+    if (freezeChance > 0 && Math.random() < freezeChance) {
+      this.goalie.freezeTime = 0.7 + Math.random() * 0.4;
+    }
+
     this.shotReady = false;
     this.shotMeter = 0;
     return true;
@@ -299,8 +315,11 @@ export class Game {
   resolveShot() {
     if (!this.activeShot) return;
 
-    const keeperLeft = this.goalie.x - this.goalie.width * 0.45;
-    const keeperRight = this.goalie.x + this.goalie.width * 0.45;
+    const freezePenalty = this.goalie.freezeTime > 0 ? 0.65 : 1;
+    const keeperLeft =
+      this.goalie.x - this.goalie.width * 0.45 * freezePenalty;
+    const keeperRight =
+      this.goalie.x + this.goalie.width * 0.45 * freezePenalty;
     const shotX = this.activeShot.targetX;
     const blocked = shotX >= keeperLeft && shotX <= keeperRight;
 
@@ -349,6 +368,7 @@ export class Game {
     this.timeSincePickup += dt;
     if (this.goalFlashTime > 0) this.goalFlashTime -= dt;
     if (this.shotResultFlash > 0) this.shotResultFlash -= dt;
+    if (this.goalie.freezeTime > 0) this.goalie.freezeTime = Math.max(0, this.goalie.freezeTime - dt);
 
     // Player animation: tackle & juke
     this.player.laneOffset = 0;
@@ -366,7 +386,7 @@ export class Game {
       this.player.jukeTime += dt;
       const t = Math.min(this.player.jukeTime / this.player.jukeDuration, 1);
       const sway = Math.sin(Math.PI * t);
-      this.player.laneOffset = this.player.jukeDirection * 22 * sway;
+      this.player.laneOffset = this.player.jukeDirection * this.player.jukeDistance * sway;
       this.player.yOffset = -34 * sway;
       if (t >= 1) {
         this.player.isJuking = false;
@@ -416,12 +436,16 @@ export class Game {
     // Collision detection
     const playerY = this.player.baseY + this.player.yOffset;
     let playerHeight = this.player.height;
+    let playerWidth = this.player.width;
     if (this.player.isTackling) {
       playerHeight = this.player.height * 0.5;
+      const leniency = Math.max(1, this.perks.tackleDefenseBonus || 1);
+      playerWidth = this.player.width / leniency;
+      playerHeight = playerHeight / leniency;
     }
     const playerX =
       this.laneX(this.player.lane, playerY + playerHeight) -
-      this.player.width / 2 +
+      playerWidth / 2 +
       this.player.laneOffset;
 
     // Obstacles
@@ -437,7 +461,7 @@ export class Game {
         this.rectsOverlap(
           playerX,
           playerY,
-          this.player.width,
+          playerWidth,
           playerHeight,
           ox,
           oy,
@@ -483,10 +507,10 @@ export class Game {
         this.circleRectOverlap(
           px,
           py,
-          p.radius * depthScale,
+          p.radius * depthScale * (p.type === "coin" ? this.perks.coinMagnetRange || 1 : 1),
           playerX,
           playerY,
-          this.player.width,
+          playerWidth,
           playerHeight
         )
       ) {
@@ -512,6 +536,11 @@ export class Game {
     // Goalie pacing between posts
     const goalLeft = this.goal.x - this.goal.width * 0.35;
     const goalRight = this.goal.x + this.goal.width * 0.35;
+    const goalieSpeed =
+      this.goalie.freezeTime > 0
+        ? this.goalie.baseSpeed * 0.3
+        : this.goalie.baseSpeed;
+    this.goalie.speed = goalieSpeed;
     this.goalie.x += this.goalie.direction * this.goalie.speed * dt;
     if (this.goalie.x < goalLeft) {
       this.goalie.x = goalLeft;

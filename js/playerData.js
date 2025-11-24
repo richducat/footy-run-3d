@@ -7,10 +7,14 @@ export const PLAYER_CARDS = [
     rarity: "common",
     rating: 72,
     position: "ST",
-    tagline: "Balanced finisher built for tight lanes.",
-    speedMultiplier: 1.0,
-    coinMultiplier: 1.0,
-    shotGainMultiplier: 1.0,
+    tagline: "Clean slide tackles and steady control in traffic.",
+    speedMultiplier: 1.03,
+    coinMultiplier: 1.02,
+    shotGainMultiplier: 1.02,
+    perks: {
+      tackleDefenseBonus: { base: 1.25, perLevel: 0.08, mode: "mult" },
+      jukeDistance: { base: 1.08, perLevel: 0.04, mode: "mult" }
+    },
     unlockCost: 0
   },
   {
@@ -19,10 +23,14 @@ export const PLAYER_CARDS = [
     rarity: "rare",
     rating: 80,
     position: "ST",
-    tagline: "+Speed, less control. For aggressive players.",
-    speedMultiplier: 1.12,
-    coinMultiplier: 1.0,
-    shotGainMultiplier: 0.95,
+    tagline: "+Speed and tighter jukes, but lighter shot gain.",
+    speedMultiplier: 1.18,
+    coinMultiplier: 0.96,
+    shotGainMultiplier: 0.94,
+    perks: {
+      laneChangeSpeed: { base: 1.25, perLevel: 0.12, mode: "mult" },
+      jukeDistance: { base: 1.18, perLevel: 0.08, mode: "mult" }
+    },
     unlockCost: 300
   },
   {
@@ -31,10 +39,14 @@ export const PLAYER_CARDS = [
     rarity: "epic",
     rating: 83,
     position: "ST",
-    tagline: "Shot meter builds faster. More goals per run.",
-    speedMultiplier: 1.02,
-    coinMultiplier: 1.0,
-    shotGainMultiplier: 1.3,
+    tagline: "Shot meter surges and keepers freeze more often.",
+    speedMultiplier: 1.06,
+    coinMultiplier: 0.98,
+    shotGainMultiplier: 1.42,
+    perks: {
+      goalieFreezeChance: { base: 0.18, perLevel: 0.06, mode: "add" },
+      tackleDefenseBonus: { base: 1.12, perLevel: 0.05, mode: "mult" }
+    },
     unlockCost: 500
   },
   {
@@ -43,10 +55,14 @@ export const PLAYER_CARDS = [
     rarity: "legendary",
     rating: 85,
     position: "CF",
-    tagline: "Earn more coins from every pickup.",
-    speedMultiplier: 1.05,
-    coinMultiplier: 1.4,
-    shotGainMultiplier: 1.0,
+    tagline: "Magnetic coin runs that fund every upgrade.",
+    speedMultiplier: 1.04,
+    coinMultiplier: 1.55,
+    shotGainMultiplier: 1.05,
+    perks: {
+      coinMagnetRange: { base: 1.35, perLevel: 0.12, mode: "mult" },
+      laneChangeSpeed: { base: 1.08, perLevel: 0.06, mode: "mult" }
+    },
     unlockCost: 900
   }
 ];
@@ -273,6 +289,32 @@ export function getEffectiveMultipliers(card, level = 1) {
     coins,
     shotGain
   };
+}
+
+const DEFAULT_PERKS = {
+  laneChangeSpeed: { base: 1, perLevel: 0, mode: "mult" },
+  jukeDistance: { base: 1, perLevel: 0, mode: "mult" },
+  tackleDefenseBonus: { base: 1, perLevel: 0, mode: "mult" },
+  goalieFreezeChance: { base: 0, perLevel: 0, mode: "add" },
+  coinMagnetRange: { base: 1, perLevel: 0, mode: "mult" }
+};
+
+function resolvePerkValue(perkDef, level) {
+  const { base, perLevel, mode } = perkDef;
+  const levelsAboveBase = Math.max(0, level - 1);
+  if (mode === "add") {
+    return base + perLevel * levelsAboveBase;
+  }
+  return base * (1 + perLevel * levelsAboveBase);
+}
+
+export function getEffectivePerks(card, level = 1) {
+  const perks = card.perks || {};
+  return Object.keys(DEFAULT_PERKS).reduce((acc, key) => {
+    const def = perks[key] || DEFAULT_PERKS[key];
+    acc[key] = resolvePerkValue({ ...DEFAULT_PERKS[key], ...def }, level);
+    return acc;
+  }, {});
 }
 
 export function unlockCard(data, card) {

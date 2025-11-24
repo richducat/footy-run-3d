@@ -10,6 +10,7 @@ import {
   selectCard,
   getCardLevel,
   getEffectiveMultipliers,
+  getEffectivePerks,
   upgradeCard,
   updateMissionsAfterRun,
   claimMissionReward,
@@ -119,6 +120,59 @@ function updateCoinsHeader() {
   headerCoinsValue.textContent = playerData.coins.toString();
 }
 
+function formatPercent(value) {
+  return `${Math.round(value)}%`;
+}
+
+function buildPerkSummary(perks = {}) {
+  const parts = [];
+  if (perks.laneChangeSpeed && perks.laneChangeSpeed !== 1) {
+    parts.push(`+${formatPercent((perks.laneChangeSpeed - 1) * 100)} juke speed`);
+  }
+  if (perks.jukeDistance && perks.jukeDistance !== 1) {
+    parts.push(`+${formatPercent((perks.jukeDistance - 1) * 100)} juke sway`);
+  }
+  if (perks.tackleDefenseBonus && perks.tackleDefenseBonus !== 1) {
+    parts.push(
+      `-${formatPercent((1 - 1 / perks.tackleDefenseBonus) * 100)} tackle hitbox`
+    );
+  }
+  if (perks.goalieFreezeChance && perks.goalieFreezeChance > 0) {
+    parts.push(`${formatPercent(perks.goalieFreezeChance * 100)} keeper freeze`);
+  }
+  if (perks.coinMagnetRange && perks.coinMagnetRange !== 1) {
+    parts.push(`+${formatPercent((perks.coinMagnetRange - 1) * 100)} coin radius`);
+  }
+  return parts.join(" · ") || "No perk bonuses";
+}
+
+function buildPerkDelta(current = {}, next = {}) {
+  const deltas = [];
+  const laneChangeDelta = next.laneChangeSpeed - current.laneChangeSpeed;
+  if (laneChangeDelta) {
+    deltas.push(`+${formatPercent(laneChangeDelta * 100)} juke speed`);
+  }
+  const jukeDelta = next.jukeDistance - current.jukeDistance;
+  if (jukeDelta) {
+    deltas.push(`+${formatPercent(jukeDelta * 100)} juke sway`);
+  }
+  const tackleDelta = current.tackleDefenseBonus
+    ? next.tackleDefenseBonus / current.tackleDefenseBonus - 1
+    : 0;
+  if (tackleDelta) {
+    deltas.push(`-${formatPercent((1 - 1 / (1 + tackleDelta)) * 100)} tackle size`);
+  }
+  const freezeDelta = (next.goalieFreezeChance - current.goalieFreezeChance) * 100;
+  if (freezeDelta) {
+    deltas.push(`+${formatPercent(freezeDelta)} freeze chance`);
+  }
+  const coinRadiusDelta = next.coinMagnetRange - current.coinMagnetRange;
+  if (coinRadiusDelta) {
+    deltas.push(`+${formatPercent(coinRadiusDelta * 100)} coin radius`);
+  }
+  return deltas.join(" / ") || "no perk growth";
+}
+
 function buildGameInstance() {
   const selectedCard =
     getCardById(playerData.selectedCardId) ||
@@ -127,10 +181,12 @@ function buildGameInstance() {
 
   const level = getCardLevel(playerData, selectedCard.id);
   const multipliers = getEffectiveMultipliers(selectedCard, level);
+  const perks = getEffectivePerks(selectedCard, level);
 
   game = new Game(canvas, {
     playerCard: selectedCard,
     multipliers,
+    perks,
     bestDistance: playerData.bestDistance,
     onStats: handleGameStats,
     onState: handleGameState,
@@ -157,8 +213,10 @@ function renderTeamScreen() {
     const isSelected = playerData.selectedCardId === card.id;
     const cardLevel = getCardLevel(playerData, card.id);
     const effective = getEffectiveMultipliers(card, cardLevel);
+    const perks = getEffectivePerks(card, cardLevel);
     const nextLevel = Math.min(CARD_LEVEL_CAP, cardLevel + 1);
     const nextEffective = getEffectiveMultipliers(card, nextLevel);
+    const nextPerks = getEffectivePerks(card, nextLevel);
 
     const el = document.createElement("article");
     el.className = "player-card";
@@ -198,6 +256,9 @@ function renderTeamScreen() {
     )} · Coins x${effective.coins.toFixed(
       2
     )} · Shot x${effective.shotGain.toFixed(2)}`;
+    const perkMeta = document.createElement("div");
+    perkMeta.className = "player-card__meta player-card__meta--perk";
+    perkMeta.textContent = buildPerkSummary(perks);
     const levelNote = document.createElement("div");
     levelNote.className = "player-card__meta";
     levelNote.textContent =
@@ -209,12 +270,13 @@ function renderTeamScreen() {
             (nextEffective.coins / effective.coins - 1) * 100
           ).toFixed(0)}% Coins · +${(
             (nextEffective.shotGain / effective.shotGain - 1) * 100
-          ).toFixed(0)}% Shot`;
+          ).toFixed(0)}% Shot · ${buildPerkDelta(perks, nextPerks)}`;
     const tagline = document.createElement("div");
     tagline.className = "player-card__tagline";
     tagline.textContent = card.tagline;
     info.appendChild(name);
     info.appendChild(meta);
+    info.appendChild(perkMeta);
     info.appendChild(levelNote);
     info.appendChild(tagline);
 
