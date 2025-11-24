@@ -1,0 +1,18 @@
+{
+  "name": "footy-run-3d",
+  "version": "1.0.0",
+  "description": "A lightweight HTML5 Temple Run–style soccer runner with mobile-friendly swipe controls, keyboard support, and simple “Ultimate Team” style striker cards.",
+  "main": "index.js",
+  "scripts": {
+    "serve": "python -m http.server 8000",
+    "test": "echo \"No automated tests specified\" && exit 0"
+  },
+  "keywords": [
+    "tailwind",
+    "runner",
+    "web-game"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
