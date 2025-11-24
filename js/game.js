@@ -7,6 +7,38 @@ const RUN_STATE = {
   ENDED: "ended"
 };
 
+function clampColor(value) {
+  return Math.max(0, Math.min(255, value));
+}
+
+function shadeColor(hex, amount) {
+  if (!hex || typeof hex !== "string") return hex;
+  const sanitized = hex.replace("#", "");
+  const num = parseInt(sanitized, 16);
+  const r = clampColor((num >> 16) + amount);
+  const g = clampColor(((num >> 8) & 0x00ff) + amount);
+  const b = clampColor((num & 0x0000ff) + amount);
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b)
+    .toString(16)
+    .slice(1)}`;
+}
+
+function buildKitPalette(custom = {}) {
+  const primary = custom.primary || "#1f3a74";
+  const secondary = custom.secondary || "#80223c";
+  const trim = custom.trim || "#0bd3c7";
+
+  return {
+    primary,
+    primaryShadow: custom.primaryShadow || shadeColor(primary, -18),
+    secondary,
+    secondaryShadow: custom.secondaryShadow || shadeColor(secondary, -18),
+    trim,
+    sockStripe: custom.sockStripe || "#f2f4ff",
+    boot: custom.boot || "#0f1e46"
+  };
+}
+
 export class Game {
   constructor(canvas, options = {}) {
     this.canvas = canvas;
@@ -43,6 +75,9 @@ export class Game {
       ...(options.perks || {})
     };
     this.playerCardMeta = playerCard;
+    const kitColors = options.kitColors || {};
+    this.kit = buildKitPalette(kitColors);
+    this.ballAccent = options.ballAccent || kitColors.ballAccent || "#f2f4ff";
 
     // Player
     this.player = {
@@ -770,6 +805,7 @@ export class Game {
   }
 
   drawSoccerBall(ctx, x, y, radius) {
+    const accent = this.ballAccent || "#f2f4ff";
     const highlight = ctx.createRadialGradient(
       x - radius * 0.3,
       y - radius * 0.3,
@@ -779,7 +815,7 @@ export class Game {
       radius
     );
     highlight.addColorStop(0, "#ffffff");
-    highlight.addColorStop(1, "#d8d8d8");
+    highlight.addColorStop(1, accent);
     ctx.fillStyle = highlight;
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -793,7 +829,7 @@ export class Game {
 
     const panels = 5;
     const centerRadius = radius * 0.38;
-    ctx.fillStyle = "#0f0f0f";
+    ctx.fillStyle = accent;
     ctx.beginPath();
     for (let i = 0; i < panels; i++) {
       const angle = -Math.PI / 2 + (i * Math.PI * 2) / panels;
@@ -832,15 +868,7 @@ export class Game {
     let h = this.player.height;
     if (this.player.isTackling) h = this.player.height * 0.5;
 
-    const kit = {
-      navy: "#1f3a74",
-      navyShadow: "#14294f",
-      trim: "#0bd3c7",
-      maroon: "#80223c",
-      maroonShadow: "#5e162c",
-      sockStripe: "#f2f4ff",
-      boot: "#0f1e46"
-    };
+    const kit = this.kit;
 
     // Depth shadow
     ctx.save();
@@ -883,8 +911,8 @@ export class Game {
 
     // Socks with double stripes inspired by the reference kit
     const sockGradient = ctx.createLinearGradient(x, y + h * 0.78, x, y + h);
-    sockGradient.addColorStop(0, kit.maroon);
-    sockGradient.addColorStop(1, kit.maroonShadow);
+    sockGradient.addColorStop(0, kit.secondary);
+    sockGradient.addColorStop(1, kit.secondaryShadow);
     ctx.fillStyle = sockGradient;
     ctx.fillRect(leftLegX, y + h * 0.78, this.player.width * 0.16, h * 0.2);
     ctx.fillRect(rightLegX, y + h * 0.78, this.player.width * 0.16, h * 0.2);
@@ -928,15 +956,15 @@ export class Game {
 
     // Shorts with maroon depth, matching the reference trim
     const shorts = ctx.createLinearGradient(x, y + h * 0.52, x, y + h * 0.85);
-    shorts.addColorStop(0, kit.maroon);
-    shorts.addColorStop(1, kit.maroonShadow);
+    shorts.addColorStop(0, kit.secondary);
+    shorts.addColorStop(1, kit.secondaryShadow);
     ctx.fillStyle = shorts;
     const shortsX = x + this.player.width * 0.13;
     const shortsW = this.player.width * 0.74;
     ctx.beginPath();
     ctx.roundRect(shortsX, y + h * 0.5, shortsW, h * 0.34, 8);
     ctx.fill();
-    ctx.fillStyle = kit.navy;
+    ctx.fillStyle = kit.primary;
     ctx.fillRect(shortsX, y + h * 0.6, shortsW, h * 0.03);
     ctx.fillStyle = "rgba(255,255,255,0.12)";
     ctx.fillRect(shortsX + shortsW * 0.08, y + h * 0.54, shortsW * 0.12, h * 0.04);
@@ -950,8 +978,8 @@ export class Game {
 
     // Torso + jersey with shoulder taper and subtle folds
     const jersey = ctx.createLinearGradient(x, y, x, y + h * 0.6);
-    jersey.addColorStop(0, kit.navy);
-    jersey.addColorStop(1, kit.navyShadow);
+    jersey.addColorStop(0, kit.primary);
+    jersey.addColorStop(1, kit.primaryShadow);
     ctx.fillStyle = jersey;
     const torsoX = x + this.player.width * 0.15;
     const torsoW = this.player.width * 0.7;
@@ -1005,8 +1033,8 @@ export class Game {
 
     // Sleeves hugging the arms
     const sleeve = ctx.createLinearGradient(x, y, x, y + h * 0.35);
-    sleeve.addColorStop(0, kit.navy);
-    sleeve.addColorStop(1, kit.navyShadow);
+    sleeve.addColorStop(0, kit.primary);
+    sleeve.addColorStop(1, kit.primaryShadow);
     ctx.fillStyle = sleeve;
     ctx.roundRect(leftArmX - this.player.width * 0.01, y + h * 0.15, armWidth + this.player.width * 0.02, h * 0.12, 6);
     ctx.roundRect(rightArmX - this.player.width * 0.01, y + h * 0.15, armWidth + this.player.width * 0.02, h * 0.12, 6);

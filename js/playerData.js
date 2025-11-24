@@ -226,7 +226,12 @@ function defaultData() {
       displayName: "",
       email: "",
       lastManualSave: null,
-      lastAutoSave: null
+      lastAutoSave: null,
+      builderCompleted: false,
+      kitPrimary: "#1f3a74",
+      kitSecondary: "#80223c",
+      kitTrim: "#0bd3c7",
+      ballAccent: "#f2f4ff"
     }
   };
 }
@@ -235,9 +240,14 @@ export function loadPlayerData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : {};
+    const defaults = defaultData();
     const data = {
-      ...defaultData(),
-      ...parsed
+      ...defaults,
+      ...parsed,
+      profile: {
+        ...defaults.profile,
+        ...(parsed.profile || {})
+      }
     };
     refreshMissions(data);
     return data;
