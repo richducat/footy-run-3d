@@ -11,6 +11,7 @@ import {
   getCardLevel,
   getEffectiveMultipliers,
   getEffectivePerks,
+  getLevelTuning,
   upgradeCard,
   updateMissionsAfterRun,
   claimMissionReward,
@@ -182,11 +183,13 @@ function buildGameInstance() {
   const level = getCardLevel(playerData, selectedCard.id);
   const multipliers = getEffectiveMultipliers(selectedCard, level);
   const perks = getEffectivePerks(selectedCard, level);
+  const tuning = getLevelTuning(selectedCard, level);
 
   game = new Game(canvas, {
     playerCard: selectedCard,
     multipliers,
     perks,
+    tuning,
     bestDistance: playerData.bestDistance,
     onStats: handleGameStats,
     onState: handleGameState,
