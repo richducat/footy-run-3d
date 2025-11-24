@@ -30,6 +30,11 @@ python -m http.server 8000
 # then open http://localhost:8000
 ```
 
+## Styling with Tailwind CSS
+- Tailwind CSS is loaded from the CDN in `index.html`, with theme colors and fonts configured to match the game's palette.
+- You can immediately use Tailwind utility classes in your markup without a build step.
+- Update the inline `tailwind.config` object in `index.html` if you want to extend the design tokens.
+
 ## 3D live preview
 - The production 3D build is served from `https://richducat.github.io/footy-run-3d/?embed=1`.
 - The landing page loads that URL inside an iframe and falls back to the local build after 3.5 seconds or on error/offline.
