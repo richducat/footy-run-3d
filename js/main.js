@@ -1079,6 +1079,11 @@ btnSkipBuilder?.addEventListener("click", () => {
   closePlayerBuilder();
 });
 
+btnShufflePreset?.addEventListener("click", () => {
+  const randomPreset = KIT_PRESETS[Math.floor(Math.random() * KIT_PRESETS.length)];
+  applyKitPreset(randomPreset);
+});
+
 [builderPrimaryInput, builderSecondaryInput, builderTrimInput, builderBallInput]
   .filter(Boolean)
   .forEach((input) => {
@@ -1306,6 +1311,7 @@ closeAuthSheet();
 updateProfileUI();
 updateTouchControlsVisibility();
 updateBuilderPreview();
+renderKitPresets();
 
 if (!playerData.profile?.builderCompleted) {
   openPlayerBuilder("Pick your kit colors to start your career.");
