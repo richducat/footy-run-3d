@@ -411,23 +411,23 @@
     // boot the game directly.
     const cacheBustedImport = () => import(bustUrl("./js/main.js"));
 
+    const loadLocalBuild = () =>
+      cacheBustedImport()
+        .then(() => {
+          previewContainer?.classList.add("hidden");
+          document.documentElement.classList.remove("remote-loaded");
+        })
+        .catch((error) => {
+          console.error("Failed to load local build", error);
+        });
+
     if (isEmbedded) {
       previewContainer.classList.add("hidden");
       document.documentElement.classList.remove("remote-loaded");
       cacheBustedImport();
     } else {
       const REMOTE_URL = bustUrl("https://richducat.github.io/footy-run-3d/?embed=1");
-      let fallbackLoaded = false;
-      const fallbackDelay = 3500;
-
-      const activateFallback = (reason) => {
-        if (fallbackLoaded) return;
-        fallbackLoaded = true;
-        previewContainer.classList.add("hidden");
-        document.documentElement.classList.remove("remote-loaded");
-        cacheBustedImport();
-        if (reason) console.info("Using local build:", reason);
-      };
+      loadLocalBuild();
 
       const startRemotePreview = () => {
         previewContainer.classList.remove("hidden");
@@ -437,24 +437,18 @@
 
       startRemotePreview();
 
-      const timeoutId = window.setTimeout(
-        () => activateFallback("Timed out loading remote preview"),
-        fallbackDelay
-      );
-
       previewFrame.addEventListener("load", () => {
-        window.clearTimeout(timeoutId);
         previewContainer.classList.add("preview-container--ready");
         previewStatus.classList.add("hidden");
       });
 
       previewFrame.addEventListener("error", (event) => {
         console.error("Remote preview failed to load", event);
-        activateFallback("Remote preview blocked");
       });
 
       if (navigator.onLine === false) {
-        activateFallback("Offline detected");
+        previewContainer.classList.add("hidden");
+        document.documentElement.classList.remove("remote-loaded");
       }
     }
   </script>
