@@ -64,13 +64,13 @@ export class Game {
 
     this.goal = {
       x: this.width / 2,
-      y: this.height * 0.12,
+      y: this.height * 0.085,
       width: this.width * 0.7,
       height: 110
     };
     this.goalie = {
       x: this.goal.x,
-      y: this.goal.y + 40,
+      y: this.goal.y + 50,
       width: 70,
       height: 70,
       direction: 1,
@@ -1094,9 +1094,9 @@ export class Game {
     ctx.clearRect(0, 0, this.width, this.height);
 
     this.drawPitch(ctx);
-    this.drawGoalArea(ctx);
     this.drawObstacles(ctx);
     this.drawPickups(ctx);
+    this.drawGoalArea(ctx);
     this.drawPlayer(ctx);
     this.drawActiveShot(ctx);
   }
