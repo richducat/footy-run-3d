@@ -97,6 +97,8 @@ export class Game {
     this.activeShot = null;
     this.shotResultFlash = 0;
     this.shotResultLabel = "";
+
+    this.reviveInvulnTime = 0;
   }
 
   getRunState() {
@@ -139,7 +141,26 @@ export class Game {
     this.player.jukeDirection = 1;
     this.player.laneOffset = 0;
     this.player.yOffset = 0;
+    this.reviveInvulnTime = 0;
     this.onState(this.runState);
+  }
+
+  reviveAfterContinue() {
+    if (this.runState !== RUN_STATE.ENDED) return false;
+
+    this.runState = RUN_STATE.RUNNING;
+    this.player.isTackling = false;
+    this.player.isJuking = false;
+    this.player.tackleTime = 0;
+    this.player.jukeTime = 0;
+    this.player.laneOffset = 0;
+    this.player.yOffset = 0;
+
+    // Clear out any nearby obstacles so the player is not immediately hit again.
+    this.obstacles = this.obstacles.filter((o) => o.y < this.height * 0.45);
+    this.reviveInvulnTime = 0.9;
+    this.onState(this.runState);
+    return true;
   }
 
   endRun() {
@@ -372,6 +393,10 @@ export class Game {
 
     const dy = this.speed * dt;
 
+    if (this.reviveInvulnTime > 0) {
+      this.reviveInvulnTime = Math.max(0, this.reviveInvulnTime - dt);
+    }
+
     // Move obstacles
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       this.obstacles[i].y += dy;
@@ -423,6 +448,7 @@ export class Game {
         const isBallCarrier = o.hasBall;
         const dodging = this.player.isJuking;
         const tackling = this.player.isTackling;
+        const recovering = this.reviveInvulnTime > 0;
 
         if (isBallCarrier && tackling) {
           this.shotMeter += 20 * this.shotGainMultiplier;
@@ -432,12 +458,17 @@ export class Game {
           continue;
         }
 
-        const safe = (o.type === "high" && tackling) || dodging;
+        const safeTackle = o.type === "high" && tackling;
+        const safeDodge = dodging || recovering;
 
-        if (!safe) {
-          this.endRun();
-          return;
+        if (safeTackle || safeDodge) {
+          this.obstacles.splice(i, 1);
+          i -= 1;
+          continue;
         }
+
+        this.endRun();
+        return;
       }
     }
 

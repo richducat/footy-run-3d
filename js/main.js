@@ -46,6 +46,9 @@ const goCoinsDistance = document.getElementById("goCoinsDistance");
 const goCoinsGoals = document.getElementById("goCoinsGoals");
 const goCoinsTotal = document.getElementById("goCoinsTotal");
 const goBestNote = document.getElementById("goBestNote");
+const goContinueNote = document.getElementById("goContinueNote");
+const btnContinue = document.getElementById("btnContinue");
+const continueCostLabel = document.getElementById("continueCostLabel");
 
 // Buttons
 const btnPlay = document.getElementById("btnPlay");
@@ -87,6 +90,15 @@ updateCoinsHeader();
 
 let game = null;
 let input = null;
+let continueCost = 10;
+let continueSpendTotal = 0;
+let pendingGameOverPayload = null;
+
+function resetContinueState() {
+  continueCost = 10;
+  continueSpendTotal = 0;
+  pendingGameOverPayload = null;
+}
 
 function setActiveScreen(id) {
   Object.values(screens).forEach((el) =>
@@ -361,6 +373,7 @@ function renderMissions() {
 function startRun() {
   setActiveScreen(null); // close menus
   pauseBanner.classList.add("hidden");
+  resetContinueState();
   game.startRun();
   updateTouchControlsVisibility();
 }
@@ -377,36 +390,24 @@ function togglePause() {
   }
 }
 
-function handleGameStats(stats) {
-  hudDistance.textContent = `${stats.distance} m`;
-  hudGoals.textContent = stats.goals.toString();
-  hudBest.textContent = `${stats.bestDistance} m`;
-  const pct = (stats.shotMeter / 100) * 100;
-  shotMeterFill.style.width = `${Math.min(100, Math.max(0, pct))}%`;
-  shotMeterFill.classList.toggle("shot-meter__fill--ready", !!stats.shotReady);
-}
-
-function handleGameState(state) {
-  if (state === "paused") {
-    pauseBanner.classList.remove("hidden");
-  } else {
-    pauseBanner.classList.add("hidden");
-  }
-  updateTouchControlsVisibility();
-}
-
-function handleGameGoal() {
-  // Could hook SFX / analytics here
-}
-
-function handleGameOver(payload) {
-  const previousBest = playerData.bestDistance;
+function calculateRunCoins(payload) {
   const distanceBonus = Math.floor(payload.distance / 20);
   const goalBonus = payload.goals * 20;
   const runCoins = payload.coins + distanceBonus + goalBonus;
+  return { runCoins, distanceBonus, goalBonus };
+}
 
-  // Merge into persistent data
-  playerData.coins += runCoins;
+function getAvailableTokensForContinue(runCoins) {
+  const remainingRunCoins = Math.max(0, runCoins - continueSpendTotal);
+  return playerData.coins + remainingRunCoins;
+}
+
+function applyRunResults(payload) {
+  const { runCoins, distanceBonus, goalBonus } = calculateRunCoins(payload);
+  const netCoins = Math.max(0, runCoins - continueSpendTotal);
+  const previousBest = playerData.bestDistance;
+
+  playerData.coins += netCoins;
   playerData.totalGoals += payload.goals;
   if (payload.distance > playerData.bestDistance) {
     playerData.bestDistance = payload.distance;
@@ -432,14 +433,16 @@ function handleGameOver(payload) {
   renderMissions();
   updateProfileUI("Progress auto-saved after the match.");
 
-  // Update game over screen
-  goDistance.textContent = `${payload.distance} m`;
-  goGoals.textContent = `${payload.goals}`;
-  goCoins.textContent = `${runCoins}`;
+  const earnedCoinsNote =
+    continueSpendTotal > 0
+      ? `Earned ${netCoins} tokens after spending ${continueSpendTotal} to continue.`
+      : "";
+
+  goCoins.textContent = `${netCoins}`;
   goCoinsInRun.textContent = `${payload.coins}`;
   goCoinsDistance.textContent = `${distanceBonus}`;
   goCoinsGoals.textContent = `${goalBonus}`;
-  goCoinsTotal.textContent = `${runCoins}`;
+  goCoinsTotal.textContent = `${netCoins}`;
 
   if (payload.distance > previousBest) {
     goBestNote.textContent = "New personal best for this device!";
@@ -447,7 +450,73 @@ function handleGameOver(payload) {
     goBestNote.textContent = `Best distance so far: ${playerData.bestDistance} m`;
   }
 
+  if (earnedCoinsNote) {
+    goBestNote.textContent += ` ${earnedCoinsNote}`;
+  }
+}
+
+function updateGameOverUI(payload) {
+  const { runCoins, distanceBonus, goalBonus } = calculateRunCoins(payload);
+  const netCoins = Math.max(0, runCoins - continueSpendTotal);
+  const projectedBest = Math.max(playerData.bestDistance, payload.distance);
+  const availableTokens = getAvailableTokensForContinue(runCoins);
+
+  goDistance.textContent = `${payload.distance} m`;
+  goGoals.textContent = `${payload.goals}`;
+  goCoins.textContent = `${netCoins}`;
+  goCoinsInRun.textContent = `${payload.coins}`;
+  goCoinsDistance.textContent = `${distanceBonus}`;
+  goCoinsGoals.textContent = `${goalBonus}`;
+  goCoinsTotal.textContent = `${netCoins}`;
+
+  if (projectedBest > playerData.bestDistance) {
+    goBestNote.textContent = "New personal best for this device!";
+  } else {
+    goBestNote.textContent = `Best distance so far: ${playerData.bestDistance} m`;
+  }
+
+  const tokenLabel = `${continueCost} tokens`;
+  continueCostLabel.textContent = tokenLabel;
+  btnContinue.textContent = `Continue for ${tokenLabel}`;
+  const canAfford = availableTokens >= continueCost;
+  btnContinue.disabled = !canAfford;
+  goContinueNote.textContent = canAfford
+    ? `You can spend tokens to keep this run going. Cost increases by 10 each time you continue.`
+    : `You need ${continueCost - availableTokens} more tokens to continue this run.`;
+}
+
+function handleGameStats(stats) {
+  hudDistance.textContent = `${stats.distance} m`;
+  hudGoals.textContent = stats.goals.toString();
+  hudBest.textContent = `${stats.bestDistance} m`;
+  const pct = (stats.shotMeter / 100) * 100;
+  shotMeterFill.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+  shotMeterFill.classList.toggle("shot-meter__fill--ready", !!stats.shotReady);
+}
+
+function handleGameState(state) {
+  if (state === "paused") {
+    pauseBanner.classList.remove("hidden");
+  } else {
+    pauseBanner.classList.add("hidden");
+  }
+  updateTouchControlsVisibility();
+}
+
+function handleGameGoal() {
+  // Could hook SFX / analytics here
+}
+
+function handleGameOver(payload) {
+  pendingGameOverPayload = payload;
+  updateGameOverUI(payload);
   setActiveScreen("gameOverScreen");
+}
+
+function finalizePendingGameOver() {
+  if (!pendingGameOverPayload) return;
+  applyRunResults(pendingGameOverPayload);
+  resetContinueState();
 }
 
 function handleInputAction(action) {
@@ -475,6 +544,7 @@ function handleInputAction(action) {
       currentScreenId === "gameOverScreen" &&
       actionType === "startRun"
     ) {
+      finalizePendingGameOver();
       setActiveScreen(null);
       game.startRun();
     }
@@ -529,17 +599,47 @@ btnPause.addEventListener("click", () => {
 });
 
 btnReplay.addEventListener("click", () => {
+  finalizePendingGameOver();
   setActiveScreen(null);
   game.startRun();
 });
 
 btnGoToTeam.addEventListener("click", () => {
+  finalizePendingGameOver();
   renderTeamScreen();
   setActiveScreen("teamScreen");
 });
 
 btnGoToMenu.addEventListener("click", () => {
+  finalizePendingGameOver();
   setActiveScreen("mainMenu");
+});
+
+btnContinue?.addEventListener("click", () => {
+  if (!pendingGameOverPayload) return;
+  const { runCoins } = calculateRunCoins(pendingGameOverPayload);
+  const availableFromRun = Math.max(0, runCoins - continueSpendTotal);
+  let costRemaining = continueCost;
+
+  if (availableFromRun > 0) {
+    const runTokensUsed = Math.min(costRemaining, availableFromRun);
+    continueSpendTotal += runTokensUsed;
+    costRemaining -= runTokensUsed;
+  }
+
+  if (costRemaining > 0) {
+    if (playerData.coins < costRemaining) {
+      alert("Not enough tokens to continue this run.");
+      return;
+    }
+    playerData.coins -= costRemaining;
+  }
+
+  continueCost += 10;
+  updateCoinsHeader();
+  setActiveScreen(null);
+  pendingGameOverPayload = null;
+  game.reviveAfterContinue();
 });
 
 btnResetProgress.addEventListener("click", () => {
