@@ -85,6 +85,7 @@ const kitPresetList = document.getElementById("kitPresetList");
 const btnSaveBuilder = document.getElementById("btnSaveBuilder");
 const btnSkipBuilder = document.getElementById("btnSkipBuilder");
 const btnOpenBuilder = document.getElementById("btnOpenBuilder");
+const btnShufflePreset = document.getElementById("btnShufflePreset");
 
 // Login / save
 const loginEmailInput = document.getElementById("loginEmail");
@@ -119,7 +120,6 @@ let missionCelebrateTimeout = null;
 let playerData = loadPlayerData();
 ensureGuestProfile();
 updateCoinsHeader();
-renderKitPresets();
 
 let game = null;
 let input = null;
@@ -356,6 +356,15 @@ const KIT_PRESETS = [
   }
 ];
 
+renderKitPresets();
+
+function normalizeHex(value = "") {
+  if (!value) return "";
+  const hex = value.trim();
+  const withPrefix = hex.startsWith("#") ? hex : `#${hex}`;
+  return withPrefix.toLowerCase();
+}
+
 function getKitColorsFromInputs() {
   return {
     primary: builderPrimaryInput?.value || playerData.profile?.kitPrimary || "#1f3a74",
@@ -468,8 +477,6 @@ function updateBuilderPreview() {
     })`;
   }
 }
-
-const normalizeHex = (value = "") => value.toLowerCase();
 
 function syncPresetSelection() {
   if (!kitPresetList) return;
