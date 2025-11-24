@@ -51,7 +51,7 @@ export class InputManager {
 
     if (action) {
       e.preventDefault();
-      this.onAction(action);
+      this.onAction({ type: action, detail: { source: "keyboard" } });
     }
   }
 
@@ -75,9 +75,11 @@ export class InputManager {
     const threshold = 30; // px
     const maxTime = 600; // ms
 
+    const detail = { source: "touch", dx, dy, dt };
+
     if (dt <= maxTime && Math.abs(dx) < threshold && Math.abs(dy) < threshold) {
       // tap
-      this.onAction("primary");
+      this.onAction({ type: "primary", detail });
       this.touchStart = null;
       e.preventDefault();
       return;
@@ -85,11 +87,14 @@ export class InputManager {
 
     if (Math.abs(dx) > Math.abs(dy)) {
       if (Math.abs(dx) > threshold) {
-        this.onAction(dx > 0 ? "moveRight" : "moveLeft");
+        this.onAction({
+          type: dx > 0 ? "moveRight" : "moveLeft",
+          detail
+        });
       }
     } else {
       if (Math.abs(dy) > threshold) {
-        this.onAction(dy > 0 ? "slide" : "jump");
+        this.onAction({ type: dy > 0 ? "slide" : "jump", detail });
       }
     }
 
