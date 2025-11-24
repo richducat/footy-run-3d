@@ -17,6 +17,10 @@
   --text-subtle: #d2d8e5;
   --shadow-strong: 0 18px 44px rgba(0, 0, 0, 0.7);
   --app-height: 100vh;
+  --pixel-font: "Press Start 2P", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --pixel-grid: rgba(255, 255, 255, 0.055);
+  --pixel-grid-strong: rgba(45, 252, 138, 0.08);
 }
 
 html,
@@ -30,10 +34,17 @@ body {
   overflow-y: auto;
   overscroll-behavior: none;
   font-family: "Inter", "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: radial-gradient(circle at 16% 10%, rgba(45, 252, 138, 0.08), transparent 28%),
-    radial-gradient(circle at 82% 12%, rgba(15, 216, 199, 0.06), transparent 30%),
-    linear-gradient(180deg, #02060d 0 12%, #050c17 48%, #03070f 100%);
+  background-color: var(--bg-ink);
+  background-image:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-deep) 92%, var(--bg-ink)) 0 18%, #03070f 100%),
+    repeating-linear-gradient(0deg, var(--pixel-grid) 0 2px, transparent 2px 18px),
+    repeating-linear-gradient(90deg, var(--pixel-grid) 0 2px, transparent 2px 18px),
+    repeating-linear-gradient(0deg, var(--pixel-grid-strong) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(90deg, var(--pixel-grid-strong) 0 1px, transparent 1px 72px),
+    radial-gradient(circle at 16% 10%, rgba(45, 252, 138, 0.08), transparent 30%),
+    radial-gradient(circle at 82% 12%, rgba(15, 216, 199, 0.08), transparent 34%);
   color: var(--text);
+  image-rendering: pixelated;
 }
 
 body {
@@ -120,24 +131,28 @@ body::after {
 .brand-mark {
   width: 32px;
   height: 32px;
-  border-radius: 10px;
-  background: conic-gradient(from 120deg, color-mix(in srgb, var(--accent) 88%, transparent),
-      color-mix(in srgb, var(--accent-2) 86%, transparent), color-mix(in srgb, var(--accent) 88%, transparent));
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 76%, transparent),
+      color-mix(in srgb, var(--accent-2) 86%, transparent)),
+    repeating-linear-gradient(0deg, rgba(1, 5, 13, 0.34) 0 3px, transparent 3px 6px);
+  border: 2px solid rgba(255, 255, 255, 0.16);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: var(--pixel-font);
   font-weight: 800;
-  font-size: 13px;
+  font-size: 11px;
   color: #01050d;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.4);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .brand-title {
+  font-family: var(--pixel-font);
   font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55);
 }
 
 .brand-meta {
@@ -253,13 +268,15 @@ body::after {
   width: min(540px, 100%);
   aspect-ratio: 9 / 16;
   margin: 0 auto;
-  border-radius: 18px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(150, 255, 210, 0.24);
-  box-shadow: var(--shadow-strong);
-  background: linear-gradient(180deg, rgba(2, 12, 18, 0.88), rgba(2, 12, 18, 0.95)),
-    radial-gradient(circle at 50% 10%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%),
-    linear-gradient(145deg, rgba(7, 31, 22, 0.85), rgba(2, 12, 18, 0.95));
+  border: 2px solid rgba(150, 255, 210, 0.4);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.45), 0 16px 0 rgba(0, 0, 0, 0.45);
+  background: linear-gradient(180deg, rgba(2, 12, 18, 0.94), rgba(2, 12, 18, 0.98)),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 14px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 14px),
+    radial-gradient(circle at 50% 10%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    linear-gradient(145deg, rgba(7, 31, 22, 0.82), rgba(2, 12, 18, 0.95));
   isolation: isolate;
 }
 
@@ -290,6 +307,11 @@ canvas {
   width: 100%;
   height: 100%;
   touch-action: none;
+  image-rendering: pixelated;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.2) 0 3px, transparent 3px 18px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 3px, transparent 3px 18px),
+    radial-gradient(circle at 50% 22%, rgba(45, 252, 138, 0.06), transparent 34%),
+    linear-gradient(180deg, #0c131d 0%, #050a12 100%);
 }
 
 /* HUD */
@@ -444,10 +466,11 @@ canvas {
   max-width: 420px;
   padding: 18px 16px;
   margin: 0 auto 16px;
-  border-radius: 18px;
-  background: linear-gradient(140deg, rgba(3, 26, 40, 0.92), rgba(3, 16, 11, 0.9));
-  border: 1px solid rgba(150, 255, 210, 0.3);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  background: linear-gradient(140deg, rgba(3, 26, 40, 0.94), rgba(3, 16, 11, 0.94)),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 10px);
+  border: 2px solid rgba(150, 255, 210, 0.32);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.8), inset 0 0 0 2px rgba(0, 0, 0, 0.35);
 }
 
 .screen-inner--scrollable {
@@ -456,13 +479,15 @@ canvas {
 }
 
 .screen-title {
-  font-size: 20px;
-  letter-spacing: 0.08em;
+  font-family: var(--pixel-font);
+  font-size: 18px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-bottom: 8px;
 }
 
 .screen-subtitle {
+  font-family: "Inter", "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 13px;
   opacity: 0.8;
   margin-bottom: 16px;
@@ -824,22 +849,26 @@ canvas {
   overflow: visible;
   --press-depth: 6px;
   border: none;
-  border-radius: 999px;
-  padding: 11px 18px;
-  font-size: 13px;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-family: var(--pixel-font);
+  font-size: 11px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   cursor: pointer;
-  background: linear-gradient(145deg, rgba(16, 26, 40, 0.95), rgba(7, 14, 26, 0.94));
+  background: linear-gradient(180deg, rgba(16, 26, 40, 0.92), rgba(7, 14, 26, 0.98)),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.06) 0 2px, transparent 2px 8px);
   color: #ecfff5;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   transition: background 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 calc(var(--press-depth) * 0.3) 0 rgba(255, 255, 255, 0.08),
-    0 calc(var(--press-depth) * 1.4) calc(var(--press-depth) * 1.2) rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 calc(var(--press-depth) * 0.4) 0 rgba(255, 255, 255, 0.12),
+    0 calc(var(--press-depth) * 1.4) calc(var(--press-depth) * 1.2) rgba(0, 0, 0, 0.6),
+    0 0 0 2px rgba(0, 0, 0, 0.35);
   transform-style: preserve-3d;
 }
 
@@ -848,7 +877,7 @@ canvas {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.55));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.6));
   transform: translateY(calc(var(--press-depth) * 0.9));
   transition: transform 0.12s ease, opacity 0.16s ease, filter 0.16s ease;
   opacity: 0.85;
@@ -869,17 +898,20 @@ canvas {
   max-width: 380px;
   padding: 18px 22px;
   border: none;
-  border-radius: 24px;
-  background: linear-gradient(130deg, color-mix(in srgb, var(--accent) 90%, #0c101a 5%),
-      color-mix(in srgb, var(--accent-2) 75%, #0c101a 10%));
+  border-radius: 14px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 86%, #03120f 10%),
+      color-mix(in srgb, var(--accent-2) 72%, #03120f 14%)),
+    repeating-linear-gradient(0deg, rgba(4, 18, 16, 0.2) 0 3px, transparent 3px 8px);
   color: #041214;
-  font-size: 20px;
+  font-family: var(--pixel-font);
+  font-size: 18px;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   box-shadow: 0 calc(var(--press-depth) * 0.35) 0 rgba(255, 255, 255, 0.12),
     0 calc(var(--press-depth) * 1.8) calc(var(--press-depth) * 1.6) rgba(0, 0, 0, 0.78),
-    0 12px 34px color-mix(in srgb, var(--accent) 26%, transparent);
+    0 12px 34px color-mix(in srgb, var(--accent) 26%, transparent),
+    0 0 0 3px rgba(0, 0, 0, 0.45);
   cursor: pointer;
   overflow: visible;
   isolation: isolate;
@@ -919,13 +951,13 @@ canvas {
 }
 
 .start-button__label {
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.05;
 }
 
 .start-button__hint {
-  font-size: 12px;
-  letter-spacing: 0.18em;
+  font-size: 11px;
+  letter-spacing: 0.16em;
   opacity: 0.78;
 }
 
