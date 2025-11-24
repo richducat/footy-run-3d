@@ -25,8 +25,9 @@ body {
   padding: 0;
   width: 100%;
   min-height: var(--app-height);
-  height: var(--app-height);
-  overflow: hidden;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   overscroll-behavior: none;
   font-family: "Inter", "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: radial-gradient(circle at 16% 10%, rgba(45, 252, 138, 0.08), transparent 28%),
@@ -318,7 +319,6 @@ html.remote-loaded,
   position: relative;
   width: min(540px, 100%);
   aspect-ratio: 9 / 16;
-  max-height: calc(var(--app-height) - 130px);
   margin: 0 auto;
   border-radius: 18px;
   overflow: hidden;
@@ -469,10 +469,22 @@ canvas {
 }
 
 .shot-meter-wrapper {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   display: flex;
   justify-content: center;
   width: 100%;
-  margin: 0 auto 4px;
+  padding: 0 12px;
+  margin: 0 auto;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.shot-meter {
+  width: min(520px, 100%);
+  pointer-events: auto;
 }
 
 /* Screens */
