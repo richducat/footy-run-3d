@@ -472,9 +472,7 @@ function updateBuilderPreview() {
     builderPreviewJersey.style.setProperty("--kit-trim", kit.trim);
   }
   if (builderPreviewBall) {
-    builderPreviewBall.style.background = `radial-gradient(circle at 30% 30%, #ffffff, ${
-      kit.ballAccent
-    })`;
+    builderPreviewBall.style.setProperty("--ball-accent", kit.ballAccent);
   }
 }
 
