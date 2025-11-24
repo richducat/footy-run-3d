@@ -706,6 +706,16 @@ export class Game {
     let h = this.player.height;
     if (this.player.isTackling) h = this.player.height * 0.5;
 
+    const kit = {
+      navy: "#1f3a74",
+      navyShadow: "#14294f",
+      trim: "#0bd3c7",
+      maroon: "#80223c",
+      maroonShadow: "#5e162c",
+      sockStripe: "#f2f4ff",
+      boot: "#0f1e46"
+    };
+
     // Depth shadow
     ctx.save();
     ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
@@ -726,107 +736,125 @@ export class Game {
     ctx.strokeStyle = "rgba(0,0,0,0.35)";
     ctx.lineWidth = 2;
 
-    // Legs with separated thigh and calf for more realistic proportions
+    // Legs with separated thigh and calf for realistic proportions
     const skinTone = ctx.createLinearGradient(x, y, x, y + h);
-    skinTone.addColorStop(0, "#f4d7b8");
-    skinTone.addColorStop(1, "#cfa579");
-    const leftLegX = x + this.player.width * 0.26;
-    const rightLegX = x + this.player.width * 0.6;
-    const thighH = h * 0.22;
-    const calfH = h * 0.16;
+    skinTone.addColorStop(0, "#f5d8b5");
+    skinTone.addColorStop(1, "#cfab7d");
+    const leftLegX = x + this.player.width * 0.24;
+    const rightLegX = x + this.player.width * 0.62;
+    const thighH = h * 0.24;
+    const calfH = h * 0.17;
     ctx.fillStyle = skinTone;
     ctx.beginPath();
-    ctx.roundRect(leftLegX, y + h * 0.6, this.player.width * 0.15, thighH, 6);
-    ctx.roundRect(rightLegX, y + h * 0.6, this.player.width * 0.15, thighH, 6);
-    ctx.roundRect(leftLegX + this.player.width * 0.01, y + h * 0.6 + thighH, this.player.width * 0.13, calfH, 5);
-    ctx.roundRect(rightLegX + this.player.width * 0.01, y + h * 0.6 + thighH, this.player.width * 0.13, calfH, 5);
+    ctx.roundRect(leftLegX, y + h * 0.6, this.player.width * 0.16, thighH, 7);
+    ctx.roundRect(rightLegX, y + h * 0.6, this.player.width * 0.16, thighH, 7);
+    ctx.roundRect(leftLegX + this.player.width * 0.01, y + h * 0.6 + thighH, this.player.width * 0.14, calfH, 6);
+    ctx.roundRect(rightLegX + this.player.width * 0.01, y + h * 0.6 + thighH, this.player.width * 0.14, calfH, 6);
     ctx.fill();
+    ctx.fillStyle = "rgba(0,0,0,0.12)";
+    ctx.fillRect(leftLegX + this.player.width * 0.02, y + h * 0.6 + thighH * 0.6, this.player.width * 0.12, calfH * 0.5);
+    ctx.fillRect(rightLegX + this.player.width * 0.02, y + h * 0.6 + thighH * 0.6, this.player.width * 0.12, calfH * 0.5);
 
-    // Socks with ribbing highlight
+    // Socks with double stripes inspired by the reference kit
     const sockGradient = ctx.createLinearGradient(x, y + h * 0.78, x, y + h);
-    sockGradient.addColorStop(0, "#0e55d8");
-    sockGradient.addColorStop(1, "#083a9b");
+    sockGradient.addColorStop(0, kit.maroon);
+    sockGradient.addColorStop(1, kit.maroonShadow);
     ctx.fillStyle = sockGradient;
-    ctx.fillRect(leftLegX, y + h * 0.78, this.player.width * 0.15, h * 0.18);
-    ctx.fillRect(rightLegX, y + h * 0.78, this.player.width * 0.15, h * 0.18);
-    ctx.fillStyle = "rgba(255,255,255,0.18)";
-    ctx.fillRect(leftLegX, y + h * 0.8, this.player.width * 0.15, h * 0.02);
-    ctx.fillRect(rightLegX, y + h * 0.8, this.player.width * 0.15, h * 0.02);
+    ctx.fillRect(leftLegX, y + h * 0.78, this.player.width * 0.16, h * 0.2);
+    ctx.fillRect(rightLegX, y + h * 0.78, this.player.width * 0.16, h * 0.2);
+    ctx.fillStyle = kit.sockStripe;
+    ctx.fillRect(leftLegX, y + h * 0.8, this.player.width * 0.16, h * 0.02);
+    ctx.fillRect(rightLegX, y + h * 0.8, this.player.width * 0.16, h * 0.02);
+    ctx.fillRect(leftLegX, y + h * 0.84, this.player.width * 0.16, h * 0.02);
+    ctx.fillRect(rightLegX, y + h * 0.84, this.player.width * 0.16, h * 0.02);
 
-    // Boots with more grounded shading and subtle lacing
+    // Boots with laces and adidas-style striping
     const bootShine = ctx.createLinearGradient(x, y + h * 0.94, x, y + h * 1.02);
-    bootShine.addColorStop(0, "#1a1a1a");
-    bootShine.addColorStop(1, "#070707");
+    bootShine.addColorStop(0, kit.boot);
+    bootShine.addColorStop(1, "#07122c");
     ctx.fillStyle = bootShine;
     ctx.beginPath();
-    ctx.roundRect(leftLegX - this.player.width * 0.02, y + h * 0.94, this.player.width * 0.2, h * 0.08, 3);
-    ctx.roundRect(rightLegX - this.player.width * 0.02, y + h * 0.94, this.player.width * 0.2, h * 0.08, 3);
+    ctx.roundRect(leftLegX - this.player.width * 0.03, y + h * 0.95, this.player.width * 0.22, h * 0.09, 3);
+    ctx.roundRect(rightLegX - this.player.width * 0.03, y + h * 0.95, this.player.width * 0.22, h * 0.09, 3);
     ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,0.6)";
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = kit.sockStripe;
+    ctx.lineWidth = 1.3;
     ctx.beginPath();
-    ctx.moveTo(leftLegX + this.player.width * 0.02, y + h * 0.98);
-    ctx.lineTo(leftLegX + this.player.width * 0.11, y + h * 0.98);
-    ctx.moveTo(rightLegX + this.player.width * 0.02, y + h * 0.98);
-    ctx.lineTo(rightLegX + this.player.width * 0.11, y + h * 0.98);
+    ctx.moveTo(leftLegX + this.player.width * 0.01, y + h * 0.99);
+    ctx.lineTo(leftLegX + this.player.width * 0.12, y + h * 0.99);
+    ctx.moveTo(rightLegX + this.player.width * 0.01, y + h * 0.99);
+    ctx.lineTo(rightLegX + this.player.width * 0.12, y + h * 0.99);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(leftLegX + this.player.width * 0.15, y + h * 0.97);
+    ctx.lineTo(leftLegX + this.player.width * 0.19, y + h * 1.02);
+    ctx.moveTo(leftLegX + this.player.width * 0.11, y + h * 0.97);
+    ctx.lineTo(leftLegX + this.player.width * 0.15, y + h * 1.02);
+    ctx.moveTo(leftLegX + this.player.width * 0.07, y + h * 0.97);
+    ctx.lineTo(leftLegX + this.player.width * 0.11, y + h * 1.02);
+    ctx.moveTo(rightLegX + this.player.width * 0.15, y + h * 0.97);
+    ctx.lineTo(rightLegX + this.player.width * 0.19, y + h * 1.02);
+    ctx.moveTo(rightLegX + this.player.width * 0.11, y + h * 0.97);
+    ctx.lineTo(rightLegX + this.player.width * 0.15, y + h * 1.02);
+    ctx.moveTo(rightLegX + this.player.width * 0.07, y + h * 0.97);
+    ctx.lineTo(rightLegX + this.player.width * 0.11, y + h * 1.02);
     ctx.stroke();
 
-    // Shorts with more depth and paneling
+    // Shorts with maroon depth, matching the reference trim
     const shorts = ctx.createLinearGradient(x, y + h * 0.52, x, y + h * 0.85);
-    shorts.addColorStop(0, "#151a2e");
-    shorts.addColorStop(1, "#090c17");
+    shorts.addColorStop(0, kit.maroon);
+    shorts.addColorStop(1, kit.maroonShadow);
     ctx.fillStyle = shorts;
-    const shortsX = x + this.player.width * 0.14;
-    const shortsW = this.player.width * 0.72;
+    const shortsX = x + this.player.width * 0.13;
+    const shortsW = this.player.width * 0.74;
     ctx.beginPath();
-    ctx.roundRect(shortsX, y + h * 0.52, shortsW, h * 0.32, 6);
+    ctx.roundRect(shortsX, y + h * 0.5, shortsW, h * 0.34, 8);
     ctx.fill();
-    ctx.fillStyle = "#0ad0ff";
-    ctx.fillRect(shortsX, y + h * 0.62, shortsW, h * 0.025);
+    ctx.fillStyle = kit.navy;
+    ctx.fillRect(shortsX, y + h * 0.6, shortsW, h * 0.03);
     ctx.fillStyle = "rgba(255,255,255,0.12)";
     ctx.fillRect(shortsX + shortsW * 0.08, y + h * 0.54, shortsW * 0.12, h * 0.04);
     ctx.fillRect(shortsX + shortsW * 0.76, y + h * 0.56, shortsW * 0.12, h * 0.04);
-    const shortsLight = ctx.createLinearGradient(shortsX, y + h * 0.52, shortsX, y + h * 0.84);
-    shortsLight.addColorStop(0, "rgba(255,255,255,0.14)");
-    shortsLight.addColorStop(0.5, "rgba(255,255,255,0.04)");
+    const shortsLight = ctx.createLinearGradient(shortsX, y + h * 0.5, shortsX, y + h * 0.84);
+    shortsLight.addColorStop(0, "rgba(255,255,255,0.16)");
+    shortsLight.addColorStop(0.5, "rgba(255,255,255,0.05)");
     shortsLight.addColorStop(1, "rgba(0,0,0,0.15)");
     ctx.fillStyle = shortsLight;
-    ctx.fillRect(shortsX, y + h * 0.52, shortsW, h * 0.32);
+    ctx.fillRect(shortsX, y + h * 0.5, shortsW, h * 0.34);
 
     // Torso + jersey with shoulder taper and subtle folds
     const jersey = ctx.createLinearGradient(x, y, x, y + h * 0.6);
-    jersey.addColorStop(0, "#0e5dd6");
-    jersey.addColorStop(1, "#0a44b1");
+    jersey.addColorStop(0, kit.navy);
+    jersey.addColorStop(1, kit.navyShadow);
     ctx.fillStyle = jersey;
-    const torsoX = x + this.player.width * 0.16;
-    const torsoW = this.player.width * 0.68;
+    const torsoX = x + this.player.width * 0.15;
+    const torsoW = this.player.width * 0.7;
     ctx.beginPath();
-    ctx.roundRect(torsoX, y + h * 0.07, torsoW, h * 0.48, 8);
+    ctx.roundRect(torsoX, y + h * 0.06, torsoW, h * 0.5, 10);
     ctx.fill();
-    ctx.fillStyle = "#0ad0ff";
-    ctx.fillRect(torsoX, y + h * 0.24, torsoW, h * 0.035);
+    ctx.fillStyle = kit.trim;
+    ctx.fillRect(torsoX, y + h * 0.23, torsoW, h * 0.035);
 
     const jerseyLight = ctx.createLinearGradient(
       torsoX - this.player.width * 0.02,
-      y + h * 0.06,
+      y + h * 0.04,
       torsoX + torsoW + this.player.width * 0.02,
-      y + h * 0.46
+      y + h * 0.5
     );
-    jerseyLight.addColorStop(0, "rgba(255,255,255,0.16)");
-    jerseyLight.addColorStop(0.5, "rgba(255,255,255,0)");
-    jerseyLight.addColorStop(1, "rgba(0,0,0,0.18)");
+    jerseyLight.addColorStop(0, "rgba(255,255,255,0.14)");
+    jerseyLight.addColorStop(0.6, "rgba(255,255,255,0)");
+    jerseyLight.addColorStop(1, "rgba(0,0,0,0.2)");
     ctx.fillStyle = jerseyLight;
-    ctx.fillRect(torsoX, y + h * 0.07, torsoW, h * 0.48);
-    ctx.strokeStyle = "rgba(0,0,0,0.22)";
+    ctx.fillRect(torsoX, y + h * 0.06, torsoW, h * 0.5);
+    ctx.strokeStyle = "rgba(255,255,255,0.25)";
     ctx.beginPath();
-    ctx.moveTo(torsoX + torsoW * 0.5, y + h * 0.08);
-    ctx.lineTo(torsoX + torsoW * 0.44, y + h * 0.16);
-    ctx.lineTo(torsoX + torsoW * 0.5, y + h * 0.18);
+    ctx.moveTo(torsoX + torsoW * 0.18, y + h * 0.12);
+    ctx.quadraticCurveTo(torsoX + torsoW * 0.5, y + h * 0.1, torsoX + torsoW * 0.82, y + h * 0.12);
     ctx.stroke();
 
     // Neck
     const skin = ctx.createLinearGradient(x, y, x, y + h * 0.22);
-    skin.addColorStop(0, "#f1d2ae");
+    skin.addColorStop(0, "#f3d5b0");
     skin.addColorStop(1, "#cfa579");
     ctx.fillStyle = skin;
     ctx.beginPath();
@@ -836,36 +864,29 @@ export class Game {
     // Arms with muscle definition and shadowing
     ctx.strokeStyle = "rgba(0,0,0,0.22)";
     const armWidth = this.player.width * 0.12;
-    const armHeight = h * 0.23;
-    const armY = y + h * 0.2;
+    const armHeight = h * 0.25;
+    const armY = y + h * 0.19;
     const leftArmX = x + this.player.width * 0.05;
     const rightArmX = x + this.player.width * 0.83 - armWidth;
     ctx.fillStyle = skin;
     ctx.beginPath();
-    ctx.roundRect(leftArmX, armY, armWidth, armHeight, 6);
-    ctx.roundRect(rightArmX, armY, armWidth, armHeight, 6);
+    ctx.roundRect(leftArmX, armY, armWidth, armHeight, 7);
+    ctx.roundRect(rightArmX, armY, armWidth, armHeight, 7);
     ctx.fill();
     ctx.fillStyle = "rgba(0,0,0,0.12)";
-    ctx.fillRect(leftArmX + armWidth * 0.08, armY + armHeight * 0.62, armWidth * 0.84, armHeight * 0.2);
-    ctx.fillRect(rightArmX + armWidth * 0.08, armY + armHeight * 0.62, armWidth * 0.84, armHeight * 0.2);
+    ctx.fillRect(leftArmX + armWidth * 0.08, armY + armHeight * 0.6, armWidth * 0.84, armHeight * 0.22);
+    ctx.fillRect(rightArmX + armWidth * 0.08, armY + armHeight * 0.6, armWidth * 0.84, armHeight * 0.22);
 
     // Sleeves hugging the arms
     const sleeve = ctx.createLinearGradient(x, y, x, y + h * 0.35);
-    sleeve.addColorStop(0, "#0e5dd6");
-    sleeve.addColorStop(1, "#0a44b1");
+    sleeve.addColorStop(0, kit.navy);
+    sleeve.addColorStop(1, kit.navyShadow);
     ctx.fillStyle = sleeve;
-    ctx.roundRect(leftArmX - this.player.width * 0.01, y + h * 0.16, armWidth + this.player.width * 0.02, h * 0.12, 5);
-    ctx.roundRect(rightArmX - this.player.width * 0.01, y + h * 0.16, armWidth + this.player.width * 0.02, h * 0.12, 5);
-    ctx.fillStyle = "#0ad0ff";
-    ctx.fillRect(leftArmX - this.player.width * 0.01, y + h * 0.25, armWidth + this.player.width * 0.02, h * 0.028);
-    ctx.fillRect(rightArmX - this.player.width * 0.01, y + h * 0.25, armWidth + this.player.width * 0.02, h * 0.028);
-
-    // Chest panel edges
-    ctx.strokeStyle = "rgba(255,255,255,0.35)";
-    ctx.beginPath();
-    ctx.moveTo(x + this.player.width * 0.18, y + h * 0.12);
-    ctx.lineTo(x + this.player.width * 0.82, y + h * 0.12);
-    ctx.stroke();
+    ctx.roundRect(leftArmX - this.player.width * 0.01, y + h * 0.15, armWidth + this.player.width * 0.02, h * 0.12, 6);
+    ctx.roundRect(rightArmX - this.player.width * 0.01, y + h * 0.15, armWidth + this.player.width * 0.02, h * 0.12, 6);
+    ctx.fillStyle = kit.trim;
+    ctx.fillRect(leftArmX - this.player.width * 0.01, y + h * 0.25, armWidth + this.player.width * 0.02, h * 0.03);
+    ctx.fillRect(rightArmX - this.player.width * 0.01, y + h * 0.25, armWidth + this.player.width * 0.02, h * 0.03);
 
     // Head with more realistic proportions and facial definition
     const headCenterX = x + this.player.width * 0.5;
@@ -954,7 +975,7 @@ export class Game {
     ctx.beginPath();
     ctx.arc(headCenterX, headCenterY - headRadius * 0.4, headRadius * 0.8, Math.PI, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#0ad0ff";
+    ctx.fillStyle = kit.trim;
     ctx.fillRect(
       headCenterX - headRadius,
       headCenterY - headRadius * 0.34,
@@ -1007,15 +1028,15 @@ export class Game {
     const torsoW = width * 0.56;
     const torsoH = height * 0.44;
     const jersey = ctx.createLinearGradient(torsoX, torsoY, torsoX, torsoY + torsoH);
-    jersey.addColorStop(0, "#1c6af0");
-    jersey.addColorStop(1, "#0c3f9f");
+    jersey.addColorStop(0, "#1f3a74");
+    jersey.addColorStop(1, "#14294f");
     ctx.fillStyle = jersey;
     ctx.beginPath();
     ctx.roundRect(torsoX, torsoY, torsoW, torsoH, 7);
     ctx.fill();
 
     // Number stripe
-    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    ctx.fillStyle = "rgba(11,211,199,0.85)";
     ctx.fillRect(torsoX + torsoW * 0.45, torsoY + torsoH * 0.12, torsoW * 0.1, torsoH * 0.68);
 
     // Arms reaching out
@@ -1030,18 +1051,24 @@ export class Game {
     ctx.fillStyle = "rgba(0,0,0,0.12)";
     ctx.fillRect(x + width * 0.08, torsoY + torsoH * 0.62, width * 0.14, torsoH * 0.12);
 
-    // Legs sweeping across
+    // Legs sweeping across with reference-colored socks
     const legGradient = ctx.createLinearGradient(x, y + height * 0.45, x, y + height);
-    legGradient.addColorStop(0, "#f1d2ae");
-    legGradient.addColorStop(1, "#cfa579");
+    legGradient.addColorStop(0, "#f5d8b5");
+    legGradient.addColorStop(1, "#cfab7d");
     ctx.fillStyle = legGradient;
     ctx.beginPath();
     ctx.roundRect(x + width * 0.12, y + height * 0.56, width * 0.3, height * 0.3, 7);
     ctx.roundRect(x + width * 0.46, y + height * 0.62, width * 0.38, height * 0.24, 7);
     ctx.fill();
+    ctx.fillStyle = "#80223c";
+    ctx.roundRect(x + width * 0.12, y + height * 0.7, width * 0.3, height * 0.16, 4);
+    ctx.roundRect(x + width * 0.46, y + height * 0.72, width * 0.38, height * 0.14, 4);
+    ctx.fillStyle = "#f2f4ff";
+    ctx.fillRect(x + width * 0.12, y + height * 0.75, width * 0.3, height * 0.02);
+    ctx.fillRect(x + width * 0.46, y + height * 0.77, width * 0.38, height * 0.02);
 
     // Cleats
-    ctx.fillStyle = "#0f9b4c";
+    ctx.fillStyle = "#0f1e46";
     ctx.roundRect(x + width * 0.1, y + height * 0.82, width * 0.22, height * 0.12, 3);
     ctx.roundRect(x + width * 0.7, y + height * 0.82, width * 0.2, height * 0.12, 3);
 
@@ -1089,7 +1116,7 @@ export class Game {
     );
 
     // Gloves
-    ctx.fillStyle = "#0f9b4c";
+    ctx.fillStyle = "#0bd3c7";
     ctx.beginPath();
     ctx.roundRect(x + width * 0.08, torsoY + torsoH * 0.68, width * 0.14, width * 0.12, 4);
     ctx.roundRect(x + width * 0.84, torsoY + torsoH * 0.12, width * 0.12, width * 0.12, 4);
@@ -1109,21 +1136,26 @@ export class Game {
 
     // Legs
     const legGradient = ctx.createLinearGradient(x, y + height * 0.55, x, y + height);
-    legGradient.addColorStop(0, "#f1d2ae");
-    legGradient.addColorStop(1, "#cfa579");
+    legGradient.addColorStop(0, "#f5d8b5");
+    legGradient.addColorStop(1, "#cfab7d");
     ctx.fillStyle = legGradient;
     ctx.beginPath();
     ctx.roundRect(x + width * 0.2, y + height * 0.56, width * 0.18, height * 0.36, 7);
     ctx.roundRect(x + width * 0.54, y + height * 0.54, width * 0.18, height * 0.4, 7);
     ctx.fill();
 
-    // Socks and cleats
-    ctx.fillStyle = "#ffffff";
-    ctx.roundRect(x + width * 0.2, y + height * 0.82, width * 0.18, height * 0.08, 3);
-    ctx.roundRect(x + width * 0.54, y + height * 0.8, width * 0.18, height * 0.08, 3);
-    ctx.fillStyle = "#0f9b4c";
-    ctx.roundRect(x + width * 0.16, y + height * 0.9, width * 0.22, height * 0.08, 3);
-    ctx.roundRect(x + width * 0.5, y + height * 0.88, width * 0.22, height * 0.08, 3);
+    // Socks and cleats styled like the reference
+    ctx.fillStyle = "#80223c";
+    ctx.roundRect(x + width * 0.2, y + height * 0.82, width * 0.18, height * 0.12, 3);
+    ctx.roundRect(x + width * 0.54, y + height * 0.8, width * 0.18, height * 0.12, 3);
+    ctx.fillStyle = "#f2f4ff";
+    ctx.fillRect(x + width * 0.2, y + height * 0.84, width * 0.18, height * 0.02);
+    ctx.fillRect(x + width * 0.54, y + height * 0.82, width * 0.18, height * 0.02);
+    ctx.fillRect(x + width * 0.2, y + height * 0.88, width * 0.18, height * 0.02);
+    ctx.fillRect(x + width * 0.54, y + height * 0.86, width * 0.18, height * 0.02);
+    ctx.fillStyle = "#0f1e46";
+    ctx.roundRect(x + width * 0.16, y + height * 0.94, width * 0.22, height * 0.08, 3);
+    ctx.roundRect(x + width * 0.5, y + height * 0.92, width * 0.22, height * 0.08, 3);
 
     // Torso
     const torsoX = x + width * 0.2;
@@ -1131,14 +1163,14 @@ export class Game {
     const torsoW = width * 0.6;
     const torsoH = height * 0.4;
     const jersey = ctx.createLinearGradient(torsoX, torsoY, torsoX, torsoY + torsoH);
-    jersey.addColorStop(0, "#1b8a3e");
-    jersey.addColorStop(1, "#0c4e24");
+    jersey.addColorStop(0, "#1f3a74");
+    jersey.addColorStop(1, "#14294f");
     ctx.fillStyle = jersey;
     ctx.beginPath();
     ctx.roundRect(torsoX, torsoY, torsoW, torsoH, 9);
     ctx.fill();
 
-    ctx.fillStyle = "rgba(255,255,255,0.78)";
+    ctx.fillStyle = "rgba(11,211,199,0.78)";
     ctx.fillRect(torsoX + torsoW * 0.38, torsoY + torsoH * 0.08, torsoW * 0.2, torsoH * 0.12);
     ctx.fillRect(torsoX + torsoW * 0.22, torsoY + torsoH * 0.32, torsoW * 0.56, torsoH * 0.12);
 
@@ -1153,7 +1185,7 @@ export class Game {
     ctx.fill();
 
     // Gloves
-    ctx.fillStyle = "#ffd447";
+    ctx.fillStyle = "#0bd3c7";
     ctx.roundRect(torsoX - width * 0.04, torsoY + torsoH * 0.4, width * 0.18, width * 0.12, 4);
     ctx.roundRect(torsoX + torsoW - width * 0.14, torsoY + torsoH * 0.42, width * 0.18, width * 0.12, 4);
 
