@@ -94,8 +94,14 @@
         <!-- Main menu -->
         <section id="mainMenu" class="screen screen--active">
           <div class="screen-inner screen-inner--scrollable">
-            <h1 class="screen-title">Ultimate Striker Run</h1>
-            <p class="screen-subtitle">Temple-run style endless runner with a pro soccer twist.</p>
+            <div class="hero-banner">
+              <div class="logo-chip">Ultimate Striker Run</div>
+              <div class="hero-banner__art" aria-hidden="true">
+                <div class="hero-banner__runner"></div>
+                <div class="hero-banner__trail"></div>
+                <div class="hero-banner__ball"></div>
+              </div>
+            </div>
             <div class="start-cta" aria-live="polite">
               <button id="btnPlay" class="start-button" aria-label="Start run">
                 <span class="start-button__glow"></span>
@@ -110,6 +116,36 @@
               Mobile: swipe or use the on-screen controls to move, tackle &amp; juke.<br />
               Desktop: arrow keys to move, tackle &amp; juke.
             </p>
+
+            <div class="panel">
+              <div class="panel__header">
+                <div>
+                  <p class="eyebrow">Mission spotlight</p>
+                  <h3 id="missionTitle">Stay on the ball</h3>
+                </div>
+                <span class="pill pill--soft" id="missionCadence">Daily</span>
+              </div>
+              <p class="mission-highlight__desc" id="missionDescription">
+                Rotate through the latest Daily and Weekly challenges.
+              </p>
+              <div class="mission-highlight__meta">
+                <div class="progress-bar mission-highlight__progress">
+                  <div class="progress-bar__fill" id="missionProgressFill"></div>
+                </div>
+                <div class="mission-highlight__labels">
+                  <span id="missionProgressText">0/0</span>
+                  <span class="mission-highlight__reward" id="missionReward">+0 coins</span>
+                </div>
+              </div>
+              <div class="mission-highlight__actions">
+                <button id="btnMissionAction" class="btn btn--primary btn--small">View Mission</button>
+                <div class="mission-highlight__carousel">
+                  <button class="circle-button" id="btnPrevMission" aria-label="Previous mission">←</button>
+                  <span id="missionStepper" class="mission-highlight__stepper">0/0</span>
+                  <button class="circle-button" id="btnNextMission" aria-label="Next mission">→</button>
+                </div>
+              </div>
+            </div>
 
             <div class="panel">
               <div class="panel__header">
