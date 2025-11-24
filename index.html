@@ -20,6 +20,16 @@
     if (stylesheet) {
       stylesheet.href = bustUrl(stylesheet.getAttribute("href"));
     }
+
+    const syncViewportHeight = () => {
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      document.documentElement.style.setProperty("--app-height", `${viewportHeight}px`);
+    };
+
+    syncViewportHeight();
+    window.addEventListener("resize", syncViewportHeight);
+    window.addEventListener("orientationchange", syncViewportHeight);
+    window.visualViewport?.addEventListener("resize", syncViewportHeight);
   </script>
 </head>
 <body>
