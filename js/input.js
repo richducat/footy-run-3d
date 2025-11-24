@@ -49,8 +49,8 @@ export class InputManager {
     let action = null;
     if (code === "ArrowLeft" || code === "KeyA") action = "moveLeft";
     else if (code === "ArrowRight" || code === "KeyD") action = "moveRight";
-    else if (code === "ArrowUp" || code === "KeyW") action = "jump";
-    else if (code === "ArrowDown" || code === "KeyS") action = "slide";
+    else if (code === "ArrowUp" || code === "KeyW") action = "tackle";
+    else if (code === "ArrowDown" || code === "KeyS") action = "juke";
     else if (code === "Space" || code === "Enter") action = "primary";
     else if (code === "Escape" || code === "KeyP") action = "pauseToggle";
 
@@ -105,7 +105,7 @@ export class InputManager {
       }
     } else {
       if (Math.abs(dy) > threshold) {
-        this.onAction({ type: dy > 0 ? "slide" : "jump", detail });
+        this.onAction({ type: dy > 0 ? "juke" : "tackle", detail });
       }
     }
 

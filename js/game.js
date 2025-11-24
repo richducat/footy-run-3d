@@ -36,12 +36,15 @@ export class Game {
       height: 78,
       baseY: this.height - 140,
       yOffset: 0,
-      isJumping: false,
-      isSliding: false,
-      jumpTime: 0,
-      slideTime: 0,
-      jumpDuration: 0.55,
-      slideDuration: 0.45
+      laneOffset: 0,
+      isTackling: false,
+      isJuking: false,
+      tackleTime: 0,
+      jukeTime: 0,
+      tackleDuration: 0.55,
+      jukeDuration: 0.42,
+      jukeDirection: 1,
+      tackleDirection: 1
     };
 
     // Run stats
@@ -128,10 +131,14 @@ export class Game {
     this.activeShot = null;
     this.resetRunStats();
     this.player.lane = 1;
-    this.player.isJumping = false;
-    this.player.isSliding = false;
-    this.player.jumpTime = 0;
-    this.player.slideTime = 0;
+    this.player.isTackling = false;
+    this.player.isJuking = false;
+    this.player.tackleTime = 0;
+    this.player.jukeTime = 0;
+    this.player.tackleDirection = 1;
+    this.player.jukeDirection = 1;
+    this.player.laneOffset = 0;
+    this.player.yOffset = 0;
     this.onState(this.runState);
   }
 
@@ -171,15 +178,18 @@ export class Game {
       if (this.player.lane > 0) this.player.lane -= 1;
     } else if (action === "right") {
       if (this.player.lane < this.lanes - 1) this.player.lane += 1;
-    } else if (action === "jump") {
-      if (!this.player.isJumping && !this.player.isSliding) {
-        this.player.isJumping = true;
-        this.player.jumpTime = 0;
+    } else if (action === "tackle") {
+      if (!this.player.isTackling && !this.player.isJuking) {
+        this.player.isTackling = true;
+        this.player.tackleTime = 0;
+        this.player.tackleDirection = Math.random() < 0.5 ? -1 : 1;
+        this.player.yOffset = 0;
       }
-    } else if (action === "slide") {
-      if (!this.player.isSliding && !this.player.isJumping) {
-        this.player.isSliding = true;
-        this.player.slideTime = 0;
+    } else if (action === "juke") {
+      if (!this.player.isJuking && !this.player.isTackling) {
+        this.player.isJuking = true;
+        this.player.jukeTime = 0;
+        this.player.jukeDirection = Math.random() < 0.5 ? -1 : 1;
       }
     }
   }
@@ -187,7 +197,8 @@ export class Game {
   spawnObstacle() {
     const lane = Math.floor(Math.random() * this.lanes);
     const high = Math.random() < 0.35;
-    const type = high ? "high" : "ground"; // high = upright defender to slide under; ground = sliding tackle
+    const type = high ? "high" : "ground"; // high = upright defender; ground = low slide tackle
+    const hasBall = Math.random() < 0.4;
     // Match defenders to the player's slimmer silhouette
     const width = 48;
     const height = high ? 92 : 72;
@@ -196,7 +207,8 @@ export class Game {
       y: -120,
       width,
       height,
-      type
+      type,
+      hasBall
     });
   }
 
@@ -317,22 +329,28 @@ export class Game {
     if (this.goalFlashTime > 0) this.goalFlashTime -= dt;
     if (this.shotResultFlash > 0) this.shotResultFlash -= dt;
 
-    // Player animation: jump
-    if (this.player.isJumping) {
-      this.player.jumpTime += dt;
-      const t = this.player.jumpTime / this.player.jumpDuration;
-      const clamped = Math.min(t, 1);
-      // parabolic jump
-      this.player.yOffset =
-        -90 * (1 - Math.pow(2 * (clamped - 0.5), 2));
+    // Player animation: tackle & juke
+    this.player.laneOffset = 0;
+    if (this.player.isTackling) {
+      this.player.tackleTime += dt;
+      const t = Math.min(this.player.tackleTime / this.player.tackleDuration, 1);
+      const slideEase = Math.sin(t * Math.PI);
+      this.player.laneOffset = slideEase * 18 * this.player.tackleDirection;
+      this.player.yOffset = 10;
       if (t >= 1) {
-        this.player.isJumping = false;
+        this.player.isTackling = false;
         this.player.yOffset = 0;
       }
-    } else if (this.player.isSliding) {
-      this.player.slideTime += dt;
-      if (this.player.slideTime >= this.player.slideDuration) {
-        this.player.isSliding = false;
+    } else if (this.player.isJuking) {
+      this.player.jukeTime += dt;
+      const t = Math.min(this.player.jukeTime / this.player.jukeDuration, 1);
+      const sway = Math.sin(Math.PI * t);
+      this.player.laneOffset = this.player.jukeDirection * 22 * sway;
+      this.player.yOffset = -34 * sway;
+      if (t >= 1) {
+        this.player.isJuking = false;
+        this.player.laneOffset = 0;
+        this.player.yOffset = 0;
       }
     } else {
       this.player.yOffset = 0;
@@ -373,12 +391,13 @@ export class Game {
     // Collision detection
     const playerY = this.player.baseY + this.player.yOffset;
     let playerHeight = this.player.height;
-    if (this.player.isSliding) {
+    if (this.player.isTackling) {
       playerHeight = this.player.height * 0.5;
     }
     const playerX =
       this.laneX(this.player.lane, playerY + playerHeight) -
-      this.player.width / 2;
+      this.player.width / 2 +
+      this.player.laneOffset;
 
     // Obstacles
     for (let i = 0; i < this.obstacles.length; i++) {
@@ -401,11 +420,19 @@ export class Game {
           scaledHeight
         )
       ) {
-        const isGround = o.type === "ground";
+        const isBallCarrier = o.hasBall;
+        const dodging = this.player.isJuking;
+        const tackling = this.player.isTackling;
 
-        const safe =
-          (isGround && this.player.isJumping && this.player.yOffset < -25) ||
-          (!isGround && this.player.isSliding);
+        if (isBallCarrier && tackling) {
+          this.shotMeter += 20 * this.shotGainMultiplier;
+          this.coinsThisRun += Math.max(1, Math.round(this.coinMultiplier));
+          this.obstacles.splice(i, 1);
+          i -= 1;
+          continue;
+        }
+
+        const safe = (o.type === "high" && tackling) || dodging;
 
         if (!safe) {
           this.endRun();
@@ -640,10 +667,13 @@ export class Game {
   }
 
   drawPlayer(ctx) {
-    const x = this.laneX(this.player.lane) - this.player.width / 2;
+    const x =
+      this.laneX(this.player.lane) -
+      this.player.width / 2 +
+      this.player.laneOffset;
     const y = this.player.baseY + this.player.yOffset;
     let h = this.player.height;
-    if (this.player.isSliding) h = this.player.height * 0.5;
+    if (this.player.isTackling) h = this.player.height * 0.5;
 
     // Depth shadow
     ctx.save();
@@ -654,7 +684,7 @@ export class Game {
       x + this.player.width / 2,
       y + h + 10,
       this.player.width * 0.55,
-      this.player.isSliding ? h * 0.45 : h * 0.3,
+      this.player.isTackling ? h * 0.45 : h * 0.3,
       0,
       0,
       Math.PI * 2
@@ -1152,6 +1182,12 @@ export class Game {
         this.drawDefender(ctx, x, y, width, height);
       } else {
         this.drawStandingDefender(ctx, x, y, width, height);
+      }
+
+      if (o.hasBall) {
+        const ballX = x + width * 0.5 + width * 0.18;
+        const ballY = y + height * 0.6;
+        this.drawSoccerBall(ctx, ballX, ballY, Math.max(8, width * 0.12));
       }
     }
   }

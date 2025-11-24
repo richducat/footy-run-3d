@@ -494,8 +494,8 @@ function handleInputAction(action) {
 
   if (actionType === "moveLeft") game.handleMove("left");
   else if (actionType === "moveRight") game.handleMove("right");
-  else if (actionType === "jump") game.handleMove("jump");
-  else if (actionType === "slide") game.handleMove("slide");
+  else if (actionType === "tackle") game.handleMove("tackle");
+  else if (actionType === "juke") game.handleMove("juke");
 }
 
 // Button wiring
