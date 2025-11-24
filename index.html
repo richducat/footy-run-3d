@@ -94,12 +94,59 @@
         <!-- Main menu -->
         <section id="mainMenu" class="screen screen--active">
           <div class="screen-inner screen-inner--scrollable">
-            <h1 class="screen-title">Ultimate Striker Run</h1>
-            <p class="screen-subtitle">Temple-run style endless runner with a pro soccer twist.</p>
-            <button id="btnPlay" class="btn btn--primary">Start run</button>
-            <button id="btnOpenBuilder" class="btn btn--ghost">Build your striker</button>
-            <button id="btnTeam" class="btn">Squad</button>
-            <button id="btnSettings" class="btn btn--ghost">Settings</button>
+            <div class="screen-hero">
+              <div>
+                <h1 class="screen-title">Ultimate Striker Run</h1>
+                <p class="screen-subtitle">
+                  Temple-run style endless runner with a pro soccer twist.
+                </p>
+              </div>
+              <div class="primary-actions">
+                <button id="btnPlay" class="btn btn--primary">Start run</button>
+                <button id="btnSettings" class="btn btn--ghost btn--small">Settings</button>
+              </div>
+            </div>
+
+            <div class="feature-dock" role="navigation" aria-label="Key game areas">
+              <button id="btnOpenBuilder" class="feature-chip">
+                <span class="feature-icon" aria-hidden="true">
+                  <svg viewBox="0 0 32 32" role="presentation" focusable="false">
+                    <g fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="16" cy="9" r="6" />
+                      <path d="M6 28c1.2-5.4 4.7-9 10-9s8.8 3.6 10 9" />
+                    </g>
+                  </svg>
+                </span>
+                <span class="feature-label">Build your striker</span>
+                <span class="feature-meta">Kits, boots &amp; ball flair</span>
+              </button>
+              <button id="btnTeam" class="feature-chip">
+                <span class="feature-icon" aria-hidden="true">
+                  <svg viewBox="0 0 32 32" role="presentation" focusable="false">
+                    <g fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 16a5 5 0 1 1 10 0M4 26c1-4.5 4-7 12-7s11 2.5 12 7" />
+                      <circle cx="10" cy="10" r="3" />
+                      <circle cx="22" cy="10" r="3" />
+                    </g>
+                  </svg>
+                </span>
+                <span class="feature-label">Squad</span>
+                <span class="feature-meta">Cards, boosts, chemistry</span>
+              </button>
+              <button id="btnMissions" class="feature-chip">
+                <span class="feature-icon" aria-hidden="true">
+                  <svg viewBox="0 0 32 32" role="presentation" focusable="false">
+                    <g fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="6" y="5" width="20" height="22" rx="3" />
+                      <path d="M11 12h10M11 18h6M17 24l4-4" />
+                    </g>
+                  </svg>
+                </span>
+                <span class="feature-label">Missions</span>
+                <span class="feature-meta">Daily &amp; weekly challenges</span>
+              </button>
+            </div>
+
             <p class="screen-help">
               Mobile: swipe or use the on-screen controls to move, tackle &amp; juke.<br />
               Desktop: arrow keys to move, tackle &amp; juke.
@@ -129,7 +176,7 @@
               </p>
             </div>
 
-            <div class="panel">
+            <div class="panel" id="missionsPanel">
               <div class="panel__header">
                 <h3>Daily Missions</h3>
                 <span class="pill pill--soft" id="dailyResetNote">Resets daily</span>
