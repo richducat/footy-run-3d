@@ -1610,6 +1610,27 @@ export class Game {
   drawLightingOverlay(ctx) {
     ctx.save();
 
+    // Floodlight beams
+    const beamY = this.height * 0.02;
+    const beamGradient = (anchorX) => {
+      const grad = ctx.createLinearGradient(anchorX, beamY, anchorX, this.height * 0.65);
+      grad.addColorStop(0, "rgba(255,255,255,0.28)");
+      grad.addColorStop(0.2, "rgba(255,255,255,0.12)");
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      return grad;
+    };
+
+    [this.width * 0.2, this.width * 0.8].forEach((x) => {
+      ctx.fillStyle = beamGradient(x);
+      ctx.beginPath();
+      ctx.moveTo(x - 40, beamY);
+      ctx.lineTo(x + 40, beamY);
+      ctx.lineTo(x + this.width * 0.14, this.height * 0.65);
+      ctx.lineTo(x - this.width * 0.14, this.height * 0.65);
+      ctx.closePath();
+      ctx.fill();
+    });
+
     // Foreground vignette for broadcast-style depth
     const vignette = ctx.createRadialGradient(
       this.width / 2,
