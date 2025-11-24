@@ -1729,8 +1729,6 @@ canvas {
 
 .builder-card {
   width: min(1040px, 100%);
-  max-height: calc(var(--app-height) - 2 * clamp(16px, 3vw, 28px));
-  overflow: auto;
   background: linear-gradient(135deg, #101428, #0b1223);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
@@ -1754,7 +1752,7 @@ canvas {
 
 .builder-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr);
+  grid-template-columns: 1.25fr 0.85fr;
   gap: 16px;
   align-items: start;
 }
