@@ -52,15 +52,17 @@ export class Game {
   constructor(canvas, options = {}) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
-    this.pixelRatio = options.pixelRatio || 1;
-    this.ctx.imageSmoothingEnabled = false;
+    const devicePixelRatio = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+    this.pixelRatio = options.pixelRatio || devicePixelRatio || 1;
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = "high";
     if (this.pixelRatio !== 1 && this.ctx.setTransform) {
       this.ctx.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
     }
     this.width = options.logicalWidth || canvas.width / this.pixelRatio;
     this.height = options.logicalHeight || canvas.height / this.pixelRatio;
 
-    this.pixelSize = 4;
+    this.pixelSize = 1;
     this.palette = {
       turfDark: "#0c2a24",
       turfMid: "#0f3d30",
@@ -257,7 +259,8 @@ export class Game {
     layer.width = this.width;
     layer.height = this.height;
     const ctx = layer.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     drawFn(ctx);
     return layer;
   }
