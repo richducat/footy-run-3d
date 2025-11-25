@@ -374,6 +374,38 @@ const KIT_PRESETS = [
     secondary: "#d1d5da",
     trim: "#e8b500",
     ballAccent: "#f1f6ff"
+  },
+  {
+    name: "Germany Retro",
+    tagline: "Sharp black-and-white kit",
+    primary: "#f6f7fb",
+    secondary: "#0f172a",
+    trim: "#36c17e",
+    ballAccent: "#f8fafc"
+  },
+  {
+    name: "Brazil Classic",
+    tagline: "Yellow tops, blue shorts, green trim",
+    primary: "#fbd34d",
+    secondary: "#1f57a4",
+    trim: "#2bb673",
+    ballAccent: "#f2f4ff"
+  },
+  {
+    name: "France Away",
+    tagline: "Clean whites with cool blue",
+    primary: "#f6f7fb",
+    secondary: "#4b6cb7",
+    trim: "#7aa7ff",
+    ballAccent: "#eef3ff"
+  },
+  {
+    name: "Spain Legacy",
+    tagline: "Bold red and sunny trim",
+    primary: "#c8102e",
+    secondary: "#f7f7f7",
+    trim: "#f7d23e",
+    ballAccent: "#fff6e5"
   }
 ];
 
