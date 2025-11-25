@@ -941,6 +941,27 @@ canvas {
   margin: 12px auto 18px;
 }
 
+.variant-toggle {
+  display: flex;
+  justify-content: center;
+  margin: -4px auto 18px;
+}
+
+.variant-toggle__button {
+  width: 100%;
+  max-width: 380px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  font-family: var(--pixel-font);
+}
+
+.variant-toggle__button--active {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 80%, transparent),
+    0 8px 20px color-mix(in srgb, var(--accent) 25%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 70%, #0a1524);
+}
+
 .start-button {
   --press-depth: 10px;
   position: relative;
