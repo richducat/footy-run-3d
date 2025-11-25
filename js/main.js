@@ -110,6 +110,33 @@ const btnCloseAuthSheet = document.getElementById("btnCloseAuthSheet");
 // Team screen
 const cardListEl = document.getElementById("cardList");
 
+const CARD_PIXEL_PALETTES = {
+  street_striker: {
+    primary: "#1f3a74",
+    secondary: "#80223c",
+    trim: "#0bd3c7",
+    ballAccent: "#f2f4ff"
+  },
+  pace_merchant: {
+    primary: "#1d4ed8",
+    secondary: "#0f172a",
+    trim: "#22d3ee",
+    ballAccent: "#f4f7ff"
+  },
+  clinical_finisher: {
+    primary: "#6b21a8",
+    secondary: "#111827",
+    trim: "#c084fc",
+    ballAccent: "#f1e8ff"
+  },
+  crowd_favorite: {
+    primary: "#166534",
+    secondary: "#052e16",
+    trim: "#34d399",
+    ballAccent: "#d1fae5"
+  }
+};
+
 // Missions
 const dailyMissionsEl = document.getElementById("dailyMissions");
 const weeklyMissionsEl = document.getElementById("weeklyMissions");
@@ -480,6 +507,214 @@ function buildPerkDelta(current = {}, next = {}) {
   return deltas.join(" / ") || "no perk growth";
 }
 
+function createPixelPlayerElement(palette = {}) {
+  const el = document.createElement("div");
+  el.className = "player-card__pixel";
+  const colors = {
+    primary: palette.primary || "#1f3a74",
+    secondary: palette.secondary || "#80223c",
+    trim: palette.trim || "#0bd3c7",
+    ballAccent: palette.ballAccent || "#f2f4ff"
+  };
+
+  el.style.setProperty("--kit-primary", colors.primary);
+  el.style.setProperty("--kit-secondary", colors.secondary);
+  el.style.setProperty("--kit-trim", colors.trim);
+  el.style.setProperty("--ball-accent", colors.ballAccent);
+
+  el.innerHTML = `
+    <svg viewBox="0 0 16 20" role="img" aria-hidden="true">
+      <g class="pixel-hair">
+        <rect x="6" y="1" width="1" height="1" />
+        <rect x="7" y="1" width="1" height="1" />
+        <rect x="8" y="1" width="1" height="1" />
+        <rect x="9" y="1" width="1" height="1" />
+        <rect x="5" y="2" width="1" height="1" />
+        <rect x="6" y="2" width="1" height="1" />
+        <rect x="7" y="2" width="1" height="1" />
+        <rect x="8" y="2" width="1" height="1" />
+        <rect x="9" y="2" width="1" height="1" />
+        <rect x="10" y="2" width="1" height="1" />
+        <rect x="5" y="3" width="1" height="1" />
+        <rect x="6" y="3" width="1" height="1" />
+        <rect x="7" y="3" width="1" height="1" />
+        <rect x="8" y="3" width="1" height="1" />
+        <rect x="9" y="3" width="1" height="1" />
+        <rect x="10" y="3" width="1" height="1" />
+        <rect x="6" y="4" width="1" height="1" />
+        <rect x="7" y="4" width="1" height="1" />
+        <rect x="8" y="4" width="1" height="1" />
+        <rect x="9" y="4" width="1" height="1" />
+        <rect x="5" y="5" width="1" height="1" />
+        <rect x="10" y="5" width="1" height="1" />
+      </g>
+      <g class="pixel-hair pixel-hair--highlight">
+        <rect x="7" y="2" width="1" height="1" />
+        <rect x="8" y="3" width="1" height="1" />
+      </g>
+      <g class="pixel-skin">
+        <rect x="6" y="5" width="1" height="1" />
+        <rect x="7" y="5" width="1" height="1" />
+        <rect x="8" y="5" width="1" height="1" />
+        <rect x="9" y="5" width="1" height="1" />
+        <rect x="6" y="6" width="1" height="1" />
+        <rect x="7" y="6" width="1" height="1" />
+        <rect x="8" y="6" width="1" height="1" />
+        <rect x="9" y="6" width="1" height="1" />
+        <rect x="6" y="7" width="1" height="1" />
+        <rect x="7" y="7" width="1" height="1" />
+        <rect x="8" y="7" width="1" height="1" />
+        <rect x="9" y="7" width="1" height="1" />
+        <rect x="7" y="8" width="1" height="1" />
+        <rect x="8" y="8" width="1" height="1" />
+        <rect x="11" y="11" width="1" height="1" />
+        <rect x="12" y="11" width="1" height="1" />
+        <rect x="11" y="12" width="1" height="1" />
+        <rect x="12" y="12" width="1" height="1" />
+        <rect x="11" y="13" width="1" height="1" />
+        <rect x="3" y="12" width="1" height="1" />
+        <rect x="4" y="12" width="1" height="1" />
+        <rect x="3" y="13" width="1" height="1" />
+        <rect x="4" y="13" width="1" height="1" />
+        <rect x="3" y="14" width="1" height="1" />
+        <rect x="5" y="16" width="1" height="1" />
+        <rect x="9" y="16" width="1" height="1" />
+      </g>
+      <g class="pixel-skin pixel-skin--shadow">
+        <rect x="6" y="7" width="1" height="1" />
+        <rect x="9" y="7" width="1" height="1" />
+        <rect x="12" y="13" width="1" height="1" />
+        <rect x="4" y="14" width="1" height="1" />
+      </g>
+      <g class="pixel-primary">
+        <rect x="4" y="9" width="1" height="1" />
+        <rect x="5" y="9" width="1" height="1" />
+        <rect x="6" y="9" width="1" height="1" />
+        <rect x="7" y="9" width="1" height="1" />
+        <rect x="8" y="9" width="1" height="1" />
+        <rect x="9" y="9" width="1" height="1" />
+        <rect x="10" y="9" width="1" height="1" />
+        <rect x="11" y="9" width="1" height="1" />
+        <rect x="3" y="10" width="1" height="1" />
+        <rect x="4" y="10" width="1" height="1" />
+        <rect x="5" y="10" width="1" height="1" />
+        <rect x="6" y="10" width="1" height="1" />
+        <rect x="7" y="10" width="1" height="1" />
+        <rect x="8" y="10" width="1" height="1" />
+        <rect x="9" y="10" width="1" height="1" />
+        <rect x="10" y="10" width="1" height="1" />
+        <rect x="11" y="10" width="1" height="1" />
+        <rect x="12" y="10" width="1" height="1" />
+        <rect x="3" y="11" width="1" height="1" />
+        <rect x="4" y="11" width="1" height="1" />
+        <rect x="5" y="11" width="1" height="1" />
+        <rect x="6" y="11" width="1" height="1" />
+        <rect x="7" y="11" width="1" height="1" />
+        <rect x="8" y="11" width="1" height="1" />
+        <rect x="9" y="11" width="1" height="1" />
+        <rect x="10" y="11" width="1" height="1" />
+        <rect x="11" y="11" width="1" height="1" />
+        <rect x="12" y="11" width="1" height="1" />
+        <rect x="4" y="12" width="1" height="1" />
+        <rect x="5" y="12" width="1" height="1" />
+        <rect x="6" y="12" width="1" height="1" />
+        <rect x="7" y="12" width="1" height="1" />
+        <rect x="8" y="12" width="1" height="1" />
+        <rect x="9" y="12" width="1" height="1" />
+        <rect x="10" y="12" width="1" height="1" />
+        <rect x="11" y="12" width="1" height="1" />
+        <rect x="5" y="13" width="1" height="1" />
+        <rect x="6" y="13" width="1" height="1" />
+        <rect x="7" y="13" width="1" height="1" />
+        <rect x="8" y="13" width="1" height="1" />
+        <rect x="9" y="13" width="1" height="1" />
+        <rect x="10" y="13" width="1" height="1" />
+        <rect x="2" y="9" width="1" height="1" />
+        <rect x="2" y="10" width="1" height="1" />
+        <rect x="12" y="9" width="1" height="1" />
+        <rect x="13" y="10" width="1" height="1" />
+      </g>
+      <g class="pixel-primary pixel-primary--shadow">
+        <rect x="4" y="10" width="1" height="1" />
+        <rect x="5" y="10" width="1" height="1" />
+        <rect x="4" y="11" width="1" height="1" />
+        <rect x="10" y="11" width="1" height="1" />
+        <rect x="11" y="11" width="1" height="1" />
+        <rect x="10" y="12" width="1" height="1" />
+        <rect x="11" y="12" width="1" height="1" />
+        <rect x="5" y="13" width="1" height="1" />
+        <rect x="6" y="13" width="1" height="1" />
+        <rect x="10" y="10" width="1" height="1" />
+      </g>
+      <g class="pixel-trim">
+        <rect x="5" y="10" width="1" height="1" />
+        <rect x="6" y="10" width="1" height="1" />
+        <rect x="8" y="10" width="1" height="1" />
+        <rect x="9" y="10" width="1" height="1" />
+        <rect x="5" y="11" width="1" height="1" />
+        <rect x="9" y="11" width="1" height="1" />
+        <rect x="5" y="12" width="1" height="1" />
+        <rect x="9" y="12" width="1" height="1" />
+      </g>
+      <g class="pixel-secondary">
+        <rect x="5" y="14" width="1" height="1" />
+        <rect x="6" y="14" width="1" height="1" />
+        <rect x="7" y="14" width="1" height="1" />
+        <rect x="8" y="14" width="1" height="1" />
+        <rect x="9" y="14" width="1" height="1" />
+        <rect x="10" y="14" width="1" height="1" />
+        <rect x="11" y="14" width="1" height="1" />
+        <rect x="6" y="15" width="1" height="1" />
+        <rect x="7" y="15" width="1" height="1" />
+        <rect x="8" y="15" width="1" height="1" />
+        <rect x="9" y="15" width="1" height="1" />
+        <rect x="10" y="15" width="1" height="1" />
+        <rect x="5" y="16" width="1" height="1" />
+        <rect x="6" y="16" width="1" height="1" />
+        <rect x="7" y="16" width="1" height="1" />
+        <rect x="8" y="16" width="1" height="1" />
+        <rect x="9" y="16" width="1" height="1" />
+        <rect x="10" y="16" width="1" height="1" />
+      </g>
+      <g class="pixel-secondary pixel-secondary--shadow">
+        <rect x="6" y="15" width="1" height="1" />
+        <rect x="7" y="15" width="1" height="1" />
+        <rect x="9" y="15" width="1" height="1" />
+      </g>
+      <g class="pixel-primary pixel-primary--sock">
+        <rect x="6" y="17" width="1" height="1" />
+        <rect x="7" y="17" width="1" height="1" />
+        <rect x="8" y="17" width="1" height="1" />
+        <rect x="9" y="17" width="1" height="1" />
+      </g>
+      <g class="pixel-primary pixel-primary--shadow">
+        <rect x="6" y="17" width="1" height="1" />
+        <rect x="9" y="17" width="1" height="1" />
+      </g>
+      <g class="pixel-boot">
+        <rect x="5" y="18" width="1" height="1" />
+        <rect x="6" y="18" width="1" height="1" />
+        <rect x="7" y="18" width="1" height="1" />
+        <rect x="8" y="18" width="1" height="1" />
+        <rect x="9" y="18" width="1" height="1" />
+        <rect x="10" y="18" width="1" height="1" />
+      </g>
+      <g class="pixel-ball">
+        <rect x="1" y="15" width="1" height="1" />
+        <rect x="1" y="16" width="1" height="1" />
+        <rect x="2" y="16" width="1" height="1" />
+        <rect x="2" y="17" width="1" height="1" />
+        <rect x="1" y="17" width="1" height="1" />
+        <rect x="3" y="17" width="1" height="1" />
+      </g>
+      <g class="pixel-ball pixel-ball--accent">
+        <rect x="2" y="15" width="1" height="1" />
+      </g>
+    </svg>
+  `;
+  return el;
+}
+
 function buildGameInstance() {
   calibrateCanvasResolution();
 
@@ -667,6 +902,7 @@ function saveBuilderChoices(markCompleted = true) {
   closePlayerBuilder();
 }
 
+
 function renderTeamScreen() {
   cardListEl.innerHTML = "";
 
@@ -679,6 +915,7 @@ function renderTeamScreen() {
     const nextLevel = Math.min(CARD_LEVEL_CAP, cardLevel + 1);
     const nextEffective = getEffectiveMultipliers(card, nextLevel);
     const nextPerks = getEffectivePerks(card, nextLevel);
+    const palette = CARD_PIXEL_PALETTES[card.id] || CARD_PIXEL_PALETTES.street_striker;
 
     const el = document.createElement("article");
     el.className = "player-card";
@@ -687,63 +924,118 @@ function renderTeamScreen() {
     if (isSelected) el.classList.add("player-card--selected");
     el.dataset.cardId = card.id;
 
-    const badge = document.createElement("div");
-    badge.className = "player-card__badge";
-    badge.innerHTML = `
-      <div>
+    const art = document.createElement("div");
+    art.className = "player-card__art";
+    const rarityPill = document.createElement("span");
+    rarityPill.className = "player-card__rarity";
+    rarityPill.textContent = `${card.rarity} card`;
+    const artStage = document.createElement("div");
+    artStage.className = "player-card__stage";
+    artStage.appendChild(createPixelPlayerElement(palette));
+    const artLevel = document.createElement("span");
+    artLevel.className = "player-card__level-tag";
+    artLevel.textContent = `Lvl ${cardLevel}`;
+    const scanlines = document.createElement("div");
+    scanlines.className = "player-card__scanlines";
+    art.appendChild(rarityPill);
+    art.appendChild(artStage);
+    art.appendChild(artLevel);
+    art.appendChild(scanlines);
+
+    const body = document.createElement("div");
+    body.className = "player-card__body";
+
+    const header = document.createElement("div");
+    header.className = "player-card__header";
+    header.innerHTML = `
+      <div class="player-card__title-block">
+        <p class="player-card__eyebrow">${card.position} • ${card.rarity.toUpperCase()}</p>
+        <div class="player-card__name-row">
+          <span class="player-card__name">${card.name}</span>
+          <span class="player-card__level">Level ${cardLevel}/${CARD_LEVEL_CAP}</span>
+        </div>
+        <p class="player-card__tagline">${card.tagline}</p>
+      </div>
+      <div class="player-card__badge">
         <div class="player-card__rating">${card.rating}</div>
+        <div class="player-card__pos">OVR</div>
         <div class="player-card__pos">${card.position}</div>
       </div>
-      <div style="font-size:9px; text-transform:uppercase; letter-spacing:0.07em;">Core</div>
     `;
 
-    const portrait = document.createElement("div");
-    portrait.className = "player-card__portrait";
-    portrait.setAttribute("aria-hidden", "true");
-    portrait.innerHTML = `
-      <div class="player-card__portrait-highlight"></div>
-      <div class="player-card__portrait-lines"></div>
-      <div class="player-card__portrait-glow"></div>
-    `;
+    const stats = document.createElement("div");
+    stats.className = "player-card__stats";
+    const buildStat = (label, current, nextText) => {
+      const stat = document.createElement("div");
+      stat.className = "player-card__stat";
+      stat.innerHTML = `
+        <p class="player-card__stat-label">${label}</p>
+        <div class="player-card__stat-values">
+          <strong>${current}</strong>
+          <span class="player-card__stat-next">${nextText}</span>
+        </div>
+      `;
+      return stat;
+    };
 
-    const info = document.createElement("div");
-    info.className = "player-card__info";
-    const name = document.createElement("div");
-    name.className = "player-card__name";
-    name.textContent = card.name;
-    const meta = document.createElement("div");
-    meta.className = "player-card__meta";
-    meta.textContent = `Level ${cardLevel}/${CARD_LEVEL_CAP} · Speed x${effective.speed.toFixed(
-      2
-    )} · Coins x${effective.coins.toFixed(
-      2
-    )} · Shot x${effective.shotGain.toFixed(2)}`;
-    const perkMeta = document.createElement("div");
-    perkMeta.className = "player-card__meta player-card__meta--perk";
-    perkMeta.textContent = buildPerkSummary(perks);
-    const levelNote = document.createElement("div");
-    levelNote.className = "player-card__meta";
-    levelNote.textContent =
+    const speedDelta = ((nextEffective.speed / effective.speed - 1) * 100).toFixed(0);
+    const coinDelta = ((nextEffective.coins / effective.coins - 1) * 100).toFixed(0);
+    const shotDelta = ((nextEffective.shotGain / effective.shotGain - 1) * 100).toFixed(0);
+
+    stats.appendChild(
+      buildStat(
+        "Acceleration",
+        `x${effective.speed.toFixed(2)}`,
+        cardLevel >= CARD_LEVEL_CAP ? "Maxed" : `Next: +${speedDelta}%`
+      )
+    );
+    stats.appendChild(
+      buildStat(
+        "Coin haul",
+        `x${effective.coins.toFixed(2)}`,
+        cardLevel >= CARD_LEVEL_CAP ? "Maxed" : `Next: +${coinDelta}%`
+      )
+    );
+    stats.appendChild(
+      buildStat(
+        "Shot meter",
+        `x${effective.shotGain.toFixed(2)}`,
+        cardLevel >= CARD_LEVEL_CAP ? "Maxed" : `Next: +${shotDelta}%`
+      )
+    );
+
+    const perkSection = document.createElement("div");
+    perkSection.className = "player-card__perks";
+    const perksTitle = document.createElement("p");
+    perksTitle.className = "player-card__perks-title";
+    perksTitle.textContent = "Signature boosts";
+    const perkList = document.createElement("div");
+    perkList.className = "player-card__perk-list";
+    const perkLines = buildPerkSummary(perks).split(" · ");
+    perkLines.forEach((line) => {
+      const chip = document.createElement("span");
+      chip.className = "player-card__perk-chip";
+      chip.textContent = line;
+      perkList.appendChild(chip);
+    });
+    const perkDelta = document.createElement("p");
+    perkDelta.className = "player-card__perk-delta";
+    perkDelta.textContent =
       cardLevel >= CARD_LEVEL_CAP
-        ? "Max level reached"
-        : `Next: +${((nextEffective.speed / effective.speed - 1) * 100).toFixed(
-            0
-          )}% Speed · +${(
-            (nextEffective.coins / effective.coins - 1) * 100
-          ).toFixed(0)}% Coins · +${(
-            (nextEffective.shotGain / effective.shotGain - 1) * 100
-          ).toFixed(0)}% Shot · ${buildPerkDelta(perks, nextPerks)}`;
-    const tagline = document.createElement("div");
-    tagline.className = "player-card__tagline";
-    tagline.textContent = card.tagline;
-    info.appendChild(name);
-    info.appendChild(meta);
-    info.appendChild(perkMeta);
-    info.appendChild(levelNote);
-    info.appendChild(tagline);
+        ? "Perks at peak"
+        : `Next upgrade adds ${buildPerkDelta(perks, nextPerks)}`;
+    perkSection.appendChild(perksTitle);
+    perkSection.appendChild(perkList);
+    perkSection.appendChild(perkDelta);
 
     const actions = document.createElement("div");
     actions.className = "player-card__actions";
+    const upgradeNote = document.createElement("p");
+    upgradeNote.className = "player-card__upgrade-note";
+    upgradeNote.textContent =
+      cardLevel >= CARD_LEVEL_CAP
+        ? "Max level reached"
+        : `Upgrade unlocks +${speedDelta}% speed, +${coinDelta}% coins, +${shotDelta}% shot gains.`;
 
     if (!isUnlocked) {
       const unlockBtn = document.createElement("button");
@@ -783,7 +1075,7 @@ function renderTeamScreen() {
         const nextCost = getUpgradeCost(card, cardLevel);
         const upgradeBtn = document.createElement("button");
         upgradeBtn.className = "btn btn--small btn--primary";
-        upgradeBtn.textContent = `Upgrade – ${nextCost} coins`;
+        upgradeBtn.textContent = `Upgrade to L${nextLevel} – ${nextCost} coins`;
         upgradeBtn.addEventListener("click", () => {
           if (playerData.coins < nextCost) {
             alert("Not enough coins to upgrade this card.");
@@ -801,10 +1093,14 @@ function renderTeamScreen() {
       }
     }
 
-    el.appendChild(badge);
-    el.appendChild(portrait);
-    el.appendChild(info);
-    el.appendChild(actions);
+    body.appendChild(header);
+    body.appendChild(stats);
+    body.appendChild(perkSection);
+    body.appendChild(upgradeNote);
+    body.appendChild(actions);
+
+    el.appendChild(art);
+    el.appendChild(body);
 
     cardListEl.appendChild(el);
   });
