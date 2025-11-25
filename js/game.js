@@ -23,6 +23,15 @@ function shadeColor(hex, amount) {
     .slice(1)}`;
 }
 
+function hexToRgba(hex, alpha = 1) {
+  const sanitized = hex.replace("#", "");
+  const bigint = parseInt(sanitized, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 function buildKitPalette(custom = {}) {
   const primary = custom.primary || "#1f3a74";
   const secondary = custom.secondary || "#80223c";
@@ -65,8 +74,20 @@ export class Game {
       kitSecondary: "#80223c",
       kitSecondaryDark: "#4e0f26",
       kitTrim: "#0bd3c7",
-      net: "#e8f7ff"
+      net: "#e8f7ff",
+      glow: "#2dfc8a"
     };
+
+    // Layered rendering buffers to keep static detail cheap
+    this.pitchLayer = null;
+    this.atmosphereLayer = null;
+    this.buildStaticLayers();
+
+    // Moment-to-moment FX
+    this.particles = [];
+    this.particleAccumulator = 0;
+    this.playerTrail = [];
+    this.trailAccumulator = 0;
 
     this.lanes = 3;
     const tuning = options.tuning || {};
@@ -196,6 +217,32 @@ export class Game {
     const horizon = this.height * 0.12;
     const t = Math.max(0, Math.min(1, (y - horizon) / (this.height - horizon)));
     return 0.55 + t * 0.55;
+  }
+
+  createLayer(drawFn) {
+    const layer = document.createElement("canvas");
+    layer.width = this.width;
+    layer.height = this.height;
+    const ctx = layer.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    drawFn(ctx);
+    return layer;
+  }
+
+  buildStaticLayers() {
+    this.pitchLayer = this.createLayer((ctx) => {
+      this.drawPitchSurface(ctx);
+    });
+
+    this.atmosphereLayer = this.createLayer((ctx) => {
+      this.drawAtmosphericBackdrop(ctx);
+      const grad = ctx.createLinearGradient(0, 0, 0, this.height);
+      grad.addColorStop(0, "rgba(10,14,26,0.9)");
+      grad.addColorStop(0.4, "rgba(9,14,22,0.35)");
+      grad.addColorStop(1, "rgba(7,12,18,0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, this.width, this.height);
+    });
   }
 
   snap(value) {
@@ -479,6 +526,8 @@ export class Game {
       this.player.yOffset = 0;
     }
 
+    this.updatePlayerTrail(dt);
+
     // Spawn obstacles (gets a bit denser over time)
     const obstacleInterval = Math.max(0.55, 1.8 - this.distance * 0.01);
     if (this.timeSinceObstacle > obstacleInterval) {
@@ -664,7 +713,7 @@ export class Game {
     });
   }
 
-  drawPitch(ctx) {
+  drawPitchSurface(ctx) {
     const { palette } = this;
     const horizon = this.height * 0.12;
 
@@ -719,6 +768,45 @@ export class Game {
     );
   }
 
+  drawAtmosphericBackdrop(ctx) {
+    const horizon = this.height * 0.12;
+    const bandHeight = horizon * 0.8;
+
+    const rimLight = ctx.createLinearGradient(0, 0, 0, bandHeight);
+    rimLight.addColorStop(0, "rgba(45,252,138,0.2)");
+    rimLight.addColorStop(1, "rgba(45,252,138,0)");
+    ctx.fillStyle = rimLight;
+    ctx.fillRect(0, 0, this.width, bandHeight);
+
+    const audience = ctx.createLinearGradient(0, horizon * 0.5, 0, horizon + 32);
+    audience.addColorStop(0, "rgba(5,10,20,0.9)");
+    audience.addColorStop(1, "rgba(5,10,20,0.2)");
+    ctx.fillStyle = audience;
+    ctx.fillRect(0, 0, this.width, horizon + 32);
+
+    for (let x = 0; x < this.width; x += this.pixelSize * 3) {
+      const twinkle = x % (this.pixelSize * 6) === 0 ? 0.5 : 0.28;
+      ctx.fillStyle = `rgba(255,255,255,${twinkle})`;
+      ctx.fillRect(x, horizon - this.pixelSize * 3, this.pixelSize, this.pixelSize);
+    }
+  }
+
+  drawPitch(ctx) {
+    if (this.pitchLayer) {
+      ctx.drawImage(this.pitchLayer, 0, 0, this.width, this.height);
+    } else {
+      this.drawPitchSurface(ctx);
+    }
+
+    // Ambient sheen for premium broadcast look
+    const sheen = ctx.createLinearGradient(0, this.height * 0.25, 0, this.height);
+    sheen.addColorStop(0, "rgba(255,255,255,0.05)");
+    sheen.addColorStop(0.6, "rgba(255,255,255,0)");
+    sheen.addColorStop(1, "rgba(0,0,0,0.28)");
+    ctx.fillStyle = sheen;
+    ctx.fillRect(0, 0, this.width, this.height);
+  }
+
   drawSoccerBall(ctx, x, y, radius) {
     const accent = this.ballAccent || "#f2f4ff";
     const size = Math.max(this.pixelSize * 3, radius * 2.1);
@@ -737,14 +825,94 @@ export class Game {
       [-3, -1]
     ];
     pattern.forEach(([dx, dy]) => {
-      this.drawPixelRect(
-        ctx,
-        x + dx * this.pixelSize,
-        y + dy * this.pixelSize,
-        this.pixelSize,
-        this.pixelSize,
-        "#111"
-      );
+        this.drawPixelRect(
+          ctx,
+          x + dx * this.pixelSize,
+          y + dy * this.pixelSize,
+          this.pixelSize,
+          this.pixelSize,
+          "#111"
+        );
+      });
+    }
+
+  updatePlayerTrail(dt) {
+    this.trailAccumulator += dt;
+    if (this.trailAccumulator >= 0.04) {
+      this.trailAccumulator = 0;
+      const x = this.laneX(this.player.lane) + this.player.laneOffset;
+      const y = this.player.baseY + this.player.yOffset + this.player.height * 0.6;
+      this.playerTrail.unshift({ x, y, alpha: 0.9, wobble: Math.random() * 6 - 3 });
+      this.playerTrail = this.playerTrail.slice(0, 18);
+    }
+
+    this.playerTrail = this.playerTrail
+      .map((trail) => ({
+        ...trail,
+        alpha: trail.alpha - dt * 1.5,
+        y: trail.y - dt * 22
+      }))
+      .filter((trail) => trail.alpha > 0.05);
+  }
+
+  drawPlayerTrail(ctx) {
+    const accent = this.kit.trim || this.palette.glow || "#2dfc8a";
+    this.playerTrail.forEach((trail, idx) => {
+      const falloff = trail.alpha * (1 - idx / Math.max(1, this.playerTrail.length));
+      const radius = 18 - idx;
+      const tinted = accent.startsWith("#")
+        ? hexToRgba(accent, Math.max(0.12, falloff * 0.8))
+        : accent.replace("rgba", "rgba").replace(")", `,${Math.max(0.12, falloff * 0.8)})`);
+      const grad = ctx.createRadialGradient(trail.x, trail.y, 2, trail.x, trail.y, radius);
+      grad.addColorStop(0, tinted);
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(trail.x + trail.wobble, trail.y, radius, radius * 0.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  updateParticles(dt) {
+    const baseSpawnRate = this.runState === RUN_STATE.RUNNING ? 0.04 : 0.12;
+    this.particleAccumulator += dt;
+    if (this.particleAccumulator >= baseSpawnRate) {
+      this.particleAccumulator = 0;
+      const x = this.laneX(this.player.lane) + this.player.laneOffset + (Math.random() * 22 - 11);
+      const y = this.player.baseY + this.player.height * 0.92;
+      this.particles.push({
+        x,
+        y,
+        vx: (Math.random() - 0.5) * 18,
+        vy: -26 - Math.random() * 16,
+        alpha: 0.9,
+        life: 0.8 + Math.random() * 0.4
+      });
+      if (this.particles.length > 70) {
+        this.particles.shift();
+      }
+    }
+
+    this.particles = this.particles
+      .map((p) => ({
+        ...p,
+        life: p.life - dt,
+        alpha: Math.max(0, p.alpha - dt * 1.4),
+        x: p.x + p.vx * dt * 20,
+        y: p.y + p.vy * dt * 20
+      }))
+      .filter((p) => p.life > 0 && p.alpha > 0.05);
+  }
+
+  drawParticles(ctx) {
+    this.particles.forEach((p) => {
+      const grad = ctx.createRadialGradient(p.x, p.y, 2, p.x, p.y, 14);
+      grad.addColorStop(0, `rgba(255,255,255,${p.alpha * 0.8})`);
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
+      ctx.fill();
     });
   }
 
@@ -1083,10 +1251,15 @@ export class Game {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.width, this.height);
 
+    if (this.atmosphereLayer) {
+      ctx.drawImage(this.atmosphereLayer, 0, 0, this.width, this.height);
+    }
+
     this.drawPitch(ctx);
     this.drawObstacles(ctx);
     this.drawPickups(ctx);
     this.drawGoalArea(ctx);
+    this.drawPlayerTrail(ctx);
     this.drawPlayer(ctx);
     this.drawActiveShot(ctx);
     this.drawLightingOverlay(ctx);
