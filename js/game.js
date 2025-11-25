@@ -65,8 +65,6 @@ export class Game {
       turfDark: "#0c2a24",
       turfMid: "#0f3d30",
       turfLight: "#155f44",
-      turfHighlight: "#1b7c4c",
-      turfShadow: "#0a251c",
       chalk: "#d4f5d4",
       shadow: "#0a0f16",
       playerSkin: "#f5d8b5",
@@ -77,11 +75,7 @@ export class Game {
       kitSecondaryDark: "#4e0f26",
       kitTrim: "#0bd3c7",
       net: "#e8f7ff",
-      glow: "#2dfc8a",
-      terrace: "#0b1220",
-      terraceAccent: "#18233a",
-      crowdBright: "#2dfc8a",
-      crowdJersey: "#3b82f6"
+      glow: "#2dfc8a"
     };
 
     // Layered rendering buffers to keep static detail cheap
@@ -188,10 +182,6 @@ export class Game {
     this.onState = options.onState || (() => {});
     this.onGoal = options.onGoal || (() => {});
     this.onGameOver = options.onGameOver || (() => {});
-
-    // Power play buffs
-    this.kickBoostTimer = 0;
-    this.kickBoostMultiplier = 1.35;
   }
 
   resetRunStats() {
@@ -287,7 +277,6 @@ export class Game {
     this.player.yOffset = 0;
     this.player.jukeCooldownTimer = 0;
     this.reviveInvulnTime = 0;
-    this.kickBoostTimer = 0;
     this.onState(this.runState);
   }
 
@@ -431,19 +420,14 @@ export class Game {
     const targetX = this.goal.x + clampedBias * targetSpread;
     const targetY = this.goal.y + this.goal.height * 0.3;
 
-    const poweredShot = this.kickBoostTimer > 0;
-    const shotPower = poweredShot ? this.kickBoostMultiplier : 1;
-
     this.activeShot = {
       startX: playerX,
       startY: playerY,
       targetX,
       targetY,
       t: 0,
-      duration: poweredShot ? 0.6 : 0.72,
-      arcHeight: 140 * shotPower,
-      power: shotPower,
-      powered: poweredShot
+      duration: 0.72,
+      arcHeight: 140
     };
 
     const freezeChance = Math.max(0, Math.min(1, this.perks.goalieFreezeChance || 0));
@@ -460,35 +444,23 @@ export class Game {
     if (!this.activeShot) return;
 
     const freezePenalty = this.goalie.freezeTime > 0 ? 0.65 : 1;
-    const shotPower = this.getKickPower(this.activeShot);
-    const reachScale = this.goalie.width * 0.45 * freezePenalty;
-    const keeperLeft = this.goalie.x - reachScale / shotPower;
-    const keeperRight = this.goalie.x + reachScale / shotPower;
+    const keeperLeft =
+      this.goalie.x - this.goalie.width * 0.45 * freezePenalty;
+    const keeperRight =
+      this.goalie.x + this.goalie.width * 0.45 * freezePenalty;
     const shotX = this.activeShot.targetX;
     const blocked = shotX >= keeperLeft && shotX <= keeperRight;
 
     if (blocked) {
-      this.shotResultLabel = shotPower > 1 ? "Parried" : "Saved";
+      this.shotResultLabel = "Saved";
       this.shotResultFlash = 0.8;
     } else {
-      this.shotResultLabel = shotPower > 1 ? "POWER GOAL" : "GOAL";
+      this.shotResultLabel = "GOAL";
       this.shotResultFlash = 0.8;
       this.scoreGoal();
     }
 
     this.activeShot = null;
-  }
-
-  grantKickBoost(source) {
-    const bonus = source === "tackle" ? 3.5 : 2.4;
-    this.kickBoostTimer = Math.min(8, this.kickBoostTimer + bonus);
-    const meterBonus = source === "tackle" ? 14 : 10;
-    this.shotMeter += meterBonus * this.shotGainMultiplier * this.shotGainRate;
-  }
-
-  getKickPower(activeShot) {
-    if (activeShot?.power) return activeShot.power;
-    return this.kickBoostTimer > 0 ? this.kickBoostMultiplier : 1;
   }
 
   update(dt) {
@@ -525,9 +497,6 @@ export class Game {
     if (this.goalFlashTime > 0) this.goalFlashTime -= dt;
     if (this.shotResultFlash > 0) this.shotResultFlash -= dt;
     if (this.goalie.freezeTime > 0) this.goalie.freezeTime = Math.max(0, this.goalie.freezeTime - dt);
-    if (this.kickBoostTimer > 0) {
-      this.kickBoostTimer = Math.max(0, this.kickBoostTimer - dt);
-    }
 
     // Player animation: tackle & juke
     this.player.laneOffset = 0;
@@ -641,7 +610,6 @@ export class Game {
         if (isBallCarrier && tackling) {
           this.shotMeter += 20 * this.shotGainMultiplier * this.shotGainRate;
           this.coinsThisRun += Math.max(1, Math.round(this.coinMultiplier));
-          this.grantKickBoost("tackle");
           this.obstacles.splice(i, 1);
           i -= 1;
           continue;
@@ -651,11 +619,6 @@ export class Game {
         const safeDodge = dodging || recovering;
 
         if (safeTackle || safeDodge) {
-          if (safeTackle) {
-            this.grantKickBoost("tackle");
-          } else if (dodging) {
-            this.grantKickBoost("juke");
-          }
           this.obstacles.splice(i, 1);
           i -= 1;
           continue;
@@ -765,28 +728,6 @@ export class Game {
       this.drawPixelRect(ctx, this.width * 0.06, y, this.width * 0.88, stripeHeight, color);
     }
 
-    // Diagonal mowing sheen
-    ctx.save();
-    ctx.globalAlpha = 0.3;
-    for (let i = -4; i < 18; i++) {
-      const y = horizon + i * stripeHeight * 1.1;
-      this.drawPixelRect(
-        ctx,
-        this.width * 0.06,
-        y,
-        this.width * 0.88,
-        stripeHeight * 0.3,
-        palette.turfShadow
-      );
-    }
-    ctx.restore();
-
-    // Sideline glow and texture
-    const sidelineW = this.width * 0.06;
-    this.drawPixelRect(ctx, 0, horizon, sidelineW, this.height - horizon, palette.turfShadow);
-    this.drawPixelRect(ctx, this.width - sidelineW, horizon, sidelineW, this.height - horizon, palette.turfShadow);
-    this.drawPixelRect(ctx, sidelineW, this.height * 0.88, this.width - sidelineW * 2, stripeHeight * 0.6, palette.turfHighlight);
-
     // Pixel crowd band
     this.drawPixelRect(ctx, 0, 0, this.width, horizon + 12, palette.shadow);
     for (let x = 0; x < this.width; x += this.pixelSize * 2) {
@@ -798,43 +739,6 @@ export class Game {
     ctx.fillStyle = "rgba(0,0,0,0.3)";
     ctx.fillRect(0, horizon, this.width, this.pixelSize);
     ctx.fillRect(0, this.height - this.pixelSize * 3, this.width, this.pixelSize * 3);
-
-    // Penalty area + arcs
-    const boxWidth = this.width * 0.74;
-    const boxHeight = this.height * 0.2;
-    const boxX = this.width / 2 - boxWidth / 2;
-    const boxY = this.goal.y + this.goal.height + this.pixelSize * 3;
-    this.drawPixelRect(ctx, boxX, boxY, boxWidth, this.pixelSize, palette.chalk);
-    this.drawPixelRect(ctx, boxX, boxY, this.pixelSize, boxHeight, palette.chalk);
-    this.drawPixelRect(ctx, boxX + boxWidth - this.pixelSize, boxY, this.pixelSize, boxHeight, palette.chalk);
-    this.drawPixelRect(ctx, boxX, boxY + boxHeight, boxWidth, this.pixelSize, palette.chalk);
-
-    const arcRadius = 48;
-    for (let angle = -Math.PI / 2; angle <= Math.PI / 2; angle += Math.PI / 10) {
-      const ax = this.goal.x + Math.cos(angle) * arcRadius;
-      const ay = boxY + Math.sin(angle) * arcRadius;
-      this.drawPixelRect(ctx, ax, ay, this.pixelSize * 1.5, this.pixelSize * 1.5, palette.chalk);
-    }
-
-    // Corner flags
-    const flagHeight = this.pixelSize * 6;
-    const flagColors = [palette.crowdBright, palette.kitSecondary, palette.kitTrim];
-    [
-      { x: this.width * 0.06, y: this.height * 0.82 },
-      { x: this.width * 0.94 - this.pixelSize, y: this.height * 0.82 },
-    ].forEach((corner) => {
-      this.drawPixelRect(ctx, corner.x, corner.y, this.pixelSize, flagHeight, palette.chalk);
-      flagColors.forEach((color, idx) => {
-        this.drawPixelRect(
-          ctx,
-          corner.x,
-          corner.y + this.pixelSize * idx * 1.6,
-          this.pixelSize * 2,
-          this.pixelSize * 1.2,
-          color
-        );
-      });
-    });
 
     // Lane markers
     ctx.fillStyle = palette.chalk;
@@ -856,7 +760,6 @@ export class Game {
       const cy = this.height * 0.45 + Math.sin(angle) * circleRadius;
       this.drawPixelRect(ctx, cx, cy, this.pixelSize * 2, this.pixelSize * 2, palette.chalk);
     }
-
     this.drawPixelRect(
       ctx,
       this.width / 2 - this.pixelSize / 2,
@@ -865,9 +768,6 @@ export class Game {
       this.pixelSize,
       palette.chalk
     );
-
-    // Center sponsor mark
-    this.drawPixelRect(ctx, this.width / 2 - this.pixelSize * 3, this.height * 0.52, this.pixelSize * 6, this.pixelSize * 2, palette.turfShadow);
   }
 
   drawAtmosphericBackdrop(ctx) {
@@ -880,38 +780,11 @@ export class Game {
     ctx.fillStyle = rimLight;
     ctx.fillRect(0, 0, this.width, bandHeight);
 
-    // Stadium terraces and crowd
-    this.drawPixelRect(ctx, 0, 0, this.width, horizon * 1.1, palette.terrace);
-    for (let row = 0; row < 6; row++) {
-      const y = horizon * 0.15 + row * this.pixelSize * 2.2;
-      const shade = row % 2 === 0 ? palette.terraceAccent : palette.terrace;
-      this.drawPixelRect(ctx, this.width * 0.04, y, this.width * 0.92, this.pixelSize * 1.8, shade);
-    }
-
-    for (let x = this.pixelSize; x < this.width; x += this.pixelSize * 2) {
-      const y = horizon * 0.6 + Math.sin(x * 0.08) * 3;
-      const colorRoll = x % (this.pixelSize * 7);
-      const fanColor =
-        colorRoll === 0
-          ? palette.crowdBright
-          : colorRoll === this.pixelSize * 3
-            ? palette.crowdJersey
-            : "#0f192c";
-      this.drawPixelRect(ctx, x, y, this.pixelSize, this.pixelSize * 1.5, fanColor);
-    }
-
-    const audience = ctx.createLinearGradient(0, horizon * 0.4, 0, horizon + 42);
+    const audience = ctx.createLinearGradient(0, horizon * 0.5, 0, horizon + 32);
     audience.addColorStop(0, "rgba(5,10,20,0.9)");
     audience.addColorStop(1, "rgba(5,10,20,0.2)");
     ctx.fillStyle = audience;
     ctx.fillRect(0, 0, this.width, horizon + 32);
-
-    // LED boards and stanchions
-    this.drawPixelRect(ctx, this.width * 0.06, horizon + this.pixelSize * 4, this.width * 0.88, this.pixelSize * 3, palette.crowdBright);
-    for (let i = 0; i < 10; i++) {
-      const x = this.width * 0.08 + i * this.width * 0.08;
-      this.drawPixelRect(ctx, x, horizon + this.pixelSize * 6, this.pixelSize * 1.2, this.pixelSize * 5, "#0d1422");
-    }
 
     for (let x = 0; x < this.width; x += this.pixelSize * 3) {
       const twinkle = x % (this.pixelSize * 6) === 0 ? 0.5 : 0.28;
@@ -938,21 +811,12 @@ export class Game {
 
   drawSoccerBall(ctx, x, y, radius) {
     const accent = this.ballAccent || "#f2f4ff";
-    const size = Math.max(this.pixelSize * 4, radius * 2.4);
+    const size = Math.max(this.pixelSize * 3, radius * 2.1);
     const topLeftX = this.snap(x - size / 2);
     const topLeftY = this.snap(y - size / 2);
 
-    // Soft lighting for a premium look
-    const shade = ctx.createRadialGradient(x, y, this.pixelSize, x, y, size * 0.6);
-    shade.addColorStop(0, hexToRgba(accent, 0.9));
-    shade.addColorStop(1, hexToRgba("#d9e4ff", 0.4));
-
     this.drawPixelRect(ctx, topLeftX, topLeftY, size, size, accent);
-    ctx.fillStyle = shade;
-    ctx.fillRect(topLeftX, topLeftY, size, size);
-
-    const panelColor = "#0f172a";
-    const bevel = hexToRgba("#ffffff", 0.35);
+    ctx.fillStyle = "#0f172a";
     const pattern = [
       [0, 0],
       [2, 1],
@@ -960,39 +824,19 @@ export class Game {
       [1, -2],
       [-1, -2],
       [3, -1],
-      [-3, -1],
-      [0, 3],
-      [0, -3]
+      [-3, -1]
     ];
     pattern.forEach(([dx, dy]) => {
-      this.drawPixelRect(
-        ctx,
-        x + dx * this.pixelSize,
-        y + dy * this.pixelSize,
-        this.pixelSize,
-        this.pixelSize,
-        panelColor
-      );
-    });
-
-    // Subtle bevels
-    this.drawPixelRect(
-      ctx,
-      x - this.pixelSize * 0.5,
-      y - size * 0.18,
-      this.pixelSize * 2,
-      this.pixelSize,
-      bevel
-    );
-    this.drawPixelRect(
-      ctx,
-      x + this.pixelSize * 0.5,
-      y + size * 0.16,
-      this.pixelSize * 2,
-      this.pixelSize,
-      hexToRgba(panelColor, 0.5)
-    );
-  }
+        this.drawPixelRect(
+          ctx,
+          x + dx * this.pixelSize,
+          y + dy * this.pixelSize,
+          this.pixelSize,
+          this.pixelSize,
+          "#111"
+        );
+      });
+    }
 
   updatePlayerTrail(dt) {
     this.trailAccumulator += dt;
@@ -1084,24 +928,6 @@ export class Game {
     const w = this.player.width;
     const p = this.palette;
     const kit = this.kit;
-
-    if (this.kickBoostTimer > 0) {
-      const intensity = Math.min(1, 0.4 + this.kickBoostTimer / 10);
-      const aura = ctx.createRadialGradient(
-        x + w / 2,
-        y + h * 0.6,
-        this.pixelSize,
-        x + w / 2,
-        y + h * 0.6,
-        Math.max(36, w * 1.4)
-      );
-      aura.addColorStop(0, hexToRgba(this.palette.glow, 0.45 * intensity));
-      aura.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = aura;
-      ctx.beginPath();
-      ctx.ellipse(x + w / 2, y + h * 0.64, w * 0.9, h * 0.7, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
 
     // Chunky shadow
     this.drawPixelRect(ctx, x + w * 0.2, y + h, w * 0.6, this.pixelSize * 2, p.shadow);
@@ -1360,23 +1186,6 @@ export class Game {
 
   drawActiveShot(ctx) {
     if (!this.activeShot) return;
-
-    if (this.activeShot.powered) {
-      const glow = ctx.createRadialGradient(
-        this.activeShot.currentX,
-        this.activeShot.currentY,
-        4,
-        this.activeShot.currentX,
-        this.activeShot.currentY,
-        28
-      );
-      glow.addColorStop(0, hexToRgba(this.palette.glow, 0.9));
-      glow.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(this.activeShot.currentX, this.activeShot.currentY, 18, 0, Math.PI * 2);
-      ctx.fill();
-    }
     this.drawSoccerBall(
       ctx,
       this.activeShot.currentX,
