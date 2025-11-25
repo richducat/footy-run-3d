@@ -79,74 +79,9 @@
       </div>
     </header>
 
-    <div class="layout-tabs" role="tablist" aria-label="Layout selector">
-      <button class="layout-tab layout-tab--active" data-layout="classic" role="tab" aria-selected="true">
-        Classic HUD
-      </button>
-      <button class="layout-tab" data-layout="royale" role="tab" aria-selected="false">
-        V2 Royale HUD
-      </button>
-    </div>
-
     <main class="app-main">
       <div class="game-shell">
         <canvas id="gameCanvas" width="540" height="960"></canvas>
-
-        <div id="royaleHudShell" class="royale-mode hidden" aria-hidden="true">
-          <div class="royale-stands royale-stands--top"></div>
-          <div class="royale-stands royale-stands--bottom"></div>
-
-          <div class="royale-canvas" aria-hidden="true"></div>
-
-          <div class="royale-pitch">
-            <div class="royale-goal royale-goal--away"></div>
-            <div class="royale-goal royale-goal--home"></div>
-          </div>
-
-          <div class="royale-banner">ULTIMATE STRIKER – ROYALE MODE</div>
-
-          <div class="royale-hud-top">
-            <div class="royale-crest royale-crest--home">
-              <div class="royale-badge"><div class="royale-badge-ball"></div></div>
-              <div class="royale-name" id="royaleHomeName">Blue FC</div>
-            </div>
-            <div class="royale-scoreboard">
-              <div class="royale-goals" id="royaleHomeScore">0</div>
-              <div class="royale-time" id="royaleMatchTime">3:00</div>
-              <div class="royale-goals" id="royaleAwayScore">0</div>
-            </div>
-            <div class="royale-crest royale-crest--away">
-              <div class="royale-badge"><div class="royale-badge-ball"></div></div>
-              <div class="royale-name" id="royaleAwayName">Red United</div>
-            </div>
-          </div>
-
-          <div class="royale-hud-right">
-            <div class="royale-stamina" id="royaleStamina">
-              <div class="royale-stamina__fill" id="royaleStaminaFill"></div>
-              <div class="royale-stamina__ticks"></div>
-              <div class="royale-stamina__cost" id="royaleStaminaValue">0</div>
-            </div>
-            <div class="royale-deck" id="royaleDeck"></div>
-          </div>
-
-          <div class="royale-hud-bottom">
-            <button class="royale-action" id="royaleShoot" title="Shoot">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M3 12h18M12 3v18" stroke="#5b2d00" stroke-width="3"/></svg>
-            </button>
-            <button class="royale-action" id="royalePass" title="Pass">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h12M10 6l6 6-6 6" stroke="#5b2d00" stroke-width="3"/></svg>
-            </button>
-            <button class="royale-action" id="royaleDash" title="Dash">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M3 12h18M3 7h12M3 17h12" stroke="#5b2d00" stroke-width="3"/></svg>
-            </button>
-            <button class="royale-action" id="royaleTackle" title="Tackle">
-              <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#5b2d00" stroke-width="3"/></svg>
-            </button>
-          </div>
-
-          <div class="royale-toast" id="royaleToast">GOAL!</div>
-        </div>
 
         <!-- HUD (in-game overlay) -->
         <div id="hud" class="hud hidden">
