@@ -331,6 +331,18 @@ export class Game {
     this.onState(this.runState);
   }
 
+  abortRun() {
+    if (this.runState === RUN_STATE.IDLE) return;
+
+    this.runState = RUN_STATE.IDLE;
+    this.resetRunStats();
+    this.obstacles = [];
+    this.pickups = [];
+    this.activeShot = null;
+    this.shotResultLabel = "";
+    this.onState(this.runState);
+  }
+
   handleMove(action) {
     if (this.runState !== RUN_STATE.RUNNING) return;
 

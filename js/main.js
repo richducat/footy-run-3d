@@ -28,6 +28,10 @@ const hudGoals = document.getElementById("hudGoals");
 const hudBest = document.getElementById("hudBest");
 const shotMeterFill = document.getElementById("shotMeterFill");
 const pauseBanner = document.getElementById("pauseBanner");
+const pauseMenu = document.getElementById("pauseMenu");
+const pauseMenuResumeBtn = document.getElementById("btnPauseResume");
+const pauseMenuSaveQuitBtn = document.getElementById("btnPauseSaveQuit");
+const pauseMenuQuitBtn = document.getElementById("btnPauseQuit");
 const headerCoinsValue = document.getElementById("headerCoinsValue");
 
 // Screens
@@ -874,6 +878,7 @@ function startRun() {
   if (!ensureProfileSetup("Customize your striker before the first run.")) return;
   setActiveScreen(null); // close menus
   pauseBanner.classList.add("hidden");
+  pauseMenu?.classList.add("hidden");
   resetContinueState();
   game.startRun();
   updateTouchControlsVisibility();
@@ -884,11 +889,35 @@ function togglePause() {
   const state = game.getRunState();
   if (state === "running") {
     game.pause();
-    pauseBanner.classList.remove("hidden");
   } else if (state === "paused") {
     game.resume();
-    pauseBanner.classList.add("hidden");
   }
+}
+
+function showPauseMenu() {
+  pauseBanner.classList.add("hidden");
+  pauseMenu?.classList.remove("hidden");
+}
+
+function hidePauseMenu() {
+  pauseMenu?.classList.add("hidden");
+  pauseBanner.classList.add("hidden");
+}
+
+function exitRun({ saveProgress = false } = {}) {
+  if (saveProgress) {
+    playerData.profile = {
+      ...playerData.profile,
+      lastManualSave: new Date().toISOString()
+    };
+    savePlayerData(playerData);
+    updateProfileUI("Progress saved before quitting.");
+  }
+
+  hidePauseMenu();
+  setActiveScreen("mainMenu");
+  game?.abortRun();
+  updateTouchControlsVisibility();
 }
 
 function calculateRunCoins(payload) {
@@ -997,9 +1026,9 @@ function handleGameStats(stats) {
 
 function handleGameState(state) {
   if (state === "paused") {
-    pauseBanner.classList.remove("hidden");
+    showPauseMenu();
   } else {
-    pauseBanner.classList.add("hidden");
+    hidePauseMenu();
   }
   updateTouchControlsVisibility();
 }
@@ -1143,6 +1172,18 @@ btnSettings.addEventListener("click", () => {
 
 btnPause.addEventListener("click", () => {
   togglePause();
+});
+
+pauseMenuResumeBtn?.addEventListener("click", () => {
+  togglePause();
+});
+
+pauseMenuSaveQuitBtn?.addEventListener("click", () => {
+  exitRun({ saveProgress: true });
+});
+
+pauseMenuQuitBtn?.addEventListener("click", () => {
+  exitRun({ saveProgress: false });
 });
 
 btnReplay.addEventListener("click", () => {

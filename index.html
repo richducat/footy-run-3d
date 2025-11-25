@@ -265,6 +265,19 @@
         <!-- Pause banner -->
         <div id="pauseBanner" class="pause-banner hidden">Paused</div>
 
+        <div id="pauseMenu" class="pause-menu hidden" role="dialog" aria-modal="true" aria-labelledby="pauseMenuTitle">
+          <div class="pause-menu__card">
+            <p class="pill pill--soft">Paused</p>
+            <h3 id="pauseMenuTitle">Match paused</h3>
+            <p class="pause-menu__hint">Take a breather or exit the match.</p>
+            <div class="button-row">
+              <button id="btnPauseResume" class="btn btn--primary">Unpause</button>
+              <button id="btnPauseSaveQuit" class="btn">Save &amp; Quit</button>
+              <button id="btnPauseQuit" class="btn btn--ghost">Quit</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Mobile touch controls -->
         <div class="touch-controls" aria-label="Touch controls">
           <div class="touch-controls__cluster touch-controls__cluster--move">
