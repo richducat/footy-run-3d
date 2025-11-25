@@ -58,6 +58,7 @@ const continueCostLabel = document.getElementById("continueCostLabel");
 
 // Buttons
 const btnPlay = document.getElementById("btnPlay");
+const btnPlayV2 = document.getElementById("btnPlayV2");
 const btnTeam = document.getElementById("btnTeam");
 const btnSettings = document.getElementById("btnSettings");
 const btnMissions = document.getElementById("btnMissions");
@@ -174,6 +175,7 @@ let input = null;
 let continueCost = 10;
 let continueSpendTotal = 0;
 let pendingGameOverPayload = null;
+let visualVariant = "v1";
 
 function resetContinueState() {
   continueCost = 10;
@@ -740,6 +742,7 @@ function buildGameInstance() {
     pixelRatio: renderScale,
     logicalWidth,
     logicalHeight,
+    visualVariant,
     onStats: handleGameStats,
     onState: handleGameState,
     onGoal: handleGameGoal,
@@ -755,6 +758,24 @@ function updateTouchControlsVisibility() {
   touchControlsContainer?.classList.toggle("touch-controls--hidden", inRun);
   startButton?.classList.toggle("hidden", inRun);
   pauseTouchButton?.classList.toggle("hidden", !inRun);
+}
+
+function setVisualVariant(nextVariant) {
+  if (visualVariant === nextVariant) return;
+  visualVariant = nextVariant;
+  buildGameInstance();
+  updateVariantToggleUI();
+}
+
+function updateVariantToggleUI() {
+  const buttons = [
+    { el: btnPlay, variant: "v1" },
+    { el: btnPlayV2, variant: "v2" }
+  ];
+
+  buttons.forEach(({ el, variant }) => {
+    el?.classList.toggle("variant-toggle__button--active", visualVariant === variant);
+  });
 }
 
 function updateBuilderPreview() {
@@ -1196,6 +1217,13 @@ function renderMissions() {
   updateMissionCelebrationState(hasClaimableMission);
 }
 
+function startVariantRun(variant) {
+  if (variant && variant !== visualVariant) {
+    setVisualVariant(variant);
+  }
+  startRun();
+}
+
 function startRun() {
   if (!ensureProfileSetup("Customize your striker before the first run.")) return;
   setActiveScreen(null); // close menus
@@ -1378,7 +1406,7 @@ function handleInputAction(action) {
   // While a menu screen is open
   if (currentScreenId === "mainMenu") {
     if (actionType === "startRun") {
-      startRun();
+      startVariantRun(visualVariant);
     } else if (actionType === "pauseToggle") {
       // ignore
     }
@@ -1440,7 +1468,12 @@ window.addEventListener("blur", clearPressedState, { passive: true });
 
 btnPlay.addEventListener("click", () => {
   spawnTapParticles(btnPlay);
-  startRun();
+  startVariantRun("v1");
+});
+
+btnPlayV2?.addEventListener("click", () => {
+  spawnTapParticles(btnPlayV2);
+  startVariantRun("v2");
 });
 
 btnOpenBuilder?.addEventListener("click", () => {
@@ -1694,6 +1727,7 @@ function loop(timestamp) {
 
 // Bootstrap
 buildGameInstance();
+updateVariantToggleUI();
 renderTeamScreen();
 renderMissions();
 setActiveScreen("mainMenu");
