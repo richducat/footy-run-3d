@@ -89,6 +89,7 @@ const builderPreviewBall = document.getElementById("builderPreviewBall");
 const kitPresetList = document.getElementById("kitPresetList");
 const btnSaveBuilder = document.getElementById("btnSaveBuilder");
 const btnSkipBuilder = document.getElementById("btnSkipBuilder");
+const btnCloseBuilder = document.getElementById("btnCloseBuilder");
 const btnOpenBuilder = document.getElementById("btnOpenBuilder");
 const btnShufflePreset = document.getElementById("btnShufflePreset");
 
@@ -1487,6 +1488,10 @@ btnSaveBuilder?.addEventListener("click", () => {
 
 btnSkipBuilder?.addEventListener("click", () => {
   saveBuilderChoices(true);
+  closePlayerBuilder();
+});
+
+btnCloseBuilder?.addEventListener("click", () => {
   closePlayerBuilder();
 });
 
