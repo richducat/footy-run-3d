@@ -83,6 +83,7 @@ export class Game {
     };
 
     // Layered rendering buffers to keep static detail cheap
+    this.visualVariant = options.visualVariant || "v1";
     this.pitchLayer = null;
     this.atmosphereLayer = null;
     this.buildStaticLayers();
@@ -151,6 +152,7 @@ export class Game {
     this.bestDistance = options.bestDistance || 0;
 
     // Systems
+    this.elapsedTime = 0;
     this.obstacles = [];
     this.pickups = [];
 
@@ -207,20 +209,47 @@ export class Game {
   }
 
   laneX(idx, y = this.height) {
-    const horizon = this.height * 0.12;
-    const t = Math.max(0, Math.min(1, (y - horizon) / (this.height - horizon)));
-    const nearSpan = this.width * 0.46;
-    const farSpan = this.width * 0.32;
-    const laneSpan = farSpan + (nearSpan - farSpan) * t;
+    const geometry = this.getFieldGeometry();
+    const { horizon, topSpan, bottomSpan } = geometry;
+    const t = this.getPerspectiveProgress(y, geometry);
+    const laneSpan = topSpan + (bottomSpan - topSpan) * t;
     const start = this.width / 2 - laneSpan / 2;
     const step = laneSpan / (this.lanes - 1);
     return start + step * idx;
   }
 
   depthScale(y) {
-    const horizon = this.height * 0.12;
-    const t = Math.max(0, Math.min(1, (y - horizon) / (this.height - horizon)));
+    const geometry = this.getFieldGeometry();
+    const t = this.getPerspectiveProgress(y, geometry);
+
+    if (this.visualVariant === "v2") {
+      return 0.42 + t * 1.08;
+    }
+
     return 0.55 + t * 0.55;
+  }
+
+  getFieldGeometry() {
+    const isV2 = this.visualVariant === "v2";
+    const horizon = this.height * (isV2 ? 0.36 : 0.12);
+    const bottomSpan = this.width * (isV2 ? 1.08 : 0.46);
+    const topSpan = this.width * (isV2 ? 0.12 : 0.32);
+
+    return {
+      horizon,
+      topSpan,
+      bottomSpan,
+      topStart: this.width / 2 - topSpan / 2,
+      bottomStart: this.width / 2 - bottomSpan / 2
+    };
+  }
+
+  getPerspectiveProgress(y, geometry) {
+    const { horizon } = geometry;
+    const clamped = Math.max(0, Math.min(1, (y - horizon) / (this.height - horizon)));
+    if (this.visualVariant !== "v2") return clamped;
+
+    return Math.pow(clamped, 1.25);
   }
 
   createLayer(drawFn) {
@@ -498,6 +527,7 @@ export class Game {
   }
 
   update(dt) {
+    this.elapsedTime += dt;
     // Always push last known stats so HUD can show IDLE state too
     this.onStats({
       distance: Math.floor(this.distance),
@@ -750,8 +780,17 @@ export class Game {
   }
 
   drawPitchSurface(ctx) {
+    if (this.visualVariant === "v2") {
+      this.drawPitchSurfaceV2(ctx);
+      return;
+    }
+
+    this.drawPitchSurfaceV1(ctx);
+  }
+
+  drawPitchSurfaceV1(ctx) {
     const { palette } = this;
-    const horizon = this.height * 0.12;
+    const { horizon } = this.getFieldGeometry();
 
     // Base turf with subtle gradient
     const grass = ctx.createLinearGradient(0, horizon, 0, this.height);
@@ -842,6 +881,168 @@ export class Game {
     });
   }
 
+  drawPitchSurfaceV2(ctx) {
+    const { palette } = this;
+    const geometry = this.getFieldGeometry();
+    const { horizon, topSpan, bottomSpan } = geometry;
+
+    ctx.fillStyle = palette.touchline;
+    ctx.fillRect(0, 0, this.width, this.height);
+
+    const grass = ctx.createLinearGradient(0, horizon, 0, this.height);
+    grass.addColorStop(0, palette.turfMid);
+    grass.addColorStop(1, palette.turfDark);
+
+    ctx.save();
+    this.tracePerspectiveField(ctx, geometry);
+    ctx.fillStyle = grass;
+    ctx.fill();
+
+    ctx.clip();
+    const stripeHeight = this.height / 20;
+    for (let i = -2; i < 28; i++) {
+      const y = horizon + i * stripeHeight;
+      const color = i % 2 === 0 ? palette.turfLight : palette.turfHighlight;
+      this.drawPixelRect(ctx, geometry.bottomStart, y, bottomSpan, stripeHeight + 2, color);
+    }
+
+    const shoulder = ctx.createLinearGradient(
+      geometry.bottomStart,
+      0,
+      geometry.bottomStart + bottomSpan,
+      0
+    );
+    shoulder.addColorStop(0, hexToRgba(palette.turfLight, 0.42));
+    shoulder.addColorStop(0.12, hexToRgba(palette.turfHighlight, 0.26));
+    shoulder.addColorStop(0.5, "rgba(0,0,0,0)");
+    shoulder.addColorStop(0.88, hexToRgba(palette.turfHighlight, 0.26));
+    shoulder.addColorStop(1, hexToRgba(palette.turfLight, 0.42));
+    ctx.fillStyle = shoulder;
+    ctx.fillRect(geometry.bottomStart, horizon, bottomSpan, this.height - horizon);
+
+    // Outline the touchline in chalk so the pitch stays recognizably football
+    ctx.save();
+    this.tracePerspectiveField(ctx, geometry);
+    ctx.strokeStyle = hexToRgba(palette.chalk, 0.9);
+    ctx.lineWidth = this.pixelSize * 1.6;
+    ctx.stroke();
+    ctx.restore();
+
+    this.drawConvergingLaneMarkers(ctx, geometry);
+
+    // Penalty areas and goal boxes hugging the converged touchlines
+    const penaltyWidth = bottomSpan * 0.72;
+    const penaltyX = this.width / 2 - penaltyWidth / 2;
+    this.drawChalkBox(ctx, penaltyX, horizon + this.pixelSize * 3, penaltyWidth, this.height * 0.2);
+
+    const goalBoxWidth = bottomSpan * 0.52;
+    const goalBoxX = this.width / 2 - goalBoxWidth / 2;
+    this.drawChalkBox(ctx, goalBoxX, horizon + this.pixelSize * 18, goalBoxWidth, this.height * 0.12);
+
+    // Penalty arc near the box to reinforce the soccer layout
+    const arcRadius = bottomSpan * 0.16;
+    const arcY = horizon + this.pixelSize * 22;
+    ctx.beginPath();
+    ctx.arc(this.width / 2, arcY, arcRadius, Math.PI * 0.06, Math.PI - Math.PI * 0.06);
+    ctx.strokeStyle = hexToRgba(palette.chalk, 0.9);
+    ctx.lineWidth = this.pixelSize;
+    ctx.stroke();
+
+    // Corner arcs at the near touchlines
+    const cornerRadius = this.pixelSize * 6;
+    const bottomY = this.height - this.pixelSize * 2;
+    const leftCornerX = geometry.bottomStart + this.pixelSize * 2;
+    const rightCornerX = geometry.bottomStart + bottomSpan - this.pixelSize * 2;
+    ctx.beginPath();
+    ctx.arc(leftCornerX, bottomY, cornerRadius, Math.PI * 1.5, Math.PI * 2);
+    ctx.arc(rightCornerX, bottomY, cornerRadius, Math.PI, Math.PI * 1.5);
+    ctx.stroke();
+
+    // Simple goal frame perched at the horizon
+    const goalWidth = topSpan * 0.32;
+    const goalHeight = this.pixelSize * 10;
+    const goalX = geometry.topStart + topSpan / 2 - goalWidth / 2;
+    const goalY = horizon - goalHeight - this.pixelSize * 2;
+    this.drawChalkBox(ctx, goalX, goalY, goalWidth, goalHeight);
+
+    // Center circle and spot anchored midway down the perspective
+    const circleRadius = 62;
+    const centerY = horizon + (this.height - horizon) * 0.52;
+    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 12) {
+      const cx = this.width / 2 + Math.cos(angle) * circleRadius;
+      const cy = centerY + Math.sin(angle) * circleRadius;
+      this.drawPixelRect(ctx, cx, cy, this.pixelSize * 2, this.pixelSize * 2, palette.chalk);
+    }
+    this.drawPixelRect(
+      ctx,
+      this.width / 2 - this.pixelSize / 2,
+      centerY - this.pixelSize / 2,
+      this.pixelSize,
+      this.pixelSize,
+      palette.chalk
+    );
+
+    ctx.restore();
+
+    // Draw crisp trapezoid outline after restoring the clip
+    ctx.save();
+    this.tracePerspectiveField(ctx, geometry);
+    ctx.strokeStyle = hexToRgba(palette.chalk, 0.6);
+    ctx.lineWidth = this.pixelSize;
+    ctx.stroke();
+    ctx.restore();
+
+    this.drawCrowdBand(ctx, horizon);
+    this.drawAdBoards(ctx, horizon);
+  }
+
+  drawConvergingLaneMarkers(ctx, geometry) {
+    const { horizon } = geometry;
+    const dashLength = this.pixelSize * 4;
+    const dashSpacing = this.pixelSize * 8;
+    const scroll = (this.elapsedTime * 0.6 * dashSpacing) % (dashSpacing * 2);
+
+    ctx.fillStyle = this.palette.chalk;
+
+    for (let i = 1; i < this.lanes; i++) {
+      const xBottom = this.snap(this.laneX(i, this.height));
+      const xTop = this.snap(this.laneX(i, horizon));
+
+      for (let y = horizon - dashSpacing; y < this.height + dashSpacing; y += dashSpacing * 2) {
+        const yPos = y + scroll;
+        const t = this.getPerspectiveProgress(yPos, geometry);
+        const x = xTop + (xBottom - xTop) * t;
+        const taper = 0.62 + t * 0.85;
+        const length = dashLength * taper;
+        const width = Math.max(this.pixelSize, this.pixelSize * taper);
+        this.drawPixelRect(ctx, x - width / 2, yPos, width, length, this.palette.chalk);
+      }
+    }
+
+    const centerLane = Math.floor(this.lanes / 2);
+    const centerBottom = this.laneX(centerLane, this.height);
+    const centerTop = this.laneX(centerLane, horizon);
+    for (let y = horizon - dashSpacing; y < this.height + dashSpacing; y += dashSpacing) {
+      const yPos = y + scroll * 0.8;
+      const t = this.getPerspectiveProgress(yPos, geometry);
+      const x = centerTop + (centerBottom - centerTop) * t;
+      const taper = 0.78 + t * 0.9;
+      const length = dashLength * taper;
+      const width = this.pixelSize * (1.4 + t * 0.6);
+      this.drawPixelRect(ctx, x - width / 2, yPos, width, length, this.palette.chalk);
+    }
+  }
+
+  tracePerspectiveField(ctx, geometry) {
+    const { horizon, topStart, topSpan, bottomStart, bottomSpan } = geometry;
+    ctx.beginPath();
+    ctx.moveTo(bottomStart, this.height);
+    ctx.lineTo(bottomStart + bottomSpan, this.height);
+    ctx.lineTo(topStart + topSpan, horizon);
+    ctx.lineTo(topStart, horizon);
+    ctx.closePath();
+  }
+
   drawChalkBox(ctx, x, y, w, h) {
     const { chalk } = this.palette;
     const thickness = this.pixelSize;
@@ -897,7 +1098,7 @@ export class Game {
   }
 
   drawAtmosphericBackdrop(ctx) {
-    const horizon = this.height * 0.12;
+    const { horizon } = this.getFieldGeometry();
     const bandHeight = horizon * 0.8;
 
     const rimLight = ctx.createLinearGradient(0, 0, 0, bandHeight);
