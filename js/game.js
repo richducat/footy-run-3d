@@ -78,6 +78,8 @@ export class Game {
       glow: "#2dfc8a"
     };
 
+    this.lanes = 3;
+
     // Layered rendering buffers to keep static detail cheap
     this.pitchLayer = null;
     this.atmosphereLayer = null;
@@ -88,8 +90,6 @@ export class Game {
     this.particleAccumulator = 0;
     this.playerTrail = [];
     this.trailAccumulator = 0;
-
-    this.lanes = 3;
     const tuning = options.tuning || {};
     this.baseSpeed = 220 * (tuning.sprintSpeed || 1); // px/s
     this.shotGainRate = tuning.shotGainRate || 1;
