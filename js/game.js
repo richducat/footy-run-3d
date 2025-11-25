@@ -526,8 +526,9 @@ export class Game {
       this.player.yOffset = 0;
     }
 
-    this.updatePlayerTrail(dt);
-    this.updateParticles(dt);
+    // Dots/trail FX disabled
+    // this.updatePlayerTrail(dt);
+    // this.updateParticles(dt);
 
     // Spawn obstacles (gets a bit denser over time)
     const obstacleInterval = Math.max(0.55, 1.8 - this.distance * 0.01);
@@ -1257,11 +1258,11 @@ export class Game {
     }
 
     this.drawPitch(ctx);
-    this.drawParticles(ctx);
+    // this.drawParticles(ctx);
     this.drawObstacles(ctx);
     this.drawPickups(ctx);
     this.drawGoalArea(ctx);
-    this.drawPlayerTrail(ctx);
+    // this.drawPlayerTrail(ctx);
     this.drawPlayer(ctx);
     this.drawActiveShot(ctx);
     this.drawLightingOverlay(ctx);
