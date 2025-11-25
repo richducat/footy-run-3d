@@ -112,16 +112,50 @@ const weeklyMissionsEl = document.getElementById("weeklyMissions");
 const missionsPanel = document.getElementById("missionsPanel");
 const missionsIcon = document.getElementById("missionsIcon");
 
+const layoutTabs = document.querySelectorAll(".layout-tab");
+const royaleShell = document.getElementById("royaleHudShell");
+const royaleHomeScore = document.getElementById("royaleHomeScore");
+const royaleAwayScore = document.getElementById("royaleAwayScore");
+const royaleHomeName = document.getElementById("royaleHomeName");
+const royaleAwayName = document.getElementById("royaleAwayName");
+const royaleMatchTime = document.getElementById("royaleMatchTime");
+const royaleStaminaFill = document.getElementById("royaleStaminaFill");
+const royaleStaminaValue = document.getElementById("royaleStaminaValue");
+const royaleStaminaTicks = document.querySelector(".royale-stamina__ticks");
+const royaleDeck = document.getElementById("royaleDeck");
+const royaleToast = document.getElementById("royaleToast");
+const royaleActionButtons = {
+  shoot: document.getElementById("royaleShoot"),
+  pass: document.getElementById("royalePass"),
+  dash: document.getElementById("royaleDash"),
+  tackle: document.getElementById("royaleTackle")
+};
+
 const activePressables = new Set();
 
 let missionHasClaimable = false;
 let missionCelebrateTimeout = null;
+
+const royaleDeckData = [
+  { id: "striker", label: "Striker", cost: 3, hue: 200, action: "primary" },
+  { id: "wing", label: "Wing Boost", cost: 2, hue: 160, action: "moveRight" },
+  { id: "press", label: "High Press", cost: 4, hue: 10, action: "tackle" },
+  { id: "keeper", label: "Keeper Wall", cost: 5, hue: 280, action: "primary" }
+];
 
 let playerData = loadPlayerData();
 
 let renderScale = 1;
 let logicalWidth = canvas?.width || 540;
 let logicalHeight = canvas?.height || 960;
+let currentLayout = "classic";
+
+const royaleHudState = {
+  time: 180,
+  stamina: 0
+};
+
+let royaleTimerInterval = null;
 
 function calibrateCanvasResolution() {
   if (!canvas) return;
@@ -135,6 +169,145 @@ function calibrateCanvasResolution() {
   canvas.width = Math.round(logicalWidth * renderScale);
   canvas.height = Math.round(logicalHeight * renderScale);
 }
+
+function buildRoyaleTicks() {
+  if (!royaleStaminaTicks) return;
+  royaleStaminaTicks.innerHTML = "";
+  for (let i = 0; i <= 10; i += 1) {
+    const tick = document.createElement("span");
+    royaleStaminaTicks.appendChild(tick);
+  }
+}
+
+function renderRoyaleDeck() {
+  if (!royaleDeck) return;
+  royaleDeck.innerHTML = "";
+  royaleDeckData.forEach((card) => {
+    const cardEl = document.createElement("div");
+    cardEl.className = "royale-card";
+    cardEl.dataset.id = card.id;
+
+    const art = document.createElement("div");
+    art.className = "royale-card__art";
+    art.style.background = `linear-gradient(180deg, hsl(${card.hue} 80% 55%), hsl(${card.hue} 80% 35%))`;
+    art.innerHTML =
+      '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="26" fill="white" stroke="black" stroke-width="4"/><circle cx="50" cy="35" r="5"/><circle cx="35" cy="60" r="5"/><circle cx="65" cy="60" r="5"/></svg>';
+
+    const cost = document.createElement("div");
+    cost.className = "royale-card__cost";
+    cost.textContent = card.cost;
+
+    const label = document.createElement("div");
+    label.className = "royale-card__label";
+    label.textContent = card.label;
+
+    cardEl.appendChild(art);
+    cardEl.appendChild(cost);
+    cardEl.appendChild(label);
+
+    cardEl.addEventListener("click", () => handleRoyaleCard(card));
+    royaleDeck.appendChild(cardEl);
+  });
+}
+
+function updateRoyaleTimerLabel() {
+  if (!royaleMatchTime) return;
+  const minutes = Math.floor(royaleHudState.time / 60);
+  const seconds = Math.max(0, Math.floor(royaleHudState.time % 60));
+  royaleMatchTime.textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function restartRoyaleTimer() {
+  royaleHudState.time = 180;
+  updateRoyaleTimerLabel();
+  if (royaleTimerInterval) window.clearInterval(royaleTimerInterval);
+  royaleTimerInterval = window.setInterval(() => {
+    if (currentLayout !== "royale") return;
+    if (game?.getRunState?.() !== "running") return;
+    royaleHudState.time = Math.max(0, royaleHudState.time - 1);
+    updateRoyaleTimerLabel();
+  }, 1000);
+}
+
+function stopRoyaleTimer() {
+  if (royaleTimerInterval) window.clearInterval(royaleTimerInterval);
+  royaleTimerInterval = null;
+}
+
+function updateRoyaleVisibility() {
+  if (!royaleShell) return;
+  const inRun = currentScreenId === null;
+  const active = currentLayout === "royale" && inRun;
+  royaleShell.classList.toggle("hidden", !active);
+  royaleShell.setAttribute("aria-hidden", active ? "false" : "true");
+}
+
+function setLayoutMode(mode) {
+  currentLayout = mode || "classic";
+  document.body.dataset.layout = currentLayout;
+  layoutTabs.forEach((btn) => {
+    const isActive = btn.dataset.layout === currentLayout;
+    btn.classList.toggle("layout-tab--active", isActive);
+    btn.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+  updateRoyaleVisibility();
+}
+
+function flashRoyaleToast(message) {
+  if (!royaleToast) return;
+  royaleToast.textContent = message;
+  royaleToast.classList.add("is-visible");
+  window.clearTimeout(flashRoyaleToast._timer);
+  flashRoyaleToast._timer = window.setTimeout(
+    () => royaleToast.classList.remove("is-visible"),
+    900
+  );
+}
+
+function handleRoyaleAction(action, label) {
+  if (action) {
+    handleInputAction(action);
+  }
+  if (label) {
+    flashRoyaleToast(label);
+  }
+}
+
+function handleRoyaleCard(card) {
+  if (!card) return;
+  if (royaleHudState.stamina < card.cost) {
+    flashRoyaleToast("Not enough stamina");
+    return;
+  }
+  royaleHudState.stamina = Math.max(0, royaleHudState.stamina - card.cost);
+  royaleStaminaValue.textContent = Math.floor(royaleHudState.stamina);
+  const pct = royaleHudState.stamina / 10;
+  royaleStaminaFill.style.height = `${Math.max(6, Math.floor(pct * 96))}%`;
+  handleRoyaleAction(card.action, card.label);
+}
+
+function updateRoyaleStats(stats) {
+  if (!royaleShell || currentLayout !== "royale") return;
+  if (royaleHomeScore) {
+    royaleHomeScore.textContent = stats.goals?.toString?.() || "0";
+  }
+  if (royaleAwayScore) {
+    royaleAwayScore.textContent = "0";
+  }
+
+  const staminaPct = Math.max(0, Math.min(1, (stats.shotMeter || 0) / 100));
+  royaleHudState.stamina = staminaPct * 10;
+  if (royaleStaminaFill) {
+    royaleStaminaFill.style.height = `${Math.max(6, Math.floor(staminaPct * 96))}%`;
+  }
+  if (royaleStaminaValue) {
+    royaleStaminaValue.textContent = Math.floor(royaleHudState.stamina);
+  }
+}
+
+buildRoyaleTicks();
+renderRoyaleDeck();
+setLayoutMode(currentLayout);
 ensureGuestProfile();
 updateCoinsHeader();
 
@@ -163,6 +336,7 @@ function setActiveScreen(id) {
   const inRun = id === null;
   hudEl.classList.toggle("hidden", !inRun);
   updateTouchControlsVisibility();
+  updateRoyaleVisibility();
 }
 
 function focusMissionsPanel() {
@@ -875,6 +1049,7 @@ function startRun() {
   setActiveScreen(null); // close menus
   pauseBanner.classList.add("hidden");
   resetContinueState();
+  restartRoyaleTimer();
   game.startRun();
   updateTouchControlsVisibility();
 }
@@ -993,6 +1168,7 @@ function handleGameStats(stats) {
   const pct = (stats.shotMeter / 100) * 100;
   shotMeterFill.style.width = `${Math.min(100, Math.max(0, pct))}%`;
   shotMeterFill.classList.toggle("shot-meter__fill--ready", !!stats.shotReady);
+  updateRoyaleStats(stats);
 }
 
 function handleGameState(state) {
@@ -1011,6 +1187,7 @@ function handleGameGoal() {
 function handleGameOver(payload) {
   pendingGameOverPayload = payload;
   updateGameOverUI(payload);
+  stopRoyaleTimer();
   setActiveScreen("gameOverScreen");
 }
 
@@ -1081,6 +1258,23 @@ function handleInputAction(action) {
 }
 
 // Button wiring
+
+layoutTabs.forEach((tab) => {
+  tab.addEventListener("click", () => setLayoutMode(tab.dataset.layout || "classic"));
+});
+
+const royaleActionMap = {
+  shoot: { action: "primary", label: "Shoot" },
+  pass: { action: "moveRight", label: "Quick Pass" },
+  dash: { action: "juke", label: "Dash" },
+  tackle: { action: "tackle", label: "Tackle" }
+};
+
+Object.entries(royaleActionButtons).forEach(([key, btn]) => {
+  if (!btn) return;
+  const config = royaleActionMap[key] || {};
+  btn.addEventListener("click", () => handleRoyaleAction(config.action, config.label));
+});
 
 document.addEventListener("pointerdown", handlePressableDown, { passive: true });
 window.addEventListener("pointerup", clearPressedState, { passive: true });
