@@ -43,9 +43,13 @@ export class Game {
   constructor(canvas, options = {}) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
+    this.pixelRatio = options.pixelRatio || 1;
     this.ctx.imageSmoothingEnabled = false;
-    this.width = canvas.width;
-    this.height = canvas.height;
+    if (this.pixelRatio !== 1 && this.ctx.setTransform) {
+      this.ctx.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
+    }
+    this.width = options.logicalWidth || canvas.width / this.pixelRatio;
+    this.height = options.logicalHeight || canvas.height / this.pixelRatio;
 
     this.pixelSize = 4;
     this.palette = {

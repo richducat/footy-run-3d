@@ -118,6 +118,23 @@ let missionHasClaimable = false;
 let missionCelebrateTimeout = null;
 
 let playerData = loadPlayerData();
+
+let renderScale = 1;
+let logicalWidth = canvas?.width || 540;
+let logicalHeight = canvas?.height || 960;
+
+function calibrateCanvasResolution() {
+  if (!canvas) return;
+
+  const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 3);
+  const rect = canvas.getBoundingClientRect();
+  logicalWidth = Math.round(rect.width || canvas.width || logicalWidth);
+  logicalHeight = Math.round(rect.height || canvas.height || logicalHeight);
+  renderScale = dpr;
+
+  canvas.width = Math.round(logicalWidth * renderScale);
+  canvas.height = Math.round(logicalHeight * renderScale);
+}
 ensureGuestProfile();
 updateCoinsHeader();
 
@@ -428,6 +445,8 @@ function buildPerkDelta(current = {}, next = {}) {
 }
 
 function buildGameInstance() {
+  calibrateCanvasResolution();
+
   const selectedCard =
     getCardById(playerData.selectedCardId) ||
     PLAYER_CARDS.find((c) => c.id === "street_striker") ||
@@ -447,6 +466,9 @@ function buildGameInstance() {
     perks,
     tuning,
     bestDistance: playerData.bestDistance,
+    pixelRatio: renderScale,
+    logicalWidth,
+    logicalHeight,
     onStats: handleGameStats,
     onState: handleGameState,
     onGoal: handleGameGoal,
