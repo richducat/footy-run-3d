@@ -33,33 +33,8 @@
     };
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="styles.css" id="appStylesheet" />
+  <link rel="stylesheet" href="styles.css" />
   <script>
-    // Simple cache-busting so refreshes always load the latest assets
-    const CACHE_BUSTER = Date.now().toString();
-    const bustUrl = (url) => `${url}${url.includes("?") ? "&" : "?"}v=${CACHE_BUSTER}`;
-    document.documentElement.dataset.cacheBuster = CACHE_BUSTER;
-    const stylesheet = document.getElementById("appStylesheet");
-    if (stylesheet) {
-      stylesheet.href = bustUrl(stylesheet.getAttribute("href"));
-    }
-
-    // Bust cached assets that keep the same filename (e.g., updated logo)
-    const bustCachedAssets = () => {
-      document.querySelectorAll("[data-cache-bust='asset']").forEach((node) => {
-        const src = node.getAttribute("src");
-        if (src) {
-          node.setAttribute("src", bustUrl(src));
-        }
-      });
-    };
-
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", bustCachedAssets);
-    } else {
-      bustCachedAssets();
-    }
-
     const syncViewportHeight = () => {
       const viewportHeight = window.visualViewport?.height || window.innerHeight;
       document.documentElement.style.setProperty("--app-height", `${viewportHeight}px`);
@@ -76,12 +51,11 @@
     <header class="app-header">
       <div class="brand">
         <img
-          src="assets/logo-usr.svg"
+          src="assets/logo-usr.svg?v=1"
           class="brand-logo"
           alt="Ultimate Striker Run logo"
           width="42"
           height="42"
-          data-cache-bust="asset"
         />
         <div class="brand-labels">
           <span class="brand-title">Ultimate Striker Run</span>
@@ -139,12 +113,11 @@
             <p class="screen-subtitle">Temple-run style endless runner with a pro soccer twist.</p>
             <div class="logo-hero">
               <img
-                src="assets/logo-usr.svg"
+                src="assets/logo-usr.svg?v=1"
                 class="logo-hero__image"
                 alt="Ultimate Striker Run crest with ball and USR wordmark"
                 width="220"
                 height="220"
-                data-cache-bust="asset"
               />
               <div class="logo-hero__copy">
                 <p class="logo-hero__eyebrow">Official game mark</p>
