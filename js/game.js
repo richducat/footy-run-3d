@@ -47,7 +47,9 @@ export class Game {
     this.width = canvas.width;
     this.height = canvas.height;
 
-    this.pixelSize = 4;
+    // Use a chunkier 32px pixel grid to keep characters distinctly blocky while
+    // preserving crisp edges with nearest-neighbor rendering.
+    this.pixelSize = options.pixelSize || 32;
     this.palette = {
       turfDark: "#0c2a24",
       turfMid: "#0f3d30",
