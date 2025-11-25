@@ -248,34 +248,6 @@ export class Game {
     };
   }
 
-  fieldProgressToY(progress, geometry = this.getFieldGeometry()) {
-    return geometry.horizon + (this.height - geometry.horizon) * progress;
-  }
-
-  yToFieldProgress(y, geometry = this.getFieldGeometry()) {
-    return (y - geometry.horizon) / (this.height - geometry.horizon);
-  }
-
-  syncGoalPose(geometry = this.getFieldGeometry()) {
-    if (this.visualVariant === "v2") {
-      const goalWidth = geometry.topSpan * 0.62;
-      const goalHeight = this.pixelSize * 12;
-      const goalY = geometry.horizon - goalHeight - this.pixelSize * 2;
-      this.goal.width = goalWidth;
-      this.goal.height = goalHeight;
-      this.goal.x = this.width / 2;
-      this.goal.y = goalY;
-
-      this.goalie.width = goalWidth * 0.32;
-      this.goalie.height = goalWidth * 0.26;
-      this.goalie.x = this.width / 2;
-      this.goalie.y = goalY + goalHeight * 0.2;
-    } else {
-      Object.assign(this.goal, this.defaultGoal);
-      Object.assign(this.goalie, this.defaultGoalie);
-    }
-  }
-
   getPerspectiveProgress(y, geometry) {
     const { horizon } = geometry;
     const clamped = Math.max(0, Math.min(1, (y - horizon) / (this.height - horizon)));
@@ -566,8 +538,6 @@ export class Game {
 
   update(dt) {
     this.elapsedTime += dt;
-    const geometry = this.getFieldGeometry();
-    this.syncGoalPose(geometry);
     // Always push last known stats so HUD can show IDLE state too
     this.onStats({
       distance: Math.floor(this.distance),
@@ -1012,8 +982,8 @@ export class Game {
     ctx.stroke();
 
     // Simple goal frame perched at the horizon
-    const goalWidth = topSpan * 0.62;
-    const goalHeight = this.pixelSize * 12;
+    const goalWidth = topSpan * 0.32;
+    const goalHeight = this.pixelSize * 10;
     const goalX = geometry.topStart + topSpan / 2 - goalWidth / 2;
     const goalY = horizon - goalHeight - this.pixelSize * 2;
     this.drawChalkBox(ctx, goalX, goalY, goalWidth, goalHeight);

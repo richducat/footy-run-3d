@@ -760,9 +760,8 @@ function updateTouchControlsVisibility() {
   pauseTouchButton?.classList.toggle("hidden", !inRun);
 }
 
-function setVisualVariant(nextVariant, { force = false } = {}) {
-  if (!nextVariant) return;
-  if (!force && visualVariant === nextVariant) return;
+function setVisualVariant(nextVariant) {
+  if (visualVariant === nextVariant) return;
   visualVariant = nextVariant;
   buildGameInstance();
   updateVariantToggleUI();
@@ -1219,8 +1218,8 @@ function renderMissions() {
 }
 
 function startVariantRun(variant) {
-  if (variant) {
-    setVisualVariant(variant, { force: true });
+  if (variant && variant !== visualVariant) {
+    setVisualVariant(variant);
   }
   startRun();
 }
