@@ -183,6 +183,10 @@ export class Game {
       freezeTime: 0
     };
 
+    this.defaultGoal = { ...this.goal };
+    this.defaultGoalie = { ...this.goalie };
+    this.syncGoalPose(this.getFieldGeometry());
+
     // Callbacks for UI / meta
     this.onStats = options.onStats || (() => {});
     this.onState = options.onState || (() => {});
@@ -425,9 +429,12 @@ export class Game {
     // Match defenders to the player's slimmer silhouette
     const width = 48;
     const height = high ? 92 : 72;
+    const geometry = this.getFieldGeometry();
+    const progress = -0.08;
     this.obstacles.push({
       lane,
-      y: -120,
+      progress,
+      y: this.fieldProgressToY(progress, geometry),
       width,
       height,
       type,
@@ -438,9 +445,12 @@ export class Game {
   spawnPickup() {
     const lane = Math.floor(Math.random() * this.lanes);
     const type = Math.random() < 0.7 ? "coin" : "ball";
+    const geometry = this.getFieldGeometry();
+    const progress = -0.06;
     this.pickups.push({
       lane,
-      y: -40,
+      progress,
+      y: this.fieldProgressToY(progress, geometry),
       radius: 14,
       type
     });
@@ -609,6 +619,7 @@ export class Game {
     }
 
     const dy = this.speed * dt;
+    const fieldProgressDelta = dy / (this.height - geometry.horizon);
 
     if (this.reviveInvulnTime > 0) {
       this.reviveInvulnTime = Math.max(0, this.reviveInvulnTime - dt);
@@ -616,16 +627,28 @@ export class Game {
 
     // Move obstacles
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
-      this.obstacles[i].y += dy;
-      if (this.obstacles[i].y > this.height + 120) {
+      const obstacle = this.obstacles[i];
+      obstacle.progress =
+        obstacle.progress == null
+          ? this.yToFieldProgress(obstacle.y, geometry)
+          : obstacle.progress;
+      obstacle.progress += fieldProgressDelta;
+      obstacle.y = this.fieldProgressToY(obstacle.progress, geometry);
+
+      if (obstacle.y > this.height + 120) {
         this.obstacles.splice(i, 1);
       }
     }
 
     // Move pickups
     for (let i = this.pickups.length - 1; i >= 0; i--) {
-      this.pickups[i].y += dy;
-      if (this.pickups[i].y > this.height + 80) {
+      const pickup = this.pickups[i];
+      pickup.progress =
+        pickup.progress == null ? this.yToFieldProgress(pickup.y, geometry) : pickup.progress;
+      pickup.progress += fieldProgressDelta;
+      pickup.y = this.fieldProgressToY(pickup.progress, geometry);
+
+      if (pickup.y > this.height + 80) {
         this.pickups.splice(i, 1);
       }
     }
