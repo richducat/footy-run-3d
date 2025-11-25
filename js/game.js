@@ -65,6 +65,8 @@ export class Game {
       turfDark: "#0c2a24",
       turfMid: "#0f3d30",
       turfLight: "#155f44",
+      turfHighlight: "#1f7a4f",
+      touchline: "#0a1524",
       chalk: "#d4f5d4",
       shadow: "#0a0f16",
       playerSkin: "#f5d8b5",
@@ -75,7 +77,9 @@ export class Game {
       kitSecondaryDark: "#4e0f26",
       kitTrim: "#0bd3c7",
       net: "#e8f7ff",
-      glow: "#2dfc8a"
+      glow: "#2dfc8a",
+      crowdJersey: ["#0f9b7f", "#1f3a74", "#ed4b88", "#ffc857", "#f1f5f9"],
+      crowdShadow: "#050912"
     };
 
     // Layered rendering buffers to keep static detail cheap
@@ -719,28 +723,46 @@ export class Game {
     const { palette } = this;
     const horizon = this.height * 0.12;
 
-    // Base turf bands
-    this.drawPixelRect(ctx, 0, 0, this.width, this.height, palette.turfMid);
+    // Base turf with subtle gradient
+    const grass = ctx.createLinearGradient(0, horizon, 0, this.height);
+    grass.addColorStop(0, palette.turfMid);
+    grass.addColorStop(1, palette.turfDark);
+    ctx.fillStyle = grass;
+    ctx.fillRect(0, 0, this.width, this.height);
+
+    // Mowed stripe pattern
     const stripeHeight = this.height / 18;
-    for (let i = 0; i < 22; i++) {
+    for (let i = 0; i < 24; i++) {
       const y = horizon + i * stripeHeight;
-      const color = i % 2 === 0 ? palette.turfLight : palette.turfDark;
-      this.drawPixelRect(ctx, this.width * 0.06, y, this.width * 0.88, stripeHeight, color);
+      const color = i % 2 === 0 ? palette.turfLight : palette.turfHighlight;
+      this.drawPixelRect(ctx, this.width * 0.06, y, this.width * 0.88, stripeHeight + 2, color);
     }
 
-    // Pixel crowd band
-    this.drawPixelRect(ctx, 0, 0, this.width, horizon + 12, palette.shadow);
-    for (let x = 0; x < this.width; x += this.pixelSize * 2) {
-      const tone = x % (this.pixelSize * 4) === 0 ? "#111826" : "#0b0f19";
-      this.drawPixelRect(ctx, x, horizon - this.pixelSize * 2, this.pixelSize, this.pixelSize * 2, tone);
+    // Angled sheen to mimic stadium lighting on grass
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.translate(this.width * -0.15, horizon * 0.1);
+    ctx.rotate((-6 * Math.PI) / 180);
+    for (let i = 0; i < 16; i++) {
+      const y = i * stripeHeight * 0.75;
+      const shade = i % 2 === 0 ? palette.turfHighlight : palette.turfLight;
+      this.drawPixelRect(ctx, 0, y, this.width * 1.4, stripeHeight * 0.6, shade);
     }
+    ctx.restore();
+
+    // Surrounding touchline and ad boards
+    const touchlineHeight = horizon + this.pixelSize * 3;
+    ctx.fillStyle = palette.touchline;
+    ctx.fillRect(0, horizon - this.pixelSize * 2, this.width, touchlineHeight);
+    this.drawCrowdBand(ctx, horizon);
+    this.drawAdBoards(ctx, horizon);
 
     // Retro vignette edge
-    ctx.fillStyle = "rgba(0,0,0,0.3)";
-    ctx.fillRect(0, horizon, this.width, this.pixelSize);
+    ctx.fillStyle = "rgba(0,0,0,0.28)";
+    ctx.fillRect(0, horizon, this.width, this.pixelSize * 2);
     ctx.fillRect(0, this.height - this.pixelSize * 3, this.width, this.pixelSize * 3);
 
-    // Lane markers
+    // Lane markers + pitch chalk
     ctx.fillStyle = palette.chalk;
     for (let i = 1; i < this.lanes; i++) {
       const x1 = this.snap(this.laneX(i, this.height));
@@ -752,6 +774,15 @@ export class Game {
         this.drawPixelRect(ctx, x - this.pixelSize / 2, y, this.pixelSize, step, palette.chalk);
       }
     }
+
+    // Halfway line
+    for (let y = horizon + this.pixelSize * 2; y < this.height; y += this.pixelSize * 4) {
+      this.drawPixelRect(ctx, this.width / 2 - this.pixelSize / 2, y, this.pixelSize, this.pixelSize * 2, palette.chalk);
+    }
+
+    // Penalty areas and goal boxes
+    this.drawChalkBox(ctx, this.width * 0.17, this.height * 0.12, this.width * 0.66, this.height * 0.2);
+    this.drawChalkBox(ctx, this.width * 0.26, this.height * 0.2, this.width * 0.48, this.height * 0.12);
 
     // Center circle + spot in chunky pixels
     const circleRadius = 70;
@@ -768,6 +799,71 @@ export class Game {
       this.pixelSize,
       palette.chalk
     );
+
+    // Corner arcs
+    const arcSize = this.pixelSize * 3;
+    const corners = [
+      [this.width * 0.06, horizon + this.pixelSize * 4],
+      [this.width * 0.94 - arcSize, horizon + this.pixelSize * 4]
+    ];
+    corners.forEach(([x, y]) => {
+      this.drawPixelRect(ctx, x, y, arcSize, this.pixelSize, palette.chalk);
+      this.drawPixelRect(ctx, x, y, this.pixelSize, arcSize, palette.chalk);
+    });
+  }
+
+  drawChalkBox(ctx, x, y, w, h) {
+    const { chalk } = this.palette;
+    const thickness = this.pixelSize;
+    this.drawPixelRect(ctx, x, y, w, thickness, chalk);
+    this.drawPixelRect(ctx, x, y + h - thickness, w, thickness, chalk);
+    this.drawPixelRect(ctx, x, y, thickness, h, chalk);
+    this.drawPixelRect(ctx, x + w - thickness, y, thickness, h, chalk);
+  }
+
+  drawAdBoards(ctx, horizon) {
+    const boardHeight = this.pixelSize * 5;
+    const inset = this.width * 0.04;
+    let x = inset;
+    const palette = ["#0bd3c7", "#2dfc8a", "#f7b801", "#e7437d", "#2b87ff"];
+
+    while (x < this.width - inset) {
+      const width = Math.min(this.pixelSize * (12 + Math.random() * 14), this.width - inset - x);
+      const color = palette[Math.floor(Math.random() * palette.length)];
+      ctx.fillStyle = color;
+      ctx.fillRect(x, horizon - boardHeight - this.pixelSize, width, boardHeight);
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillRect(x, horizon - boardHeight - this.pixelSize, width, this.pixelSize);
+      x += width + this.pixelSize * 2;
+    }
+  }
+
+  drawCrowdBand(ctx, horizon) {
+    const { crowdJersey, crowdShadow } = this.palette;
+    const rowHeight = this.pixelSize * 3;
+    const rows = 4;
+    const baseY = horizon - rowHeight * rows - this.pixelSize * 2;
+
+    ctx.fillStyle = crowdShadow;
+    ctx.fillRect(0, baseY - this.pixelSize * 2, this.width, rowHeight * rows + this.pixelSize * 3);
+
+    for (let r = 0; r < rows; r++) {
+      const y = baseY + r * rowHeight;
+      for (let x = 0; x < this.width; x += this.pixelSize * 2) {
+        const jersey = crowdJersey[(x + r) % crowdJersey.length];
+        const shade = r % 2 === 0 ? jersey : hexToRgba(jersey, 0.82);
+        this.drawPixelRect(ctx, x, y, this.pixelSize, rowHeight - this.pixelSize / 2, shade);
+      }
+    }
+
+    // Wave tiny flags for energy
+    for (let i = 0; i < 6; i++) {
+      const x = this.width * 0.12 + i * this.width * 0.14;
+      const y = baseY - this.pixelSize * 2;
+      ctx.fillStyle = crowdJersey[i % crowdJersey.length];
+      this.drawPixelRect(ctx, x, y, this.pixelSize * 2, this.pixelSize * 2, ctx.fillStyle);
+      this.drawPixelRect(ctx, x + this.pixelSize, y + this.pixelSize * 2, this.pixelSize / 2, this.pixelSize, "#fff");
+    }
   }
 
   drawAtmosphericBackdrop(ctx) {
@@ -775,19 +871,43 @@ export class Game {
     const bandHeight = horizon * 0.8;
 
     const rimLight = ctx.createLinearGradient(0, 0, 0, bandHeight);
-    rimLight.addColorStop(0, "rgba(45,252,138,0.2)");
+    rimLight.addColorStop(0, "rgba(45,252,138,0.24)");
     rimLight.addColorStop(1, "rgba(45,252,138,0)");
     ctx.fillStyle = rimLight;
     ctx.fillRect(0, 0, this.width, bandHeight);
 
-    const audience = ctx.createLinearGradient(0, horizon * 0.5, 0, horizon + 32);
-    audience.addColorStop(0, "rgba(5,10,20,0.9)");
-    audience.addColorStop(1, "rgba(5,10,20,0.2)");
-    ctx.fillStyle = audience;
-    ctx.fillRect(0, 0, this.width, horizon + 32);
+    const nightSky = ctx.createLinearGradient(0, 0, 0, horizon * 2);
+    nightSky.addColorStop(0, "#050912");
+    nightSky.addColorStop(1, "#0b1224");
+    ctx.fillStyle = nightSky;
+    ctx.fillRect(0, 0, this.width, horizon * 2);
 
+    // Stadium light beams
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    const beam = ctx.createLinearGradient(0, 0, 0, this.height * 0.55);
+    beam.addColorStop(0, "rgba(255,255,255,0.28)");
+    beam.addColorStop(1, "rgba(255,255,255,0)");
+    [this.width * 0.18, this.width * 0.82].forEach((x) => {
+      ctx.save();
+      ctx.translate(x, 0);
+      ctx.rotate((-12 * Math.PI) / 180);
+      ctx.fillStyle = beam;
+      ctx.fillRect(-this.width * 0.05, 0, this.width * 0.12, this.height * 0.65);
+      ctx.restore();
+    });
+    ctx.restore();
+
+    // Audience haze
+    const audience = ctx.createLinearGradient(0, horizon * 0.5, 0, horizon + 48);
+    audience.addColorStop(0, "rgba(5,10,20,0.92)");
+    audience.addColorStop(1, "rgba(5,10,20,0.25)");
+    ctx.fillStyle = audience;
+    ctx.fillRect(0, 0, this.width, horizon + 48);
+
+    // Twinkle lights across the stadium rim
     for (let x = 0; x < this.width; x += this.pixelSize * 3) {
-      const twinkle = x % (this.pixelSize * 6) === 0 ? 0.5 : 0.28;
+      const twinkle = x % (this.pixelSize * 6) === 0 ? 0.55 : 0.32;
       ctx.fillStyle = `rgba(255,255,255,${twinkle})`;
       ctx.fillRect(x, horizon - this.pixelSize * 3, this.pixelSize, this.pixelSize);
     }
@@ -811,11 +931,27 @@ export class Game {
 
   drawSoccerBall(ctx, x, y, radius) {
     const accent = this.ballAccent || "#f2f4ff";
-    const size = Math.max(this.pixelSize * 3, radius * 2.1);
+    const size = Math.max(this.pixelSize * 4, radius * 2.4);
     const topLeftX = this.snap(x - size / 2);
     const topLeftY = this.snap(y - size / 2);
 
-    this.drawPixelRect(ctx, topLeftX, topLeftY, size, size, accent);
+    // Subtle shadow
+    const shadow = ctx.createRadialGradient(x + this.pixelSize, y + this.pixelSize * 1.2, 4, x, y, size);
+    shadow.addColorStop(0, "rgba(0,0,0,0.35)");
+    shadow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = shadow;
+    ctx.beginPath();
+    ctx.arc(x, y + this.pixelSize * 0.2, size * 0.55, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Base panel shading
+    const shell = ctx.createLinearGradient(topLeftX, topLeftY, topLeftX + size, topLeftY + size);
+    shell.addColorStop(0, accent);
+    shell.addColorStop(1, shadeColor(accent, -22));
+    ctx.fillStyle = shell;
+    ctx.fillRect(topLeftX, topLeftY, size, size);
+
+    // Panel pattern
     ctx.fillStyle = "#0f172a";
     const pattern = [
       [0, 0],
@@ -824,19 +960,28 @@ export class Game {
       [1, -2],
       [-1, -2],
       [3, -1],
-      [-3, -1]
+      [-3, -1],
+      [0, 3],
+      [0, -3]
     ];
     pattern.forEach(([dx, dy]) => {
-        this.drawPixelRect(
-          ctx,
-          x + dx * this.pixelSize,
-          y + dy * this.pixelSize,
-          this.pixelSize,
-          this.pixelSize,
-          "#111"
-        );
-      });
-    }
+      this.drawPixelRect(
+        ctx,
+        x + dx * this.pixelSize,
+        y + dy * this.pixelSize,
+        this.pixelSize,
+        this.pixelSize,
+        "#0a0f16"
+      );
+    });
+
+    // Highlight
+    const gleam = ctx.createRadialGradient(x - this.pixelSize, y - this.pixelSize, 2, x, y, size * 0.6);
+    gleam.addColorStop(0, "rgba(255,255,255,0.8)");
+    gleam.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = gleam;
+    ctx.fillRect(topLeftX, topLeftY, size, size);
+  }
 
   updatePlayerTrail(dt) {
     this.trailAccumulator += dt;
