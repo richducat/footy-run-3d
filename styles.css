@@ -941,6 +941,27 @@ canvas {
   margin: 12px auto 18px;
 }
 
+.variant-toggle {
+  display: flex;
+  justify-content: center;
+  margin: -4px auto 18px;
+}
+
+.variant-toggle__button {
+  width: 100%;
+  max-width: 380px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  font-family: var(--pixel-font);
+}
+
+.variant-toggle__button--active {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 80%, transparent),
+    0 8px 20px color-mix(in srgb, var(--accent) 25%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 70%, #0a1524);
+}
+
 .start-button {
   --press-depth: 10px;
   position: relative;
@@ -1144,9 +1165,9 @@ canvas {
     radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 32%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   display: grid;
-  grid-template-columns: 0.92fr 1.08fr;
+  grid-template-columns: minmax(180px, 240px) 1fr;
   gap: 16px;
-  align-items: flex-start;
+  align-items: stretch;
   position: relative;
   overflow: hidden;
   box-shadow: 0 18px 32px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
@@ -1173,57 +1194,41 @@ canvas {
 }
 
 .player-card__art {
+  --kit-primary: #1f3a74;
+  --kit-secondary: #80223c;
+  --kit-trim: #0bd3c7;
+  --skin-tone: #c58c63;
+  --skin-shadow: color-mix(in srgb, var(--skin-tone), #000 28%);
+  --hair: #1c120d;
+  --hair-highlight: #2f1d13;
+  --kit-primary-shadow: color-mix(in srgb, var(--kit-primary), #000 30%);
+  --kit-secondary-shadow: color-mix(in srgb, var(--kit-secondary), #000 26%);
+  --kit-trim-bright: color-mix(in srgb, var(--kit-trim), #fff 16%);
+  --ball-accent: #f2f4ff;
   position: relative;
   border-radius: 14px;
-  background:
-    linear-gradient(#1f6c41, #1f6c41),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.08) 0 2px, transparent 2px 16px);
-  border: 2px solid #0e3b21;
+  background: linear-gradient(160deg, rgba(15, 52, 31, 0.9), rgba(7, 30, 18, 0.96)),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 14px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   padding: 12px;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 10px;
-  align-items: center;
-  align-self: flex-start;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35), 0 12px 24px rgba(0, 0, 0, 0.45);
-}
-
-.player-card__stage {
-  position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  min-height: 150px;
-  padding: 6px 4px 2px;
-  border-radius: 12px;
-  background: linear-gradient(145deg, rgba(8, 25, 16, 0.95), rgba(5, 18, 12, 0.92));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-  overflow: hidden;
-  z-index: 0;
-}
-
-.player-card__scanlines {
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18) 2px, transparent 2px, transparent 8px);
-  opacity: 0.4;
-  mix-blend-mode: soft-light;
-  pointer-events: none;
-  border-radius: 12px;
-  z-index: 1;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35), 0 12px 24px rgba(0, 0, 0, 0.45);
+  min-height: 230px;
 }
 
 .player-card__pixel {
-  width: min(190px, 100%);
+  width: 100%;
+  max-width: 180px;
   aspect-ratio: 4 / 5;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  background: linear-gradient(#17442a, #102c1b);
+  background: linear-gradient(#0d2c1b, #0a1e14);
   border-radius: 12px;
-  border: 2px solid #0c2c19;
+  border: 2px solid #0b1d12;
   image-rendering: pixelated;
-  padding: 10px 12px;
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.05), 0 12px 20px rgba(0, 0, 0, 0.35);
 }
 
@@ -1251,7 +1256,6 @@ canvas {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(6px);
-  z-index: 2;
 }
 
 .player-card__rarity {
@@ -1268,11 +1272,6 @@ canvas {
   gap: 12px;
   position: relative;
   z-index: 1;
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.04));
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  padding: 12px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .player-card__header {
