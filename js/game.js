@@ -52,15 +52,17 @@ export class Game {
   constructor(canvas, options = {}) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
-    this.pixelRatio = options.pixelRatio || 1;
-    this.ctx.imageSmoothingEnabled = false;
+    const devicePixelRatio = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+    this.pixelRatio = options.pixelRatio || devicePixelRatio || 1;
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = "high";
     if (this.pixelRatio !== 1 && this.ctx.setTransform) {
       this.ctx.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
     }
     this.width = options.logicalWidth || canvas.width / this.pixelRatio;
     this.height = options.logicalHeight || canvas.height / this.pixelRatio;
 
-    this.pixelSize = 4;
+    this.pixelSize = 1;
     this.palette = {
       turfDark: "#0c2a24",
       turfMid: "#0f3d30",
@@ -257,7 +259,8 @@ export class Game {
     layer.width = this.width;
     layer.height = this.height;
     const ctx = layer.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     drawFn(ctx);
     return layer;
   }
@@ -1162,56 +1165,86 @@ export class Game {
 
   drawSoccerBall(ctx, x, y, radius) {
     const accent = this.ballAccent || "#f2f4ff";
-    const size = Math.max(this.pixelSize * 4, radius * 2.4);
-    const topLeftX = this.snap(x - size / 2);
-    const topLeftY = this.snap(y - size / 2);
-
-    // Subtle shadow
-    const shadow = ctx.createRadialGradient(x + this.pixelSize, y + this.pixelSize * 1.2, 4, x, y, size);
+    const r = Math.max(radius, this.pixelSize * 4);
+    const detailPx = Math.max(1, this.pixelSize);
+    const shadow = ctx.createRadialGradient(
+      x + detailPx * 0.6,
+      y + detailPx * 0.9,
+      r * 0.2,
+      x,
+      y + r * 0.15,
+      r * 1.1
+    );
     shadow.addColorStop(0, "rgba(0,0,0,0.35)");
     shadow.addColorStop(1, "rgba(0,0,0,0)");
+
+    ctx.save();
+
+    // Grounded shadow
     ctx.fillStyle = shadow;
     ctx.beginPath();
-    ctx.arc(x, y + this.pixelSize * 0.2, size * 0.55, 0, Math.PI * 2);
+    ctx.ellipse(x, y + r * 0.35, r * 0.95, r * 0.55, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Base panel shading
-    const shell = ctx.createLinearGradient(topLeftX, topLeftY, topLeftX + size, topLeftY + size);
-    shell.addColorStop(0, accent);
-    shell.addColorStop(1, shadeColor(accent, -22));
+    // Shell with soft spherical shading
+    const shell = ctx.createRadialGradient(x - r * 0.25, y - r * 0.35, r * 0.15, x, y, r * 1.05);
+    shell.addColorStop(0, shadeColor(accent, 8));
+    shell.addColorStop(0.55, accent);
+    shell.addColorStop(1, shadeColor(accent, -24));
     ctx.fillStyle = shell;
-    ctx.fillRect(topLeftX, topLeftY, size, size);
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Panel pattern
-    ctx.fillStyle = "#0f172a";
-    const pattern = [
-      [0, 0],
-      [2, 1],
-      [-2, 1],
-      [1, -2],
-      [-1, -2],
-      [3, -1],
-      [-3, -1],
-      [0, 3],
-      [0, -3]
-    ];
-    pattern.forEach(([dx, dy]) => {
-      this.drawPixelRect(
-        ctx,
-        x + dx * this.pixelSize,
-        y + dy * this.pixelSize,
-        this.pixelSize,
-        this.pixelSize,
-        "#0a0f16"
-      );
-    });
+    // Central pentagon
+    const drawPatch = (cx, cy, scale, rotation = 0, color = "#0f172a") => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const angle = (-Math.PI / 2 + (i * Math.PI * 2) / 5);
+        const px = Math.cos(angle) * r * scale;
+        const py = Math.sin(angle) * r * scale;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.lineWidth = Math.max(1, detailPx * 0.9);
+      ctx.strokeStyle = "rgba(15,23,42,0.7)";
+      ctx.stroke();
+      ctx.restore();
+    };
 
-    // Highlight
-    const gleam = ctx.createRadialGradient(x - this.pixelSize, y - this.pixelSize, 2, x, y, size * 0.6);
-    gleam.addColorStop(0, "rgba(255,255,255,0.8)");
+    drawPatch(x, y, 0.24);
+    drawPatch(x + r * 0.35, y - r * 0.08, 0.14, Math.PI / 6, "#1f2937");
+    drawPatch(x - r * 0.3, y - r * 0.12, 0.14, Math.PI / 3, "#1f2937");
+    drawPatch(x + r * 0.08, y + r * 0.3, 0.15, -Math.PI / 4, "#111827");
+
+    // Seams wrapping the sphere
+    ctx.strokeStyle = "rgba(15,23,42,0.6)";
+    ctx.lineWidth = Math.max(1, detailPx * 0.85);
+    const seam = (start, end, cpx, cpy) => {
+      ctx.beginPath();
+      ctx.moveTo(start[0], start[1]);
+      ctx.quadraticCurveTo(cpx, cpy, end[0], end[1]);
+      ctx.stroke();
+    };
+    seam([x - r * 0.6, y], [x + r * 0.6, y + r * 0.06], x, y - r * 0.3);
+    seam([x, y - r * 0.65], [x + r * 0.05, y + r * 0.6], x + r * 0.25, y - r * 0.1);
+    seam([x - r * 0.4, y + r * 0.38], [x + r * 0.5, y - r * 0.28], x + r * 0.1, y + r * 0.32);
+
+    // Glossy highlight
+    const gleam = ctx.createRadialGradient(x - r * 0.28, y - r * 0.34, r * 0.08, x - r * 0.12, y - r * 0.12, r * 0.45);
+    gleam.addColorStop(0, "rgba(255,255,255,0.9)");
     gleam.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = gleam;
-    ctx.fillRect(topLeftX, topLeftY, size, size);
+    ctx.beginPath();
+    ctx.arc(x - r * 0.1, y - r * 0.12, r * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
   }
 
   updatePlayerTrail(dt) {
@@ -1391,65 +1424,92 @@ export class Game {
   drawStandingDefender(ctx, x, y, width, height) {
     const p = this.palette;
     const kit = this.kit;
-    this.drawPixelRect(ctx, x + width * 0.2, y + height, width * 0.6, this.pixelSize * 2, p.shadow);
+    this.drawPixelRect(ctx, x + width * 0.18, y + height, width * 0.64, this.pixelSize * 2.2, p.shadow);
 
-    // Legs + socks
-    const legW = width * 0.18;
-    this.drawPixelRect(ctx, x + width * 0.18, y + height * 0.6, legW, height * 0.28, p.playerSkin);
-    this.drawPixelRect(ctx, x + width * 0.56, y + height * 0.58, legW, height * 0.3, p.playerSkin);
-    this.drawPixelRect(ctx, x + width * 0.18, y + height * 0.78, legW, height * 0.1, kit.secondary);
-    this.drawPixelRect(ctx, x + width * 0.56, y + height * 0.76, legW, height * 0.1, kit.secondary);
-    this.drawPixelRect(ctx, x + width * 0.16, y + height * 0.88, legW + this.pixelSize, height * 0.08, kit.boot || p.shadow);
-    this.drawPixelRect(ctx, x + width * 0.54, y + height * 0.86, legW + this.pixelSize, height * 0.08, kit.boot || p.shadow);
+    const legW = width * 0.17;
+    const sockH = height * 0.08;
+    const bootH = height * 0.08;
 
-    // Torso + stripe
-    const torsoX = x + width * 0.2;
-    const torsoW = width * 0.6;
-    const torsoH = height * 0.35;
-    this.drawPixelRect(ctx, torsoX, y + height * 0.26, torsoW, torsoH, kit.primary || p.kitPrimary);
-    this.drawPixelRect(ctx, torsoX, y + height * 0.36, torsoW, this.pixelSize, kit.trim || p.kitTrim);
+    // Left leg
+    this.drawPixelRect(ctx, x + width * 0.2, y + height * 0.54, legW, height * 0.22, p.playerSkin);
+    this.drawPixelRect(ctx, x + width * 0.2, y + height * 0.76, legW, sockH, kit.secondary || p.kitSecondary);
+    this.drawPixelRect(ctx, x + width * 0.2, y + height * 0.76 + sockH * 0.55, legW, this.pixelSize, kit.trim || p.kitTrim);
+    this.drawPixelRect(ctx, x + width * 0.18, y + height * 0.84, legW + this.pixelSize * 0.6, bootH, kit.boot || p.shadow);
 
-    // Arms crossed
-    this.drawPixelRect(ctx, torsoX - width * 0.08, y + height * 0.32, width * 0.2, height * 0.16, p.playerSkin);
-    this.drawPixelRect(ctx, torsoX + torsoW - width * 0.12, y + height * 0.3, width * 0.2, height * 0.16, p.playerSkin);
+    // Right leg
+    this.drawPixelRect(ctx, x + width * 0.6, y + height * 0.52, legW, height * 0.24, p.playerSkin);
+    this.drawPixelRect(ctx, x + width * 0.6, y + height * 0.76, legW, sockH, kit.secondary || p.kitSecondary);
+    this.drawPixelRect(ctx, x + width * 0.6, y + height * 0.76 + sockH * 0.55, legW, this.pixelSize, kit.trim || p.kitTrim);
+    this.drawPixelRect(ctx, x + width * 0.58, y + height * 0.84, legW + this.pixelSize * 0.6, bootH, kit.boot || p.shadow);
 
-    // Head
+    // Shorts
+    const shortH = height * 0.18;
+    this.drawPixelRect(ctx, x + width * 0.2, y + height * 0.44, width * 0.57, shortH, kit.secondary || p.kitSecondary);
+    this.drawPixelRect(ctx, x + width * 0.2, y + height * 0.44 + shortH * 0.6, width * 0.57, this.pixelSize, kit.trim || p.kitTrim);
+
+    // Torso with dual-tone jersey
+    const torsoX = x + width * 0.18;
+    const torsoW = width * 0.64;
+    const torsoH = height * 0.32;
+    this.drawPixelRect(ctx, torsoX, y + height * 0.18, torsoW, torsoH, kit.primary || p.kitPrimary);
+    this.drawPixelRect(ctx, torsoX, y + height * 0.18, torsoW, this.pixelSize * 1.5, shadeColor(kit.primary || p.kitPrimary, 18));
+    this.drawPixelRect(ctx, torsoX + torsoW * 0.05, y + height * 0.26, torsoW * 0.9, this.pixelSize, kit.trim || p.kitTrim);
+    this.drawPixelRect(ctx, torsoX + torsoW * 0.32, y + height * 0.18, this.pixelSize * 1.6, torsoH, kit.trim || p.kitTrim);
+
+    // Arms folded across chest
+    this.drawPixelRect(ctx, torsoX - width * 0.08, y + height * 0.24, width * 0.26, height * 0.14, p.playerSkin);
+    this.drawPixelRect(ctx, torsoX + torsoW - width * 0.12, y + height * 0.22, width * 0.24, height * 0.16, p.playerSkin);
+    this.drawPixelRect(ctx, torsoX - width * 0.04, y + height * 0.3, width * 0.24, this.pixelSize * 1.4, kit.trim || p.kitTrim);
+
+    // Neck and head with hair + features
     const headSize = width * 0.28;
     const headX = x + width * 0.36;
-    const headY = y + height * 0.08;
+    const headY = y + height * 0.02;
+    this.drawPixelRect(ctx, headX + headSize * 0.12, headY + headSize * 0.22, headSize * 0.72, this.pixelSize * 1.4, p.playerSkinShade);
     this.drawPixelRect(ctx, headX, headY, headSize, headSize, p.playerSkin);
-    this.drawPixelRect(ctx, headX + headSize * 0.22, headY + headSize * 0.35, this.pixelSize, this.pixelSize, '#0f172a');
-    this.drawPixelRect(ctx, headX + headSize * 0.6, headY + headSize * 0.35, this.pixelSize, this.pixelSize, '#0f172a');
+    this.drawPixelRect(ctx, headX, headY, headSize, this.pixelSize * 2, "#1f2937");
+    this.drawPixelRect(ctx, headX + headSize * 0.18, headY + headSize * 0.42, this.pixelSize, this.pixelSize, '#0f172a');
+    this.drawPixelRect(ctx, headX + headSize * 0.64, headY + headSize * 0.42, this.pixelSize, this.pixelSize, '#0f172a');
+    this.drawPixelRect(ctx, headX + headSize * 0.38, headY + headSize * 0.52, this.pixelSize * 1.6, this.pixelSize, '#0f172a');
   }
 
   drawDefender(ctx, x, y, width, height) {
     const p = this.palette;
     const kit = this.kit;
-    this.drawPixelRect(ctx, x + width * 0.1, y + height * 0.9, width * 0.8, this.pixelSize * 2, p.shadow);
+    this.drawPixelRect(ctx, x + width * 0.08, y + height * 0.9, width * 0.82, this.pixelSize * 2, p.shadow);
 
-    // Sliding body
-    this.drawPixelRect(ctx, x + width * 0.1, y + height * 0.5, width * 0.7, height * 0.2, kit.primary || p.kitPrimary);
-    this.drawPixelRect(ctx, x + width * 0.12, y + height * 0.58, width * 0.66, this.pixelSize, kit.trim || p.kitTrim);
+    // Sliding torso with trim and number banding
+    const bodyH = height * 0.22;
+    this.drawPixelRect(ctx, x + width * 0.1, y + height * 0.48, width * 0.74, bodyH, kit.primary || p.kitPrimary);
+    this.drawPixelRect(ctx, x + width * 0.1, y + height * 0.48, width * 0.74, this.pixelSize * 1.2, shadeColor(kit.primary || p.kitPrimary, 16));
+    this.drawPixelRect(ctx, x + width * 0.14, y + height * 0.56, width * 0.66, this.pixelSize, kit.trim || p.kitTrim);
+    this.drawPixelRect(ctx, x + width * 0.4, y + height * 0.48, this.pixelSize * 1.4, bodyH, kit.trim || p.kitTrim);
 
-    // Leading leg and trailing leg
-    this.drawPixelRect(ctx, x + width * 0.68, y + height * 0.52, width * 0.18, height * 0.12, p.playerSkin);
-    this.drawPixelRect(ctx, x + width * 0.16, y + height * 0.6, width * 0.18, height * 0.12, p.playerSkin);
-    this.drawPixelRect(ctx, x + width * 0.68, y + height * 0.6, width * 0.18, height * 0.08, kit.secondary || p.kitSecondary);
-    this.drawPixelRect(ctx, x + width * 0.14, y + height * 0.68, width * 0.2, height * 0.08, kit.secondary || p.kitSecondary);
+    // Leading leg and trailing leg with socks
+    this.drawPixelRect(ctx, x + width * 0.7, y + height * 0.5, width * 0.18, height * 0.12, p.playerSkin);
+    this.drawPixelRect(ctx, x + width * 0.68, y + height * 0.6, width * 0.2, height * 0.08, kit.secondary || p.kitSecondary);
+    this.drawPixelRect(ctx, x + width * 0.68, y + height * 0.66, width * 0.2, this.pixelSize, kit.trim || p.kitTrim);
+
+    this.drawPixelRect(ctx, x + width * 0.12, y + height * 0.62, width * 0.18, height * 0.12, p.playerSkin);
+    this.drawPixelRect(ctx, x + width * 0.1, y + height * 0.72, width * 0.22, height * 0.08, kit.secondary || p.kitSecondary);
+    this.drawPixelRect(ctx, x + width * 0.1, y + height * 0.78, width * 0.22, this.pixelSize, kit.trim || p.kitTrim);
 
     // Boots
-    this.drawPixelRect(ctx, x + width * 0.66, y + height * 0.68, width * 0.2, height * 0.08, kit.boot || p.shadow);
-    this.drawPixelRect(ctx, x + width * 0.12, y + height * 0.76, width * 0.22, height * 0.08, kit.boot || p.shadow);
+    this.drawPixelRect(ctx, x + width * 0.66, y + height * 0.7, width * 0.22, height * 0.08, kit.boot || p.shadow);
+    this.drawPixelRect(ctx, x + width * 0.08, y + height * 0.82, width * 0.24, height * 0.08, kit.boot || p.shadow);
 
     // Arms reaching forward/back
-    this.drawPixelRect(ctx, x + width * 0.08, y + height * 0.46, width * 0.22, height * 0.12, p.playerSkin);
-    this.drawPixelRect(ctx, x + width * 0.6, y + height * 0.44, width * 0.2, height * 0.12, p.playerSkin);
+    this.drawPixelRect(ctx, x + width * 0.08, y + height * 0.42, width * 0.22, height * 0.12, p.playerSkin);
+    this.drawPixelRect(ctx, x + width * 0.6, y + height * 0.4, width * 0.22, height * 0.12, p.playerSkin);
+    this.drawPixelRect(ctx, x + width * 0.08, y + height * 0.5, width * 0.2, this.pixelSize * 1.2, kit.trim || p.kitTrim);
 
-    // Head
+    // Head with hair and mask shading
     const headSize = width * 0.26;
-    this.drawPixelRect(ctx, x + width * 0.32, y + height * 0.32, headSize, headSize, p.playerSkin);
-    this.drawPixelRect(ctx, x + width * 0.36, y + height * 0.38, this.pixelSize, this.pixelSize, '#0f172a');
-    this.drawPixelRect(ctx, x + width * 0.5, y + height * 0.38, this.pixelSize, this.pixelSize, '#0f172a');
+    this.drawPixelRect(ctx, x + width * 0.32, y + height * 0.3, headSize, headSize, p.playerSkin);
+    this.drawPixelRect(ctx, x + width * 0.3, y + height * 0.3, headSize * 1.02, this.pixelSize * 1.8, "#111827");
+    this.drawPixelRect(ctx, x + width * 0.36, y + height * 0.36, this.pixelSize, this.pixelSize, '#0f172a');
+    this.drawPixelRect(ctx, x + width * 0.5, y + height * 0.36, this.pixelSize, this.pixelSize, '#0f172a');
+    this.drawPixelRect(ctx, x + width * 0.42, y + height * 0.42, this.pixelSize * 1.4, this.pixelSize, '#0f172a');
   }
 
   drawObstacles(ctx) {
