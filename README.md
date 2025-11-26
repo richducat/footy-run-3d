@@ -40,6 +40,10 @@ python -m http.server 8000
 - The landing page loads that URL inside an iframe and falls back to the local build after 3.5 seconds or on error/offline.
 - When the build runs inside the iframe (signaled by `?embed=1`), the nested preview is skipped and the game boots immediately, preventing infinite iframe recursion.
 
+## Healthy rewards & onboarding
+- A concise blueprint for generous, non-predatory rewards (coins, XP, cosmetics, training points) plus adaptive onboarding is documented in `docs/rewarding-and-onboarding.md`.
+- Key ideas: frequent micro wins, clear milestone payouts, gentle surprise rewards, transparent odds, and an onboarding flow with early wins and adaptive difficulty.
+
 ## Deploy to GitHub Pages
 1. Push the repo to GitHub.
 2. In **Settings → Pages**, choose **Deploy from a branch** and select the `main` branch with the root directory.
