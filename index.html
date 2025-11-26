@@ -214,19 +214,71 @@
                 </summary>
                 <div class="accordion__content">
                   <div class="social-grid">
-                    <div>
-                      <h4>Club sprint</h4>
-                      <ul id="clubLeaderboard" class="leaderboard"></ul>
+                    <div class="panel panel--soft">
+                      <p class="eyebrow">Leagues &amp; squads</p>
+                      <h4>Join a club and stack points</h4>
+                      <p class="retention-note">Play runs or train to contribute club points and climb your weekly league.</p>
+                      <div class="retention-grid">
+                        <div class="retention-card">
+                          <p class="eyebrow">Your club</p>
+                          <p class="retention-value" id="clubStatus">Neon Strikers · Gold League</p>
+                          <p class="retention-note">Contribute points by finishing runs or completing drills.</p>
+                        </div>
+                        <div class="retention-card">
+                          <p class="eyebrow">Club sprint</p>
+                          <ul id="clubLeaderboard" class="leaderboard"></ul>
+                        </div>
+                      </div>
                     </div>
-                    <div class="social-copy">
-                      <h4>Shareable moments</h4>
-                      <p class="retention-note">Every perfect shot gets clipped for quick sharing.</p>
-                      <p class="retention-note">Ghost replays are available for friend races.</p>
-                      <ul class="social-list">
-                        <li>New "Rally" emotes show up in friend feeds when you chain goals.</li>
-                        <li>Squad sprint bonus when three clubmates play within an hour.</li>
-                        <li>Opt-in highlight reels to drop into your team chat.</li>
-                      </ul>
+
+                    <div class="panel">
+                      <p class="eyebrow">Leaderboards</p>
+                      <h4>Global, friend, and local races</h4>
+                      <p class="retention-note">Tiered boards keep Bronze, Silver, and Gold runners matched with similar skill.</p>
+                      <div class="leaderboard-grid">
+                        <div>
+                          <p class="eyebrow">Global stage</p>
+                          <ul id="globalLeaderboard" class="leaderboard"></ul>
+                        </div>
+                        <div>
+                          <p class="eyebrow">Friends &amp; crew</p>
+                          <ul id="friendLeaderboard" class="leaderboard"></ul>
+                        </div>
+                        <div>
+                          <p class="eyebrow">Local region</p>
+                          <ul id="localLeaderboard" class="leaderboard"></ul>
+                        </div>
+                      </div>
+                      <div class="tier-grid">
+                        <div class="retention-card">
+                          <p class="eyebrow">Tiered races</p>
+                          <ul id="tierLeaderboard" class="leaderboard"></ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="panel">
+                      <p class="eyebrow">Co-op goals</p>
+                      <h4>Stack rewards together</h4>
+                      <p class="retention-note">Work as a club to smash weekly goals and unlock chests for everyone who helped.</p>
+                      <ul id="coopGoalList" class="goal-list"></ul>
+                    </div>
+
+                    <div class="panel">
+                      <p class="eyebrow">PvP &amp; highlights</p>
+                      <h4>Race friends live or by ghost</h4>
+                      <p class="retention-note">Queue for live head-to-head, battle ghost replays, and share outrageous highlights.</p>
+                      <div class="retention-grid">
+                        <div class="retention-card">
+                          <p class="eyebrow">Matchmaking</p>
+                          <ul id="pvpList" class="leaderboard"></ul>
+                        </div>
+                        <div class="retention-card">
+                          <p class="eyebrow">Shareable moments</p>
+                          <p class="retention-note">Automatic clips land in your feed for one-tap sharing.</p>
+                          <ul id="shareList" class="leaderboard"></ul>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -2797,6 +2797,20 @@ canvas {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
+.leaderboard-grid,
+.tier-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.leaderboard-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.tier-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
 .reward-grid {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
