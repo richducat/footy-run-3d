@@ -526,10 +526,16 @@ canvas {
   top: 0;
   left: 0;
   right: 0;
-  padding: 8px;
+  padding: 8px 10px;
   pointer-events: none;
   color: #e7ecf5;
   z-index: 2;
+}
+
+.hud-v3--compact {
+  max-width: 980px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .hud-v3__row {
@@ -565,7 +571,7 @@ canvas {
 .hud-v3__club {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   min-width: 120px;
 }
 
@@ -581,7 +587,7 @@ canvas {
 }
 
 .hud-v3__club-name {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 800;
   text-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
 }
@@ -590,7 +596,7 @@ canvas {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 7px 11px;
   border-radius: 10px;
   background: rgba(24, 37, 62, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -598,7 +604,7 @@ canvas {
 }
 
 .hud-v3__score {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 900;
   line-height: 1;
   text-shadow: 0 0 8px rgba(80, 203, 255, 0.4);
@@ -653,7 +659,7 @@ canvas {
 
 .hud-v3__stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 6px;
   width: 100%;
 }
@@ -661,7 +667,7 @@ canvas {
 .hud-v3__stat {
   padding: 8px 10px;
   border-radius: 10px;
-  background: rgba(10, 16, 28, 0.6);
+  background: linear-gradient(160deg, rgba(10, 16, 28, 0.75), rgba(6, 12, 20, 0.65));
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
   pointer-events: none;
@@ -676,7 +682,7 @@ canvas {
 }
 
 .hud-v3__stat-value {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 800;
   display: block;
   margin-top: 4px;
@@ -719,11 +725,79 @@ canvas {
   }
 
   .hud-v3__stats {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
   }
 
   .hud-v3__stat {
     padding: 7px 9px;
+  }
+}
+
+@media (max-width: 520px) {
+  .hud-v3 {
+    padding: 6px 8px;
+  }
+
+  .hud-v3__scorecard {
+    grid-template-columns: 1fr;
+    text-align: center;
+    row-gap: 4px;
+    padding: 7px 9px;
+  }
+
+  .hud-v3__scoreline {
+    justify-content: center;
+  }
+
+  .hud-v3__club {
+    min-width: 0;
+    align-items: center;
+  }
+
+  .hud-v3__club--away {
+    align-items: center;
+  }
+
+  .hud-v3__label {
+    font-size: 9px;
+  }
+
+  .hud-v3__club-name {
+    font-size: 15px;
+  }
+
+  .hud-v3__scorebox {
+    padding: 6px 10px;
+  }
+
+  .hud-v3__score {
+    font-size: 21px;
+  }
+
+  .hud-v3__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: space-between;
+  }
+
+  .hud-v3__stat {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 140px;
+    padding: 7px 8px;
+  }
+
+  .hud-v3__stat-value {
+    font-size: 16px;
+  }
+
+  .hud-v3__stat-note {
+    font-size: 10px;
+    line-height: 1.3;
+  }
+
+  .hud-v3__stat-body {
+    gap: 6px;
   }
 }
 
