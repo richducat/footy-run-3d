@@ -180,7 +180,7 @@ export class Game {
 
     this.lanes = 3;
     const tuning = options.tuning || {};
-    this.baseSpeed = 220 * (tuning.sprintSpeed || 1); // px/s
+    this.baseSpeed = 200 * (tuning.sprintSpeed || 1); // px/s
     this.shotGainRate = tuning.shotGainRate || 1;
     this.reviveInvulnDuration =
       tuning.reviveInvulnDuration == null ? 0.9 : tuning.reviveInvulnDuration;
@@ -194,61 +194,61 @@ export class Game {
         name: "Kickoff Circuit",
         note: "Opening pace",
         start: 0,
-        speedRamp: 0.45,
-        speedMultiplier: 1,
-        obstacleBase: 1.8,
-        obstacleMin: 0.55,
-        obstacleRamp: 0.01,
-        pickupInterval: 0.85,
-        ballPickupChance: 0.3,
-        highObstacleChance: 0.35,
-        ballCarrierChance: 0.4,
-        goalieSpeed: 1
+        speedRamp: 0.36,
+        speedMultiplier: 0.95,
+        obstacleBase: 2.05,
+        obstacleMin: 0.8,
+        obstacleRamp: 0.007,
+        pickupInterval: 0.95,
+        ballPickupChance: 0.32,
+        highObstacleChance: 0.28,
+        ballCarrierChance: 0.35,
+        goalieSpeed: 0.95
       },
       {
         name: "Derby Nights",
         note: "Crowded lanes and quick breaks",
         start: 400,
-        speedRamp: 0.5,
-        speedMultiplier: 1.04,
-        obstacleBase: 1.6,
-        obstacleMin: 0.5,
-        obstacleRamp: 0.011,
-        pickupInterval: 0.8,
+        speedRamp: 0.42,
+        speedMultiplier: 0.99,
+        obstacleBase: 1.9,
+        obstacleMin: 0.72,
+        obstacleRamp: 0.009,
+        pickupInterval: 0.88,
         ballPickupChance: 0.34,
-        highObstacleChance: 0.4,
-        ballCarrierChance: 0.45,
-        goalieSpeed: 1.05
+        highObstacleChance: 0.34,
+        ballCarrierChance: 0.4,
+        goalieSpeed: 1
       },
       {
         name: "Continental Clash",
         note: "Bonus balls and harder presses",
         start: 850,
-        speedRamp: 0.56,
-        speedMultiplier: 1.08,
-        obstacleBase: 1.45,
-        obstacleMin: 0.46,
-        obstacleRamp: 0.0125,
-        pickupInterval: 0.74,
+        speedRamp: 0.48,
+        speedMultiplier: 1.03,
+        obstacleBase: 1.75,
+        obstacleMin: 0.68,
+        obstacleRamp: 0.0105,
+        pickupInterval: 0.82,
         ballPickupChance: 0.36,
-        highObstacleChance: 0.44,
-        ballCarrierChance: 0.48,
-        goalieSpeed: 1.12
+        highObstacleChance: 0.38,
+        ballCarrierChance: 0.44,
+        goalieSpeed: 1.05
       },
       {
         name: "Champions Blitz",
         note: "Relentless pace and elite keepers",
         start: 1400,
-        speedRamp: 0.62,
-        speedMultiplier: 1.12,
-        obstacleBase: 1.3,
-        obstacleMin: 0.42,
-        obstacleRamp: 0.0135,
-        pickupInterval: 0.7,
-        ballPickupChance: 0.4,
-        highObstacleChance: 0.48,
-        ballCarrierChance: 0.52,
-        goalieSpeed: 1.18
+        speedRamp: 0.54,
+        speedMultiplier: 1.06,
+        obstacleBase: 1.65,
+        obstacleMin: 0.64,
+        obstacleRamp: 0.0115,
+        pickupInterval: 0.78,
+        ballPickupChance: 0.38,
+        highObstacleChance: 0.42,
+        ballCarrierChance: 0.46,
+        goalieSpeed: 1.1
       }
     ];
     this.activeTier = this.getDifficultyTier();
@@ -379,9 +379,9 @@ export class Game {
 
   getFieldGeometry() {
     const isV2 = this.visualVariant === "v2";
-    const horizon = this.height * (isV2 ? 0.36 : 0.12);
-    const bottomSpan = this.width * (isV2 ? 1.08 : 0.46);
-    const topSpan = this.width * (isV2 ? 0.12 : 0.32);
+    const horizon = this.height * (isV2 ? 0.34 : 0.16);
+    const bottomSpan = this.width * (isV2 ? 1.18 : 0.6);
+    const topSpan = this.width * (isV2 ? 0.18 : 0.46);
 
     return {
       horizon,

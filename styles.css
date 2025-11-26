@@ -2648,6 +2648,16 @@ canvas {
   align-items: center;
 }
 
+.inline-toast {
+  border-color: rgba(45, 252, 138, 0.35);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, rgba(45, 252, 138, 0.12), rgba(15, 216, 199, 0.08));
+}
+
+.inline-toast__copy {
+  margin-top: 4px;
+}
+
 .leaderboard__rank {
   width: 28px;
   text-align: center;

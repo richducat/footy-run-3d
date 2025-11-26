@@ -457,15 +457,26 @@ function renderStreakUI() {
 }
 
 function triggerCelebration({ title, copy, tag = "Goal!", duration = 1400 }) {
-  if (!celebrationOverlay) return;
-  celebrationOverlay.classList.remove("hidden");
-  celebrationTitle.textContent = title;
-  celebrationCopy.textContent = copy;
-  celebrationTag.textContent = tag;
-  window.clearTimeout(celebrationOverlay._hideTimeout);
-  celebrationOverlay._hideTimeout = window.setTimeout(() => {
+  // Keep the full-screen overlay hidden so gameplay isn't obstructed.
+  if (celebrationOverlay) {
     celebrationOverlay.classList.add("hidden");
-  }, duration);
+    window.clearTimeout(celebrationOverlay._hideTimeout);
+  }
+
+  if (!notificationListEl) return;
+
+  const toast = document.createElement("li");
+  toast.classList.add("inline-toast");
+  toast.innerHTML = `
+    <div>
+      <strong>${tag}</strong>
+      <p class="progress-label">${title}</p>
+      <p class="progress-label inline-toast__copy">${copy}</p>
+    </div>
+  `;
+
+  notificationListEl.prepend(toast);
+  window.setTimeout(() => toast.remove(), Math.max(duration, 1500));
 }
 
 function generateGuestId() {
