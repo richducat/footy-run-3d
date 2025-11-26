@@ -26,6 +26,8 @@ const hudEl = document.getElementById("hud");
 const hudDistance = document.getElementById("hudDistance");
 const hudGoals = document.getElementById("hudGoals");
 const hudBest = document.getElementById("hudBest");
+const hudTierName = document.getElementById("hudTierName");
+const hudTierNote = document.getElementById("hudTierNote");
 const shotMeterFill = document.getElementById("shotMeterFill");
 const pauseBanner = document.getElementById("pauseBanner");
 const pauseMenu = document.getElementById("pauseMenu");
@@ -136,6 +138,18 @@ const CARD_PIXEL_PALETTES = {
     secondary: "#052e16",
     trim: "#34d399",
     ballAccent: "#d1fae5"
+  },
+  midfield_maestro: {
+    primary: "#5b21b6",
+    secondary: "#1b1034",
+    trim: "#f59e0b",
+    ballAccent: "#fef3c7"
+  },
+  neon_icon: {
+    primary: "#0ea5e9",
+    secondary: "#0f172a",
+    trim: "#22d3ee",
+    ballAccent: "#f472b6"
   }
 };
 
@@ -1370,6 +1384,8 @@ function handleGameStats(stats) {
   hudDistance.textContent = `${stats.distance} m`;
   hudGoals.textContent = stats.goals.toString();
   hudBest.textContent = `${stats.bestDistance} m`;
+  if (hudTierName) hudTierName.textContent = stats.tierName || "Kickoff Circuit";
+  if (hudTierNote) hudTierNote.textContent = stats.tierNote || "Opening pace";
   const pct = (stats.shotMeter / 100) * 100;
   shotMeterFill.style.width = `${Math.min(100, Math.max(0, pct))}%`;
   shotMeterFill.classList.toggle("shot-meter__fill--ready", !!stats.shotReady);
