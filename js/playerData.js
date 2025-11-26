@@ -162,30 +162,60 @@ export const RARITY_CONFIG = {
   }
 };
 
-const DAILY_MISSIONS = [
+const DAILY_MISSION_POOL = [
   {
-    id: "daily_runs",
-    name: "Kickoff Runs",
-    description: "Complete 3 runs.",
+    id: "daily_warmup_runs",
+    name: "Warmup Jog",
+    description: "Finish 2 quick runs to loosen up.",
     metric: "runs",
-    goal: 3,
-    reward: 75
+    goal: 2,
+    reward: 50,
+    difficulty: "easy"
   },
   {
-    id: "daily_goals",
-    name: "Sharpshooter",
-    description: "Score 5 goals (total across runs).",
+    id: "daily_coin_lane",
+    name: "Lane Collector",
+    description: "Grab 120 coins from the lanes.",
+    metric: "coins",
+    goal: 120,
+    reward: 60,
+    difficulty: "easy"
+  },
+  {
+    id: "daily_goal_burst",
+    name: "Goal Burst",
+    description: "Score 6 goals across any runs.",
     metric: "goals",
-    goal: 5,
-    reward: 75
+    goal: 6,
+    reward: 90,
+    difficulty: "medium"
   },
   {
-    id: "daily_distance",
-    name: "Marathon Legs",
-    description: "Reach 1,500m total distance in a day.",
+    id: "daily_meter_push",
+    name: "Sprint Session",
+    description: "Reach 1,800m combined distance today.",
     metric: "distance",
-    goal: 1500,
-    reward: 100
+    goal: 1800,
+    reward: 110,
+    difficulty: "medium"
+  },
+  {
+    id: "daily_hat_trick",
+    name: "Hat Trick Hero",
+    description: "Score 9 goals before reset.",
+    metric: "goals",
+    goal: 9,
+    reward: 140,
+    difficulty: "hard"
+  },
+  {
+    id: "daily_marathon",
+    name: "Distance Grinder",
+    description: "Cover 2,400m total in a day.",
+    metric: "distance",
+    goal: 2400,
+    reward: 150,
+    difficulty: "hard"
   }
 ];
 
@@ -193,28 +223,79 @@ const WEEKLY_MISSIONS = [
   {
     id: "weekly_distance",
     name: "Endless Engine",
-    description: "Run 10,000m total.",
+    description: "Run 12,500m total this week.",
     metric: "distance",
-    goal: 10000,
-    reward: 250
+    goal: 12500,
+    reward: 275
   },
   {
     id: "weekly_goals",
     name: "Net Shredder",
-    description: "Score 40 goals.",
+    description: "Score 45 goals.",
     metric: "goals",
-    goal: 40,
-    reward: 250
+    goal: 45,
+    reward: 280
   },
   {
     id: "weekly_coins",
     name: "Treasure Hunter",
-    description: "Collect 300 coins in runs.",
+    description: "Collect 350 coins in runs.",
     metric: "coins",
-    goal: 300,
-    reward: 300
+    goal: 350,
+    reward: 320
+  },
+  {
+    id: "weekly_runs",
+    name: "Club Captain",
+    description: "Finish 18 runs.",
+    metric: "runs",
+    goal: 18,
+    reward: 240
   }
 ];
+
+const JOURNEY_MISSIONS = [
+  {
+    id: "journey_matches",
+    name: "Season Grind",
+    description: "Play 10 matches across any days.",
+    metric: "runs",
+    goal: 10,
+    reward: 250
+  },
+  {
+    id: "journey_goals",
+    name: "Golden Boot Pace",
+    description: "Score 20 goals over multiple sessions.",
+    metric: "goals",
+    goal: 20,
+    reward: 320
+  },
+  {
+    id: "journey_coin_bank",
+    name: "Transfer Kitty",
+    description: "Bank 1,000 coins to fund upgrades.",
+    metric: "coins",
+    goal: 1000,
+    reward: 360
+  }
+];
+
+function pickMissionByDifficulty(pool, difficulty, seed = 0) {
+  const candidates = pool.filter((mission) => mission.difficulty === difficulty);
+  const list = candidates.length > 0 ? candidates : pool;
+  const index = list.length > 0 ? seed % list.length : 0;
+  return list[index];
+}
+
+function pickDailyMissions(now = new Date()) {
+  const seed = now.getUTCFullYear() + now.getUTCMonth() + now.getUTCDate();
+  return [
+    pickMissionByDifficulty(DAILY_MISSION_POOL, "easy", seed),
+    pickMissionByDifficulty(DAILY_MISSION_POOL, "medium", seed + 1),
+    pickMissionByDifficulty(DAILY_MISSION_POOL, "hard", seed + 2)
+  ];
+}
 
 function getDayKey(date = new Date()) {
   const copy = new Date(date);
@@ -279,11 +360,15 @@ function defaultMissions(now = new Date()) {
   return {
     daily: {
       key: getDayKey(now),
-      missions: missionStateFromDefs(DAILY_MISSIONS)
+      missions: missionStateFromDefs(pickDailyMissions(now))
     },
     weekly: {
       key: getWeekKey(now),
       missions: missionStateFromDefs(WEEKLY_MISSIONS)
+    },
+    journey: {
+      key: "journey",
+      missions: missionStateFromDefs(JOURNEY_MISSIONS)
     }
   };
 }
@@ -516,7 +601,7 @@ export function refreshMissions(data, now = new Date()) {
   if (data.missions.daily?.key !== currentDay) {
     data.missions.daily = {
       key: currentDay,
-      missions: missionStateFromDefs(DAILY_MISSIONS)
+      missions: missionStateFromDefs(pickDailyMissions(now))
     };
   }
 
@@ -525,6 +610,13 @@ export function refreshMissions(data, now = new Date()) {
     data.missions.weekly = {
       key: currentWeek,
       missions: missionStateFromDefs(WEEKLY_MISSIONS)
+    };
+  }
+
+  if (!data.missions.journey?.missions) {
+    data.missions.journey = {
+      key: "journey",
+      missions: missionStateFromDefs(JOURNEY_MISSIONS)
     };
   }
 }
@@ -539,7 +631,7 @@ export function updateMissionsAfterRun(data, runStats) {
     coins: runStats.coins || 0
   };
 
-  ["daily", "weekly"].forEach((cadence) => {
+  ["daily", "weekly", "journey"].forEach((cadence) => {
     const bucket = data.missions[cadence];
     if (!bucket?.missions) return;
 
@@ -727,9 +819,20 @@ export function updateStreak(data, now = new Date()) {
     }
   }
 
+  if (streak.days >= 3 && streak.shield < 1) {
+    streak.shield = 1; // replenish grace day after rebuilding momentum
+  }
+
   streak.lastLogin = todayKey;
   data.streak = streak;
   return streak;
+}
+
+export function getStreakBonuses(streak = { days: 0, shield: 0 }) {
+  const days = streak.days || 0;
+  const xpBonus = 1 + Math.min(0.2, days * 0.02);
+  const coinBonus = 1 + Math.min(0.15, Math.max(0, days - 1) * 0.01);
+  return { xpBonus, coinBonus, shield: streak.shield || 0 };
 }
 
 export function logSessionEvent(data, { sessionLengthMs = 0 } = {}) {
