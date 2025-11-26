@@ -145,7 +145,8 @@ export class Game {
     this.height = options.logicalHeight || canvas.height / this.pixelRatio;
 
     this.pixelSize = 1;
-    this.palette = {
+    this.visualVariant = options.visualVariant || "v1";
+    this.basePalette = {
       turfDark: "#0c2a24",
       turfMid: "#0f3d30",
       turfLight: "#155f44",
@@ -163,8 +164,17 @@ export class Game {
       net: "#e8f7ff",
       glow: "#2dfc8a",
       crowdJersey: ["#0f9b7f", "#1f3a74", "#ed4b88", "#ffc857", "#f1f5f9"],
-      crowdShadow: "#050912"
+      crowdShadow: "#050912",
+      wallBase: "#1f2631",
+      wallAccent: "#324156",
+      graffiti: "#f25f5c",
+      paint: "#3f7fb6",
+      paintAccent: "#f29f67",
+      asphaltPatch: "#2d323b",
+      fence: "#6b7280"
     };
+    this.palette = { ...this.basePalette };
+    this.applyVariantPalette();
 
     if (this.visualVariant === "v2") {
       this.palette = {
@@ -183,7 +193,6 @@ export class Game {
     }
 
     // Layered rendering buffers to keep static detail cheap
-    this.visualVariant = options.visualVariant || "v1";
     this.pitchLayer = null;
     this.atmosphereLayer = null;
     this.buildStaticLayers();
@@ -402,11 +411,29 @@ export class Game {
       return 0.42 + t * 1.08;
     }
 
+    if (this.visualVariant === "v3") {
+      return 0.5 + t * 0.85;
+    }
+
     return 0.55 + t * 0.55;
   }
 
   getFieldGeometry() {
     const isV2 = this.visualVariant === "v2";
+    if (this.visualVariant === "v3") {
+      const horizon = this.height * 0.28;
+      const bottomSpan = this.width * 1.08;
+      const topSpan = this.width * 0.32;
+
+      return {
+        horizon,
+        topSpan,
+        bottomSpan,
+        topStart: this.width / 2 - topSpan / 2,
+        bottomStart: this.width / 2 - bottomSpan / 2
+      };
+    }
+
     const horizon = this.height * (isV2 ? 0.34 : 0.16);
     const bottomSpan = this.width * (isV2 ? 1.18 : 0.6);
     const topSpan = this.width * (isV2 ? 0.18 : 0.46);
@@ -423,9 +450,42 @@ export class Game {
   getPerspectiveProgress(y, geometry) {
     const { horizon } = geometry;
     const clamped = Math.max(0, Math.min(1, (y - horizon) / (this.height - horizon)));
-    if (this.visualVariant !== "v2") return clamped;
+    if (this.visualVariant === "v2") {
+      return Math.pow(clamped, 1.25);
+    }
 
-    return Math.pow(clamped, 1.25);
+    if (this.visualVariant === "v3") {
+      return Math.pow(clamped, 1.12);
+    }
+
+    return clamped;
+  }
+
+  applyVariantPalette() {
+    if (this.visualVariant === "v3") {
+      this.palette = {
+        ...this.basePalette,
+        turfDark: "#1f232c",
+        turfMid: "#2a2f3a",
+        turfLight: "#343b47",
+        turfHighlight: "#3f4754",
+        touchline: "#151821",
+        chalk: "#f2f6ff",
+        glow: "#f97316",
+        crowdJersey: ["#f97316", "#22d3ee", "#a5b4fc", "#facc15", "#9ca3af"],
+        crowdShadow: "#0d1018",
+        wallBase: "#2b303b",
+        wallAccent: "#3b4350",
+        graffiti: "#ef4444",
+        paint: "#3f7fb6",
+        paintAccent: "#f97316",
+        asphaltPatch: "#2c313a",
+        fence: "#8b95a5"
+      };
+      return;
+    }
+
+    this.palette = { ...this.basePalette };
   }
 
   createLayer(drawFn) {
@@ -1015,6 +1075,11 @@ export class Game {
   }
 
   drawPitchSurface(ctx) {
+    if (this.visualVariant === "v3") {
+      this.drawPitchSurfaceV3(ctx);
+      return;
+    }
+
     if (this.visualVariant === "v2") {
       this.drawPitchSurfaceV2(ctx);
       return;
@@ -1234,6 +1299,88 @@ export class Game {
     ctx.fillRect(0, horizon - this.pixelSize * 8, this.width, this.pixelSize * 26);
   }
 
+  drawPitchSurfaceV3(ctx) {
+    const { palette } = this;
+    const geometry = this.getFieldGeometry();
+    const { horizon, bottomSpan } = geometry;
+
+    ctx.fillStyle = palette.touchline;
+    ctx.fillRect(0, 0, this.width, this.height);
+
+    ctx.save();
+    this.tracePerspectiveField(ctx, geometry);
+    ctx.clip();
+
+    const asphalt = ctx.createLinearGradient(0, horizon - this.pixelSize * 4, 0, this.height);
+    asphalt.addColorStop(0, palette.turfLight);
+    asphalt.addColorStop(0.4, palette.turfMid);
+    asphalt.addColorStop(1, palette.turfDark);
+    ctx.fillStyle = asphalt;
+    ctx.fillRect(0, horizon - this.pixelSize * 8, this.width, this.height);
+
+    for (let i = 0; i < 26; i++) {
+      const w = this.width * (0.04 + Math.random() * 0.08);
+      const h = this.pixelSize * (6 + Math.random() * 22);
+      const x = geometry.bottomStart + Math.random() * Math.max(this.pixelSize, bottomSpan - w);
+      const y = horizon + Math.random() * (this.height - horizon);
+      const shade = i % 3 === 0 ? hexToRgba(palette.chalk, 0.06) : palette.asphaltPatch;
+      this.drawPixelRect(ctx, x, y, w, h, shade);
+    }
+
+    const paintWidth = bottomSpan * 0.72;
+    const paintHeight = (this.height - horizon) * 0.2;
+    const paintX = geometry.bottomStart + (bottomSpan - paintWidth) / 2;
+    const paintY = horizon + this.pixelSize * 2;
+    this.drawPixelRect(ctx, paintX, paintY, paintWidth, paintHeight, hexToRgba(palette.paint, 0.8));
+    this.drawPixelRect(
+      ctx,
+      paintX + this.pixelSize * 2,
+      paintY + this.pixelSize * 2,
+      paintWidth - this.pixelSize * 4,
+      paintHeight - this.pixelSize * 4,
+      hexToRgba(palette.paintAccent, 0.18)
+    );
+
+    const stripY = horizon + (this.height - horizon) * 0.58;
+    this.drawPixelRect(
+      ctx,
+      geometry.bottomStart + this.pixelSize,
+      stripY,
+      bottomSpan - this.pixelSize * 2,
+      this.pixelSize * 3,
+      hexToRgba(palette.paintAccent, 0.35)
+    );
+
+    ctx.fillStyle = hexToRgba(palette.chalk, 0.76);
+    this.drawConvergingLaneMarkers(ctx, geometry);
+
+    const circleRadius = 58;
+    const centerY = horizon + (this.height - horizon) * 0.52;
+    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 12) {
+      const cx = this.width / 2 + Math.cos(angle) * circleRadius;
+      const cy = centerY + Math.sin(angle) * circleRadius;
+      this.drawPixelRect(ctx, cx, cy, this.pixelSize * 2, this.pixelSize * 2, palette.chalk);
+    }
+    this.drawPixelRect(
+      ctx,
+      this.width / 2 - this.pixelSize / 2,
+      centerY - this.pixelSize / 2,
+      this.pixelSize,
+      this.pixelSize,
+      palette.chalk
+    );
+
+    ctx.restore();
+    ctx.save();
+    this.tracePerspectiveField(ctx, geometry);
+    ctx.strokeStyle = hexToRgba(palette.chalk, 0.75);
+    ctx.lineWidth = this.pixelSize * 1.6;
+    ctx.stroke();
+    ctx.restore();
+
+    this.drawStreetPerimeter(ctx, geometry, horizon);
+  }
+
   drawConvergingLaneMarkers(ctx, geometry) {
     const { horizon } = geometry;
     const dashLength = this.pixelSize * 4;
@@ -1268,6 +1415,29 @@ export class Game {
       const length = dashLength * taper;
       const width = this.pixelSize * (1.4 + t * 0.6);
       this.drawPixelRect(ctx, x - width / 2, yPos, width, length, this.palette.chalk);
+    }
+  }
+
+  drawStreetPerimeter(ctx, geometry, horizon) {
+    const apronHeight = this.pixelSize * 10;
+    ctx.fillStyle = hexToRgba(this.palette.wallAccent, 0.35);
+    ctx.fillRect(0, horizon - apronHeight, this.width, apronHeight);
+
+    ctx.fillStyle = hexToRgba(this.palette.fence, 0.68);
+    for (
+      let x = geometry.bottomStart + this.pixelSize * 2;
+      x < geometry.bottomStart + geometry.bottomSpan;
+      x += this.pixelSize * 6
+    ) {
+      this.drawPixelRect(ctx, x, horizon - apronHeight * 0.6, this.pixelSize, apronHeight * 0.6, ctx.fillStyle);
+    }
+
+    const coneColor = "#f97316";
+    for (let i = 0; i < 5; i++) {
+      const x = geometry.bottomStart + (geometry.bottomSpan * (i + 0.6)) / 5.6;
+      const y = this.height - this.pixelSize * 7;
+      this.drawPixelRect(ctx, x, y, this.pixelSize * 2, this.pixelSize * 4, coneColor);
+      this.drawPixelRect(ctx, x - this.pixelSize * 0.5, y + this.pixelSize * 3, this.pixelSize * 3, this.pixelSize, hexToRgba(coneColor, 0.9));
     }
   }
 
@@ -1336,6 +1506,11 @@ export class Game {
   }
 
   drawAtmosphericBackdrop(ctx) {
+    if (this.visualVariant === "v3") {
+      this.drawUrbanBackdrop(ctx);
+      return;
+    }
+
     const { horizon } = this.getFieldGeometry();
     const bandHeight = horizon * 0.8;
 
@@ -1397,6 +1572,52 @@ export class Game {
       ctx.fillStyle = `rgba(255,255,255,${twinkle})`;
       ctx.fillRect(x, horizon - this.pixelSize * 3, this.pixelSize, this.pixelSize);
     }
+  }
+
+  drawUrbanBackdrop(ctx) {
+    const { horizon } = this.getFieldGeometry();
+    const bandHeight = horizon * 0.9;
+
+    const dusk = ctx.createLinearGradient(0, 0, 0, horizon * 1.6);
+    dusk.addColorStop(0, "#262c3a");
+    dusk.addColorStop(1, "#12151c");
+    ctx.fillStyle = dusk;
+    ctx.fillRect(0, 0, this.width, horizon * 1.6);
+
+    ctx.fillStyle = this.palette.wallBase;
+    ctx.fillRect(0, horizon - bandHeight, this.width, bandHeight);
+    ctx.fillStyle = hexToRgba(this.palette.wallAccent, 0.5);
+    ctx.fillRect(0, horizon - bandHeight * 0.72, this.width, this.pixelSize * 6);
+
+    const windowColor = "#fcd34d";
+    for (let y = horizon - bandHeight * 0.85; y < horizon - bandHeight * 0.2; y += this.pixelSize * 12) {
+      for (let x = this.pixelSize * 4; x < this.width; x += this.pixelSize * 22) {
+        const flicker = x % (this.pixelSize * 44) === 0;
+        const color = flicker ? hexToRgba(windowColor, 0.95) : hexToRgba(windowColor, 0.6);
+        this.drawPixelRect(ctx, x, y, this.pixelSize * 6, this.pixelSize * 4, color);
+      }
+    }
+
+    ctx.fillStyle = hexToRgba(this.palette.graffiti, 0.8);
+    this.drawPixelRect(ctx, this.width * 0.12, horizon - this.pixelSize * 8, this.pixelSize * 24, this.pixelSize * 6, ctx.fillStyle);
+    ctx.fillStyle = hexToRgba(this.palette.paintAccent, 0.7);
+    this.drawPixelRect(ctx, this.width * 0.62, horizon - this.pixelSize * 10, this.pixelSize * 18, this.pixelSize * 8, ctx.fillStyle);
+
+    ctx.strokeStyle = hexToRgba(this.palette.fence, 0.35);
+    ctx.lineWidth = this.pixelSize;
+    for (let y = horizon - this.pixelSize * 6; y < horizon + this.pixelSize * 2; y += this.pixelSize * 4) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(this.width, y - this.pixelSize * 2);
+      ctx.stroke();
+    }
+
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.fillStyle = hexToRgba("#f97316", 0.32);
+    ctx.fillRect(this.width * 0.08, horizon - bandHeight * 0.32, this.pixelSize * 10, bandHeight * 0.4);
+    ctx.fillRect(this.width * 0.82, horizon - bandHeight * 0.28, this.pixelSize * 10, bandHeight * 0.36);
+    ctx.restore();
   }
 
   drawPitch(ctx) {
