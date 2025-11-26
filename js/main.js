@@ -138,6 +138,7 @@ const btnSkipBuilder = document.getElementById("btnSkipBuilder");
 const btnCloseBuilder = document.getElementById("btnCloseBuilder");
 const btnOpenBuilder = document.getElementById("btnOpenBuilder");
 const btnShufflePreset = document.getElementById("btnShufflePreset");
+const featureJumpButtons = document.querySelectorAll("[data-feature-target], [data-feature-action]");
 
 // Login / save
 const loginEmailInput = document.getElementById("loginEmail");
@@ -2234,6 +2235,36 @@ btnPlay.addEventListener("click", () => {
 btnPlayV2?.addEventListener("click", () => {
   spawnTapParticles(btnPlayV2);
   startVariantRun("v2");
+});
+
+const highlightFeatureTarget = (targetEl) => {
+  if (!targetEl) return;
+  targetEl.classList.add("feature-highlight");
+  targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.setTimeout(() => targetEl.classList.remove("feature-highlight"), 1800);
+};
+
+featureJumpButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const action = btn.dataset.featureAction;
+    if (action === "openBuilder") {
+      openPlayerBuilder("Claim your kit and ball look.");
+      highlightFeatureTarget(builderOverlay);
+      return;
+    }
+
+    const targetId = btn.dataset.featureTarget;
+    if (!targetId) return;
+
+    const targetEl = document.getElementById(targetId);
+    if (!targetEl) return;
+
+    if (targetEl.tagName?.toLowerCase() === "details") {
+      targetEl.open = true;
+    }
+
+    highlightFeatureTarget(targetEl);
+  });
 });
 
 skillPathButtons.forEach((btn) => {
