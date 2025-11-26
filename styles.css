@@ -372,6 +372,13 @@ canvas {
   min-width: 130px;
 }
 
+.hud-block--session {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+}
+
 .hud-label {
   font-size: 9px;
   letter-spacing: 0.08em;
@@ -1020,6 +1027,54 @@ canvas {
   gap: 10px;
 }
 
+.session-presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 28px 0 10px;
+}
+
+.session-card {
+  background: rgba(10, 21, 36, 0.72);
+  border: 1px solid rgba(45, 252, 138, 0.18);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.session-card--primary {
+  border-color: rgba(45, 252, 138, 0.45);
+  box-shadow: 0 8px 32px rgba(45, 252, 138, 0.18);
+}
+
+.session-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.session-card__copy {
+  color: #e5e7eb;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.session-card__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.session-card__hint {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
 .start-button {
   --press-depth: 10px;
   position: relative;
@@ -1609,6 +1664,12 @@ canvas {
   margin-bottom: 10px;
 }
 
+.stat-note--highlight {
+  color: #e0fbea;
+  opacity: 1;
+  font-weight: 700;
+}
+
 .continue-panel {
   margin-top: 10px;
 }
@@ -1628,6 +1689,31 @@ canvas {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   padding: 6px 10px;
   border-radius: 999px;
+}
+
+.session-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(10, 21, 36, 0.55);
+  border: 1px solid rgba(45, 252, 138, 0.25);
+  border-radius: 12px;
+  margin: 8px 0;
+}
+
+.session-summary__label {
+  font-weight: 700;
+  margin: 2px 0 0;
+  color: #e5e7eb;
+}
+
+.session-summary__meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .button-row {

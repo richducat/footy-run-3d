@@ -32,6 +32,46 @@ import { InputManager } from "./input.js";
 const DEV_CODE = "everett";
 const DEV_TOKEN_STASH = 999999;
 
+const SESSION_PRESETS = {
+  quick: {
+    key: "quick",
+    label: "Quick match",
+    targetDurationMs: 3 * 60 * 1000,
+    speedScalar: 0.98,
+    offlineFriendly: false
+  },
+  offline: {
+    key: "offline",
+    label: "Offline drill",
+    targetDurationMs: 2 * 60 * 1000,
+    speedScalar: 0.9,
+    offlineFriendly: true
+  },
+  endless: {
+    key: "endless",
+    label: "Endless run",
+    targetDurationMs: null,
+    speedScalar: 1,
+    offlineFriendly: false
+  }
+};
+let activeSessionPreset = SESSION_PRESETS.quick;
+
+function formatDuration(ms) {
+  const totalSeconds = Math.max(0, Math.round(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60)
+    .toString()
+    .padStart(1, "0");
+  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
+
+function sessionDurationHint(preset) {
+  if (!preset?.targetDurationMs) return "No cap";
+  const minutes = Math.round(preset.targetDurationMs / 60000);
+  return `${minutes}-min cap`;
+}
+
 const canvas = document.getElementById("gameCanvas");
 const hudEl = document.getElementById("hud");
 const hudDistance = document.getElementById("hudDistance");
@@ -39,6 +79,8 @@ const hudGoals = document.getElementById("hudGoals");
 const hudBest = document.getElementById("hudBest");
 const hudTierName = document.getElementById("hudTierName");
 const hudTierNote = document.getElementById("hudTierNote");
+const hudSessionLabel = document.getElementById("hudSessionLabel");
+const hudSessionTimer = document.getElementById("hudSessionTimer");
 const shotMeterFill = document.getElementById("shotMeterFill");
 const pauseBanner = document.getElementById("pauseBanner");
 const pauseMenu = document.getElementById("pauseMenu");
@@ -98,6 +140,9 @@ const goCoinsGoals = document.getElementById("goCoinsGoals");
 const goCoinsTotal = document.getElementById("goCoinsTotal");
 const goBestNote = document.getElementById("goBestNote");
 const goContinueNote = document.getElementById("goContinueNote");
+const goSessionSummary = document.getElementById("goSessionSummary");
+const goSessionDuration = document.getElementById("goSessionDuration");
+const goSessionMode = document.getElementById("goSessionMode");
 const btnContinue = document.getElementById("btnContinue");
 const continueCostLabel = document.getElementById("continueCostLabel");
 
@@ -110,6 +155,9 @@ const btnMissions = document.getElementById("btnMissions");
 const btnDevCode = document.getElementById("btnDevCode");
 const btnPause = document.getElementById("btnPause");
 const btnReplay = document.getElementById("btnReplay");
+const btnQuickSession = document.getElementById("btnQuickSession");
+const btnOfflineDrill = document.getElementById("btnOfflineDrill");
+const btnEndless = document.getElementById("btnEndless");
 const btnGoToTeam = document.getElementById("btnGoToTeam");
 const btnGoToMenu = document.getElementById("btnGoToMenu");
 const btnResetProgress = document.getElementById("btnResetProgress");
@@ -543,6 +591,7 @@ let continueCost = 10;
 let continueSpendTotal = 0;
 let pendingGameOverPayload = null;
 let visualVariant = "v1";
+let sessionStartTime = null;
 
 function resetContinueState() {
   continueCost = 10;
@@ -1466,6 +1515,16 @@ function updateVariantToggleUI() {
   });
 }
 
+function syncSessionLabels(preset) {
+  const hint = sessionDurationHint(preset);
+  if (hudSessionLabel) hudSessionLabel.textContent = preset?.label || "Session";
+  if (hudSessionTimer) hudSessionTimer.textContent = `${formatDuration(0)} · ${hint}`;
+  if (goSessionSummary) goSessionSummary.textContent = preset?.label || "Session";
+  if (goSessionDuration) goSessionDuration.textContent = `${formatDuration(0)}`;
+  if (goSessionMode)
+    goSessionMode.textContent = preset?.offlineFriendly ? "Offline ready" : "Connected play";
+}
+
 function updateBuilderPreview() {
   const kit = getKitColorsFromInputs();
   if (builderPreviewJersey) {
@@ -1934,22 +1993,24 @@ function startVariantRun(variant) {
   if (variant && variant !== visualVariant) {
     setVisualVariant(variant);
   }
-  startRun();
+  startRun(activeSessionPreset);
 }
 
-function startRun() {
+function startRun(preset = activeSessionPreset) {
+  activeSessionPreset = preset || activeSessionPreset;
   if (!ensureProfileSetup("Customize your striker before the first run.")) return;
   setActiveScreen(null); // close menus
   pauseBanner.classList.add("hidden");
   pauseMenu?.classList.add("hidden");
+  sessionStartTime = Date.now();
   resetContinueState();
   updateStreak(playerData);
-  logSessionEvent(playerData, { sessionLengthMs: 0 });
   renderStreakUI();
   renderInsights();
   savePlayerData(playerData);
-  game.startRun();
+  game.startRun({ sessionConfig: activeSessionPreset });
   updateTouchControlsVisibility();
+  syncSessionLabels(activeSessionPreset);
 }
 
 function togglePause() {
@@ -2091,6 +2152,7 @@ function updateGameOverUI(payload) {
   const netCoins = Math.max(0, runCoins - continueSpendTotal);
   const projectedBest = Math.max(playerData.bestDistance, payload.distance);
   const availableTokens = getAvailableTokensForContinue(runCoins);
+  const preset = payload.sessionConfig || activeSessionPreset;
 
   goDistance.textContent = `${payload.distance} m`;
   goGoals.textContent = `${payload.goals}`;
@@ -2099,6 +2161,16 @@ function updateGameOverUI(payload) {
   goCoinsDistance.textContent = `${distanceBonus}`;
   goCoinsGoals.textContent = `${goalBonus}`;
   goCoinsTotal.textContent = `${netCoins}`;
+  if (goSessionSummary) {
+    const endCopy = payload.endReason === "sessionComplete" ? " · Session complete" : "";
+    goSessionSummary.textContent = `${preset.label}${endCopy}`;
+  }
+  if (goSessionDuration) {
+    const capLabel = preset.targetDurationMs ? sessionDurationHint(preset) : "No cap";
+    goSessionDuration.textContent = `${formatDuration(payload.runDurationMs || 0)} · ${capLabel}`;
+  }
+  if (goSessionMode)
+    goSessionMode.textContent = preset.offlineFriendly ? "Offline ready" : "Connected play";
 
   if (projectedBest > playerData.bestDistance) {
     goBestNote.textContent = "New personal best for this device!";
@@ -2124,6 +2196,11 @@ function handleGameStats(stats) {
   hudBest.textContent = `${stats.bestDistance} m`;
   if (hudTierName) hudTierName.textContent = stats.tierName || "Kickoff Circuit";
   if (hudTierNote) hudTierNote.textContent = stats.tierNote || "Opening pace";
+  if (hudSessionLabel) hudSessionLabel.textContent = stats.sessionLabel || activeSessionPreset.label;
+  if (hudSessionTimer) {
+    const capLabel = stats.targetDurationMs ? sessionDurationHint({ targetDurationMs: stats.targetDurationMs }) : "No cap";
+    hudSessionTimer.textContent = `${formatDuration(stats.runDurationMs || 0)} · ${capLabel}`;
+  }
   const pct = (stats.shotMeter / 100) * 100;
   shotMeterFill.style.width = `${Math.min(100, Math.max(0, pct))}%`;
   shotMeterFill.classList.toggle("shot-meter__fill--ready", !!stats.shotReady);
@@ -2148,6 +2225,9 @@ function handleGameGoal() {
 }
 
 function handleGameOver(payload) {
+  if (payload.sessionConfig) {
+    activeSessionPreset = payload.sessionConfig;
+  }
   pendingGameOverPayload = payload;
   updateGameOverUI(payload);
   setActiveScreen("gameOverScreen");
@@ -2155,8 +2235,13 @@ function handleGameOver(payload) {
 
 function finalizePendingGameOver() {
   if (!pendingGameOverPayload) return;
+  const sessionLengthMs =
+    pendingGameOverPayload.runDurationMs ||
+    (sessionStartTime ? Date.now() - sessionStartTime : 0);
+  logSessionEvent(playerData, { sessionLengthMs });
   applyRunResults(pendingGameOverPayload);
   resetContinueState();
+  sessionStartTime = null;
 }
 
 function handleInputAction(action) {
@@ -2183,13 +2268,12 @@ function handleInputAction(action) {
     } else if (
       currentScreenId === "gameOverScreen" &&
       actionType === "startRun"
-    ) {
-      finalizePendingGameOver();
-      setActiveScreen(null);
-      game.startRun();
+      ) {
+        finalizePendingGameOver();
+        startRun(activeSessionPreset);
+      }
+      return;
     }
-    return;
-  }
 
   // In run (no active overlay screen)
   if (!game) return;
@@ -2228,12 +2312,34 @@ window.addEventListener("blur", clearPressedState, { passive: true });
 
 btnPlay.addEventListener("click", () => {
   spawnTapParticles(btnPlay);
+  activeSessionPreset = SESSION_PRESETS.quick;
+  syncSessionLabels(activeSessionPreset);
   startVariantRun("v1");
 });
 
 btnPlayV2?.addEventListener("click", () => {
   spawnTapParticles(btnPlayV2);
+  activeSessionPreset = SESSION_PRESETS.quick;
+  syncSessionLabels(activeSessionPreset);
   startVariantRun("v2");
+});
+
+btnQuickSession?.addEventListener("click", () => {
+  activeSessionPreset = SESSION_PRESETS.quick;
+  syncSessionLabels(activeSessionPreset);
+  startRun(SESSION_PRESETS.quick);
+});
+
+btnOfflineDrill?.addEventListener("click", () => {
+  activeSessionPreset = SESSION_PRESETS.offline;
+  syncSessionLabels(activeSessionPreset);
+  startRun(SESSION_PRESETS.offline);
+});
+
+btnEndless?.addEventListener("click", () => {
+  activeSessionPreset = SESSION_PRESETS.endless;
+  syncSessionLabels(activeSessionPreset);
+  startRun(SESSION_PRESETS.endless);
 });
 
 skillPathButtons.forEach((btn) => {
@@ -2321,8 +2427,7 @@ pauseMenuQuitBtn?.addEventListener("click", () => {
 
 btnReplay.addEventListener("click", () => {
   finalizePendingGameOver();
-  setActiveScreen(null);
-  game.startRun();
+  startRun(activeSessionPreset);
 });
 
 btnGoToTeam.addEventListener("click", () => {
@@ -2516,6 +2621,7 @@ updateProfileUI();
 updateTouchControlsVisibility();
 updateBuilderPreview();
 renderKitPresets();
+syncSessionLabels(activeSessionPreset);
 
 if (!playerData.profile?.builderCompleted) {
   openPlayerBuilder("Pick your kit colors to start your career.");
