@@ -128,6 +128,84 @@
               Temple-run style endless runner with a pro soccer twist—now with multi-tier runs and deeper
               upgrades.
             </p>
+
+            <div class="info-accordions" aria-label="New rewards and social updates">
+              <details class="accordion" open>
+                <summary class="accordion__summary">
+                  <div class="accordion__left">
+                    <div class="accordion__icon" aria-hidden="true">🎁</div>
+                    <div class="accordion__copy">
+                      <p class="eyebrow">Fresh drops</p>
+                      <h3 class="accordion__title">Rewards &amp; loot flow</h3>
+                      <p class="accordion__subtitle">New streak crates, post-match pulses, and ethical odds.</p>
+                    </div>
+                  </div>
+                  <div class="accordion__right">
+                    <span class="pill pill--soft" id="rewardPulse">Fresh loot</span>
+                    <span class="accordion__chevron" aria-hidden="true">⌄</span>
+                  </div>
+                </summary>
+                <div class="accordion__content">
+                  <div class="reward-grid">
+                    <div class="reward-track">
+                      <p class="eyebrow">Post-match breakdown</p>
+                      <p class="reward-line" id="rewardLine">Coins, XP, and surprise bonuses drop every run.</p>
+                      <div class="progress-bar">
+                        <div class="progress-bar__fill progress-bar__fill--accent" id="rewardMeter"></div>
+                      </div>
+                      <p class="progress-label">Milestone crates hit faster when you stay on streak.</p>
+                    </div>
+                    <div class="reward-track">
+                      <p class="eyebrow">Ethical guardrails</p>
+                      <p class="retention-note">
+                        No predatory loot boxes. Cosmetic-first economy with clear odds and season expiry timers.
+                      </p>
+                      <ul class="reward-list">
+                        <li>Weekly neon chest with distance and goal boosts.</li>
+                        <li>Club-wide bonus when three teammates finish a run.</li>
+                        <li>Double coins on event weekends with transparent timers.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </details>
+
+              <details class="accordion">
+                <summary class="accordion__summary">
+                  <div class="accordion__left">
+                    <div class="accordion__icon" aria-hidden="true">🤝</div>
+                    <div class="accordion__copy">
+                      <p class="eyebrow">Clubs &amp; friends</p>
+                      <h3 class="accordion__title">Social &amp; competition</h3>
+                      <p class="accordion__subtitle">Leaderboards, ghost races, and co-op streak boosts.</p>
+                    </div>
+                  </div>
+                  <div class="accordion__right">
+                    <span class="pill pill--soft">Clubs · Leaderboards · Co-op</span>
+                    <span class="accordion__chevron" aria-hidden="true">⌄</span>
+                  </div>
+                </summary>
+                <div class="accordion__content">
+                  <div class="social-grid">
+                    <div>
+                      <h4>Club sprint</h4>
+                      <ul id="clubLeaderboard" class="leaderboard"></ul>
+                    </div>
+                    <div class="social-copy">
+                      <h4>Shareable moments</h4>
+                      <p class="retention-note">Every perfect shot gets clipped for quick sharing.</p>
+                      <p class="retention-note">Ghost replays are available for friend races.</p>
+                      <ul class="social-list">
+                        <li>New "Rally" emotes show up in friend feeds when you chain goals.</li>
+                        <li>Squad sprint bonus when three clubmates play within an hour.</li>
+                        <li>Opt-in highlight reels to drop into your team chat.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </details>
+            </div>
+
             <div class="logo-hero">
               <img
                 src="assets/logo-usr.svg"
@@ -263,50 +341,6 @@
                   <p class="eyebrow">Weekly questline</p>
                   <p class="retention-value" id="weeklySet">Play 10 · Score 20 · Win 5</p>
                   <p class="retention-note">Complete to claim a neon reward chest.</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel" id="socialPanel">
-              <div class="panel__header panel__header--spaced">
-                <div class="panel__title-with-icon">
-                  <div class="panel__icon" aria-hidden="true">🤝</div>
-                  <h3>Social &amp; Competition</h3>
-                </div>
-                <span class="pill pill--soft">Clubs · Leaderboards · Co-op</span>
-              </div>
-              <div class="social-grid">
-                <div>
-                  <h4>Club sprint</h4>
-                  <ul id="clubLeaderboard" class="leaderboard"></ul>
-                </div>
-                <div>
-                  <h4>Shareable moments</h4>
-                  <p class="retention-note">Every perfect shot gets clipped for quick sharing.</p>
-                  <p class="retention-note">Ghost replays are available for friend races.</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel" id="rewardPanel">
-              <div class="panel__header panel__header--spaced">
-                <div class="panel__title-with-icon">
-                  <div class="panel__icon" aria-hidden="true">🎁</div>
-                  <h3>Reward Flow</h3>
-                </div>
-                <span class="pill pill--soft" id="rewardPulse">Fresh loot</span>
-              </div>
-              <div class="reward-grid">
-                <div class="reward-track">
-                  <p class="eyebrow">Post-match breakdown</p>
-                  <p class="reward-line" id="rewardLine">Coins, XP, and surprise bonuses drop every run.</p>
-                  <div class="progress-bar">
-                    <div class="progress-bar__fill progress-bar__fill--accent" id="rewardMeter"></div>
-                  </div>
-                </div>
-                <div class="reward-track">
-                  <p class="eyebrow">Ethical guardrails</p>
-                  <p class="retention-note">No predatory loot boxes. Cosmetic-first economy with clear odds.</p>
                 </div>
               </div>
             </div>
