@@ -145,6 +145,61 @@
           </div>
         </div>
 
+        <div id="hudV3" class="hud-v3 hidden" aria-live="polite">
+          <div class="hud-v3__row">
+            <div class="hud-v3__scorecard">
+              <div class="hud-v3__scoreline">
+                <div class="hud-v3__club">
+                  <span class="hud-v3__label">Club</span>
+                  <span id="hudV3TeamName" class="hud-v3__club-name">Neon Strikers</span>
+                </div>
+                <div class="hud-v3__scorebox">
+                  <span id="hudV3TeamScore" class="hud-v3__score">0</span>
+                  <span class="hud-v3__score-separator">-</span>
+                  <span id="hudV3OpponentScore" class="hud-v3__score hud-v3__score--muted">0</span>
+                </div>
+                <div class="hud-v3__club hud-v3__club--away">
+                  <span class="hud-v3__label">Opposition</span>
+                  <span id="hudV3OpponentName" class="hud-v3__club-name">MLS XI</span>
+                </div>
+              </div>
+              <div id="hudV3Regulation" class="hud-v3__note">MLS regulation: clean tackles, no handballs</div>
+              <div class="hud-v3__meter" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                <div id="hudV3HypeFill" class="hud-v3__meter-fill"></div>
+                <span id="hudV3HypeLabel" class="hud-v3__meter-label">Hype 0% · supporters in full voice</span>
+              </div>
+            </div>
+            <div class="hud-v3__stats">
+              <div class="hud-v3__stat">
+                <span class="hud-v3__stat-label">Distance ran</span>
+                <span id="hudV3Distance" class="hud-v3__stat-value">0 m</span>
+              </div>
+              <div class="hud-v3__stat">
+                <span class="hud-v3__stat-label">Opponents dodged</span>
+                <span id="hudV3Dodged" class="hud-v3__stat-value">0</span>
+              </div>
+              <div class="hud-v3__stat">
+                <span class="hud-v3__stat-label">Balls collected</span>
+                <span id="hudV3Balls" class="hud-v3__stat-value">0</span>
+              </div>
+              <div class="hud-v3__stat">
+                <span class="hud-v3__stat-label">Ball steals</span>
+                <span id="hudV3BallSteals" class="hud-v3__stat-value">0</span>
+              </div>
+              <div id="hudV3SuperCard" class="hud-v3__stat hud-v3__stat--super">
+                <div class="hud-v3__stat-header">
+                  <span class="hud-v3__stat-label">Slide tackles</span>
+                  <span class="hud-v3__badge">MLS 5x super</span>
+                </div>
+                <div class="hud-v3__stat-body">
+                  <span id="hudV3SlideTackles" class="hud-v3__stat-value">0</span>
+                  <span id="hudV3SuperTimer" class="hud-v3__stat-note">Super after 5 more clean tackles</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Main menu -->
         <section id="mainMenu" class="screen screen--active">
           <div class="screen-inner screen-inner--scrollable">

@@ -324,6 +324,8 @@ export class Game {
     };
 
     // Run stats
+    this.teamName = options.teamName || "Neon Strikers";
+    this.opponentName = options.opponentName || "MLS XI";
     this.resetRunStats();
     this.bestDistance = options.bestDistance || 0;
 
@@ -380,6 +382,14 @@ export class Game {
     this.distance = 0;
     this.coinsThisRun = 0;
     this.goalsThisRun = 0;
+    this.opponentsDodged = 0;
+    this.ballsCollected = 0;
+    this.ballSteals = 0;
+    this.slideTackles = 0;
+    this.slideTackleStreak = 0;
+    this.slideSuperTime = 0;
+    this.looseBalls = [];
+    this.hype = 0;
     this.shotMeter = 0;
     this.shotReady = false;
     this.activeShot = null;
@@ -395,10 +405,10 @@ export class Game {
 
   laneX(idx, y = this.height) {
     const geometry = this.getFieldGeometry();
-    const { horizon, topSpan, bottomSpan } = geometry;
+    const { horizon, topSpan, bottomSpan, skew } = geometry;
     const t = this.getPerspectiveProgress(y, geometry);
     const laneSpan = topSpan + (bottomSpan - topSpan) * t;
-    const start = this.width / 2 - laneSpan / 2;
+    const start = this.width / 2 - laneSpan / 2 + (skew || 0) * (1 - t);
     const step = laneSpan / (this.lanes - 1);
     return start + step * idx;
   }
@@ -421,15 +431,17 @@ export class Game {
   getFieldGeometry() {
     const isV2 = this.visualVariant === "v2";
     if (this.visualVariant === "v3") {
-      const horizon = this.height * 0.28;
-      const bottomSpan = this.width * 1.08;
-      const topSpan = this.width * 0.32;
+      const horizon = this.height * 0.24;
+      const bottomSpan = this.width * 1.12;
+      const topSpan = this.width * 0.38;
+      const skew = this.width * 0.06;
 
       return {
         horizon,
         topSpan,
         bottomSpan,
-        topStart: this.width / 2 - topSpan / 2,
+        skew,
+        topStart: this.width / 2 - topSpan / 2 + skew,
         bottomStart: this.width / 2 - bottomSpan / 2
       };
     }
@@ -455,7 +467,7 @@ export class Game {
     }
 
     if (this.visualVariant === "v3") {
-      return Math.pow(clamped, 1.12);
+      return Math.pow(clamped, 1.05);
     }
 
     return clamped;
@@ -552,6 +564,62 @@ export class Game {
     };
     this.assistProfile = { ...defaults, ...profile };
     this.shotGainRate = this.baseShotGainRate * (this.assistProfile.shotGainBoost || 1);
+  }
+
+  addHype(amount = 0) {
+    this.hype = Math.max(0, Math.min(100, this.hype + amount));
+  }
+
+  spawnLooseBall(x, y, direction = 1) {
+    const baseSpeed = Math.max(120, this.speed * 0.35);
+    this.looseBalls.push({
+      x,
+      y,
+      radius: 12,
+      vx: baseSpeed * 0.6 * direction,
+      vy: -baseSpeed * 0.35,
+      spin: 120,
+      age: 0
+    });
+  }
+
+  updateLooseBalls(dt, playerRect) {
+    const groundY = this.height - 36;
+    for (let i = this.looseBalls.length - 1; i >= 0; i--) {
+      const ball = this.looseBalls[i];
+      ball.age += dt;
+      ball.vy += 540 * dt;
+      ball.vx *= 0.995;
+      ball.x += ball.vx * dt;
+      ball.y += ball.vy * dt;
+
+      if (ball.y > groundY) {
+        ball.y = groundY;
+        ball.vy *= -0.52;
+        ball.vx *= 0.9;
+        ball.spin *= 0.7;
+      }
+
+      if (ball.x < this.pixelSize * 8 || ball.x > this.width - this.pixelSize * 8) {
+        ball.x = Math.max(this.pixelSize * 8, Math.min(this.width - this.pixelSize * 8, ball.x));
+        ball.vx *= -0.65;
+      }
+
+      if (Math.abs(ball.vx) < 3 && Math.abs(ball.vy) < 6 && ball.age > 2) {
+        this.looseBalls.splice(i, 1);
+        continue;
+      }
+
+      const { x: px, y: py, w, h } = playerRect;
+      if (
+        this.circleRectOverlap(ball.x, ball.y, ball.radius, px, py, w, h) &&
+        this.runState === RUN_STATE.RUNNING
+      ) {
+        this.ballsCollected += 1;
+        this.addHype(10);
+        this.looseBalls.splice(i, 1);
+      }
+    }
   }
 
   startRun() {
@@ -734,6 +802,7 @@ export class Game {
   scoreGoal() {
     this.goalsThisRun += 1;
     this.goalFlashTime = 0.7;
+    this.addHype(22);
     this.onGoal(this.goalsThisRun);
   }
 
@@ -802,8 +871,7 @@ export class Game {
     if (this.runState === RUN_STATE.RUNNING) {
       this.runElapsed += dt;
     }
-    // Always push last known stats so HUD can show IDLE state too
-    this.onStats({
+    const statsPayload = {
       distance: Math.floor(this.distance),
       coins: this.coinsThisRun,
       goals: this.goalsThisRun,
@@ -816,8 +884,23 @@ export class Game {
       runDurationMs: Math.round(this.runElapsed * 1000),
       targetDurationMs: this.sessionConfig?.targetDurationMs,
       sessionLabel: this.sessionConfig?.label,
-      offlineFriendly: !!this.sessionConfig?.offlineFriendly
-    });
+      offlineFriendly: !!this.sessionConfig?.offlineFriendly,
+      opponentsDodged: this.opponentsDodged,
+      ballsCollected: this.ballsCollected,
+      ballSteals: this.ballSteals,
+      teamName: this.teamName,
+      opponentName: this.opponentName,
+      teamScore: this.goalsThisRun,
+      hype: Math.round(this.hype),
+      slideTackles: this.slideTackles,
+      slideTackleStreak: this.slideTackleStreak,
+      superTime: this.slideSuperTime,
+      superActive: this.slideSuperTime > 0,
+      regulation: "MLS regulation: clean tackles, no handballs"
+    };
+
+    // Always push last known stats so HUD can show IDLE state too
+    this.onStats(statsPayload);
 
     if (this.runState !== RUN_STATE.RUNNING) {
       if (this.goalFlashTime > 0) this.goalFlashTime -= dt;
@@ -825,11 +908,18 @@ export class Game {
       return;
     }
 
+    if (this.slideSuperTime > 0) {
+      this.slideSuperTime = Math.max(0, this.slideSuperTime - dt);
+    }
+    this.hype = Math.max(0, this.hype - dt * 6);
+    const superActive = this.slideSuperTime > 0;
+
     // Difficulty ramp
     const base =
       (this.baseSpeed + this.distance * (tier?.speedRamp ?? 0.45)) *
       (tier?.speedMultiplier ?? 1) *
-      (assist.speedScale || 1);
+      (assist.speedScale || 1) *
+      (superActive ? 1.08 : 1);
     this.speed = base * this.speedMultiplier;
 
     // Distance scaled to "meters"
@@ -913,6 +1003,7 @@ export class Game {
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       this.obstacles[i].y += dy;
       if (this.obstacles[i].y > this.height + 120) {
+        this.opponentsDodged += 1;
         this.obstacles.splice(i, 1);
       }
     }
@@ -939,6 +1030,9 @@ export class Game {
       this.laneX(this.player.lane, playerY + playerHeight) -
       playerWidth / 2 +
       this.player.laneOffset;
+    const playerRect = { x: playerX, y: playerY, w: playerWidth, h: playerHeight };
+
+    this.updateLooseBalls(dt, playerRect);
 
     // Obstacles
     for (let i = 0; i < this.obstacles.length; i++) {
@@ -974,10 +1068,29 @@ export class Game {
           continue;
         }
 
-        const safeTackle = o.type === "high" && tackling;
+        const safeTackle = tackling && (o.type === "high" || superActive);
         const safeDodge = dodging || recovering;
 
         if (safeTackle || safeDodge) {
+          if (safeTackle) {
+            this.slideTackles += 1;
+            this.slideTackleStreak += 1;
+            if (o.hasBall) {
+              this.ballSteals += 1;
+              this.spawnLooseBall(ox + scaledWidth * 0.55, oy + scaledHeight * 0.5, this.player.tackleDirection);
+              this.addHype(16);
+            } else {
+              this.addHype(8);
+            }
+            if (this.slideTackleStreak >= 5) {
+              this.slideSuperTime = 5;
+              this.slideTackleStreak = 0;
+              this.addHype(18);
+            }
+          } else {
+            this.opponentsDodged += 1;
+            this.addHype(4);
+          }
           this.obstacles.splice(i, 1);
           i -= 1;
           continue;
@@ -1010,8 +1123,11 @@ export class Game {
           const gain = Math.max(1, Math.round(this.coinMultiplier));
           this.coinsThisRun += gain;
           this.shotMeter += 10 * this.shotGainMultiplier * this.shotGainRate;
+          this.addHype(2);
         } else if (p.type === "ball") {
           this.shotMeter += 25 * this.shotGainMultiplier * this.shotGainRate;
+          this.ballsCollected += 1;
+          this.addHype(8);
         }
 
         this.pickups.splice(i, 1);
@@ -1064,13 +1180,23 @@ export class Game {
 
     // Update stats (again after changes)
     this.onStats({
+      ...statsPayload,
       distance: Math.floor(this.distance),
       coins: this.coinsThisRun,
       goals: this.goalsThisRun,
       shotMeter: this.shotMeter,
       shotReady: this.shotReady,
       bestDistance: Math.floor(this.bestDistance),
-      runState: this.runState
+      runState: this.runState,
+      opponentsDodged: this.opponentsDodged,
+      ballsCollected: this.ballsCollected,
+      ballSteals: this.ballSteals,
+      teamScore: this.goalsThisRun,
+      hype: Math.round(this.hype),
+      slideTackles: this.slideTackles,
+      slideTackleStreak: this.slideTackleStreak,
+      superTime: this.slideSuperTime,
+      superActive: this.slideSuperTime > 0
     });
   }
 
@@ -2010,6 +2136,11 @@ export class Game {
       } else {
         this.drawSoccerBall(ctx, x, y, radius);
       }
+    }
+
+    for (const [index, ball] of this.looseBalls.entries()) {
+      const wobble = Math.sin(this.elapsedTime * 6 + index) * 3;
+      this.drawSoccerBall(ctx, ball.x + wobble, ball.y, ball.radius * 0.9);
     }
 
     // GOAL overlay
