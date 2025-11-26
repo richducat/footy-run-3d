@@ -238,6 +238,43 @@ function missionStateFromDefs(defs) {
   }));
 }
 
+function defaultGoalProgress() {
+  return {
+    session: {
+      leftFootGoals: 0,
+      drillAccuracy: 0,
+      sprintFinishes: 0
+    },
+    mid: {
+      promotion: 0.2,
+      trainingPlan: 0,
+      weeklyForm: 0
+    },
+    long: {
+      stadiums: 1,
+      collections: 1,
+      skillPoints: 0,
+      specialMoves: 0
+    }
+  };
+}
+
+function defaultSkillTree() {
+  return {
+    path: "finisher",
+    pointsEarned: 0,
+    pointsSpent: 0
+  };
+}
+
+function defaultUnlocks() {
+  return {
+    stadiumsUnlocked: 1,
+    teamsUnlocked: 1,
+    drillsUnlocked: 1
+  };
+}
+
 function defaultMissions(now = new Date()) {
   return {
     daily: {
@@ -282,6 +319,9 @@ function defaultData() {
     },
     missions: defaultMissions(),
     recentRunCoins: [],
+    goalProgress: defaultGoalProgress(),
+    skillTree: defaultSkillTree(),
+    unlocks: defaultUnlocks(),
     profile: {
       displayName: "",
       email: "",
@@ -314,8 +354,21 @@ export function loadPlayerData() {
       cardLevels: {
         ...defaults.cardLevels,
         ...(parsed.cardLevels || {})
+      },
+      goalProgress: {
+        ...defaults.goalProgress,
+        ...(parsed.goalProgress || {})
+      },
+      skillTree: {
+        ...defaults.skillTree,
+        ...(parsed.skillTree || {})
+      },
+      unlocks: {
+        ...defaults.unlocks,
+        ...(parsed.unlocks || {})
       }
     };
+    ensureGoalProgress(data);
     refreshMissions(data);
     return data;
   } catch (e) {
@@ -441,6 +494,17 @@ function addProgress(mission, amount) {
   mission.progress = Math.min(mission.goal, mission.progress + amount);
 }
 
+function clampProgress(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+export function ensureGoalProgress(data) {
+  if (!data.goalProgress) data.goalProgress = defaultGoalProgress();
+  if (!data.skillTree) data.skillTree = defaultSkillTree();
+  if (!data.unlocks) data.unlocks = defaultUnlocks();
+  return data.goalProgress;
+}
+
 export function refreshMissions(data, now = new Date()) {
   if (!data.missions) {
     data.missions = defaultMissions(now);
@@ -495,6 +559,77 @@ export function claimMissionReward(data, cadence, missionId) {
   mission.claimed = true;
   data.coins += mission.reward;
   return mission.reward;
+}
+
+export function updateProgressionTracks(data, runStats = {}, meta = {}) {
+  ensureGoalProgress(data);
+
+  const session = data.goalProgress.session;
+  const mid = data.goalProgress.mid;
+  const long = data.goalProgress.long;
+
+  session.leftFootGoals = clampProgress(
+    session.leftFootGoals + Math.min(runStats.goals || 0, 3),
+    0,
+    3
+  );
+  session.drillAccuracy = clampProgress(
+    session.drillAccuracy + Math.floor((runStats.distance || 0) / 450),
+    0,
+    3
+  );
+  if ((runStats.distance || 0) >= 600) {
+    session.sprintFinishes = clampProgress(session.sprintFinishes + 1, 0, 2);
+  }
+
+  const promotionGain = (runStats.distance || 0) / 4500 + (runStats.goals || 0) * 0.05;
+  mid.promotion = clampProgress((mid.promotion || 0) + promotionGain, 0, 1);
+  if ((runStats.distance || 0) >= 800) {
+    mid.trainingPlan = clampProgress((mid.trainingPlan || 0) + 1, 0, 4);
+  }
+  if (runStats.goals) {
+    mid.weeklyForm = clampProgress((mid.weeklyForm || 0) + Math.max(1, Math.round(runStats.goals / 2)), 0, 5);
+  }
+
+  const levelBefore = meta.levelBefore ?? data.level ?? 1;
+  const levelAfter = meta.levelAfter ?? data.level ?? 1;
+  const levelGain = Math.max(0, levelAfter - levelBefore);
+  if (levelGain > 0) {
+    data.skillTree.pointsEarned = (data.skillTree.pointsEarned || 0) + levelGain;
+    long.skillPoints = clampProgress((long.skillPoints || 0) + levelGain, 0, 9);
+  }
+
+  long.collections = clampProgress(
+    Math.max(long.collections || 0, Math.floor((data.unlockedCards?.length || 1) / 1.5)),
+    0,
+    5
+  );
+  long.stadiums = clampProgress(
+    Math.max(long.stadiums || 0, Math.ceil((data.level || 1) / 5)),
+    0,
+    3
+  );
+  long.specialMoves = clampProgress(
+    Math.max(long.specialMoves || 0, Math.floor((data.skillTree.pointsEarned || 0) / 2)),
+    0,
+    4
+  );
+
+  data.unlocks = {
+    ...data.unlocks,
+    stadiumsUnlocked: Math.max(data.unlocks?.stadiumsUnlocked || 1, long.stadiums || 1),
+    drillsUnlocked: Math.max(
+      data.unlocks?.drillsUnlocked || 1,
+      Math.min(4, 1 + Math.floor(session.drillAccuracy))
+    ),
+    teamsUnlocked: Math.max(
+      data.unlocks?.teamsUnlocked || 1,
+      Math.min(4, Math.ceil(((data.totalGoals || 0) + (runStats.goals || 0)) / 15))
+    )
+  };
+
+  data.goalProgress = { session, mid, long };
+  return data.goalProgress;
 }
 
 export function estimateRunsForCost(data, cost) {
