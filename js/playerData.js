@@ -64,12 +64,44 @@ export const PLAYER_CARDS = [
       laneChangeSpeed: { base: 1.08, perLevel: 0.06, mode: "mult" }
     },
     unlockCost: 900
+  },
+  {
+    id: "midfield_maestro",
+    name: "Midfield Maestro",
+    rarity: "epic",
+    rating: 88,
+    position: "CAM",
+    tagline: "Glides through traffic while keeping the shot meter humming.",
+    speedMultiplier: 1.1,
+    coinMultiplier: 1.12,
+    shotGainMultiplier: 1.15,
+    perks: {
+      laneChangeSpeed: { base: 1.15, perLevel: 0.09, mode: "mult" },
+      tackleDefenseBonus: { base: 1.18, perLevel: 0.07, mode: "mult" }
+    },
+    unlockCost: 1100
+  },
+  {
+    id: "neon_icon",
+    name: "Neon Icon",
+    rarity: "legendary",
+    rating: 90,
+    position: "ST",
+    tagline: "Signature glow pulls coins and freezes keepers in big matches.",
+    speedMultiplier: 1.14,
+    coinMultiplier: 1.65,
+    shotGainMultiplier: 1.25,
+    perks: {
+      coinMagnetRange: { base: 1.5, perLevel: 0.14, mode: "mult" },
+      goalieFreezeChance: { base: 0.24, perLevel: 0.07, mode: "add" }
+    },
+    unlockCost: 1500
   }
 ];
 
 const STORAGE_KEY = "usr_player_data_v1";
 
-export const CARD_LEVEL_CAP = 5;
+export const CARD_LEVEL_CAP = 8;
 
 export const RARITY_CONFIG = {
   common: {
@@ -80,7 +112,10 @@ export const RARITY_CONFIG = {
       2: 200,
       3: 325,
       4: 500,
-      5: 750
+      5: 750,
+      6: 1100,
+      7: 1500,
+      8: 2000
     }
   },
   rare: {
@@ -91,7 +126,10 @@ export const RARITY_CONFIG = {
       2: 325,
       3: 525,
       4: 775,
-      5: 1050
+      5: 1050,
+      6: 1400,
+      7: 1850,
+      8: 2350
     }
   },
   epic: {
@@ -102,7 +140,10 @@ export const RARITY_CONFIG = {
       2: 475,
       3: 725,
       4: 1000,
-      5: 1400
+      5: 1400,
+      6: 1850,
+      7: 2400,
+      8: 3000
     }
   },
   legendary: {
@@ -113,7 +154,10 @@ export const RARITY_CONFIG = {
       2: 650,
       3: 975,
       4: 1350,
-      5: 1900
+      5: 1900,
+      6: 2450,
+      7: 3100,
+      8: 3800
     }
   }
 };
@@ -218,7 +262,9 @@ function defaultData() {
       street_striker: 1,
       pace_merchant: 1,
       clinical_finisher: 1,
-      crowd_favorite: 1
+      crowd_favorite: 1,
+      midfield_maestro: 1,
+      neon_icon: 1
     },
     missions: defaultMissions(),
     recentRunCoins: [],
@@ -250,6 +296,10 @@ export function loadPlayerData() {
       profile: {
         ...defaults.profile,
         ...(parsed.profile || {})
+      },
+      cardLevels: {
+        ...defaults.cardLevels,
+        ...(parsed.cardLevels || {})
       }
     };
     refreshMissions(data);

@@ -107,6 +107,70 @@ export class Game {
     this.jukeDurationBase = tuning.jukeDuration || 0.42;
     this.runState = RUN_STATE.IDLE;
 
+    this.difficultyTiers = [
+      {
+        name: "Kickoff Circuit",
+        note: "Opening pace",
+        start: 0,
+        speedRamp: 0.45,
+        speedMultiplier: 1,
+        obstacleBase: 1.8,
+        obstacleMin: 0.55,
+        obstacleRamp: 0.01,
+        pickupInterval: 0.85,
+        ballPickupChance: 0.3,
+        highObstacleChance: 0.35,
+        ballCarrierChance: 0.4,
+        goalieSpeed: 1
+      },
+      {
+        name: "Derby Nights",
+        note: "Crowded lanes and quick breaks",
+        start: 400,
+        speedRamp: 0.5,
+        speedMultiplier: 1.04,
+        obstacleBase: 1.6,
+        obstacleMin: 0.5,
+        obstacleRamp: 0.011,
+        pickupInterval: 0.8,
+        ballPickupChance: 0.34,
+        highObstacleChance: 0.4,
+        ballCarrierChance: 0.45,
+        goalieSpeed: 1.05
+      },
+      {
+        name: "Continental Clash",
+        note: "Bonus balls and harder presses",
+        start: 850,
+        speedRamp: 0.56,
+        speedMultiplier: 1.08,
+        obstacleBase: 1.45,
+        obstacleMin: 0.46,
+        obstacleRamp: 0.0125,
+        pickupInterval: 0.74,
+        ballPickupChance: 0.36,
+        highObstacleChance: 0.44,
+        ballCarrierChance: 0.48,
+        goalieSpeed: 1.12
+      },
+      {
+        name: "Champions Blitz",
+        note: "Relentless pace and elite keepers",
+        start: 1400,
+        speedRamp: 0.62,
+        speedMultiplier: 1.12,
+        obstacleBase: 1.3,
+        obstacleMin: 0.42,
+        obstacleRamp: 0.0135,
+        pickupInterval: 0.7,
+        ballPickupChance: 0.4,
+        highObstacleChance: 0.48,
+        ballCarrierChance: 0.52,
+        goalieSpeed: 1.18
+      }
+    ];
+    this.activeTier = this.getDifficultyTier();
+
     // Player card tuning
     const playerCard = options.playerCard || {};
     const multipliers = options.multipliers || {};
@@ -422,9 +486,10 @@ export class Game {
 
   spawnObstacle() {
     const lane = Math.floor(Math.random() * this.lanes);
-    const high = Math.random() < 0.35;
+    const tier = this.activeTier || this.getDifficultyTier();
+    const high = Math.random() < (tier?.highObstacleChance ?? 0.35);
     const type = high ? "high" : "ground"; // high = upright defender; ground = low slide tackle
-    const hasBall = Math.random() < 0.4;
+    const hasBall = Math.random() < (tier?.ballCarrierChance ?? 0.4);
     // Match defenders to the player's slimmer silhouette
     const width = 48;
     const height = high ? 92 : 72;
@@ -440,13 +505,26 @@ export class Game {
 
   spawnPickup() {
     const lane = Math.floor(Math.random() * this.lanes);
-    const type = Math.random() < 0.7 ? "coin" : "ball";
+    const tier = this.activeTier || this.getDifficultyTier();
+    const ballChance = tier?.ballPickupChance ?? 0.3;
+    const type = Math.random() < ballChance ? "ball" : "coin";
     this.pickups.push({
       lane,
       y: -40,
       radius: 14,
       type
     });
+  }
+
+  getDifficultyTier() {
+    if (!Array.isArray(this.difficultyTiers) || this.difficultyTiers.length === 0) {
+      return null;
+    }
+    let current = this.difficultyTiers[0];
+    for (const tier of this.difficultyTiers) {
+      if (this.distance >= tier.start) current = tier;
+    }
+    return current;
   }
 
   rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
@@ -530,6 +608,8 @@ export class Game {
   }
 
   update(dt) {
+    this.activeTier = this.getDifficultyTier();
+    const tier = this.activeTier;
     this.elapsedTime += dt;
     // Always push last known stats so HUD can show IDLE state too
     this.onStats({
@@ -539,7 +619,9 @@ export class Game {
       shotMeter: this.shotMeter,
       shotReady: this.shotReady,
       bestDistance: Math.floor(this.bestDistance),
-      runState: this.runState
+      runState: this.runState,
+      tierName: tier?.name,
+      tierNote: tier?.note
     });
 
     if (this.runState !== RUN_STATE.RUNNING) {
@@ -549,7 +631,9 @@ export class Game {
     }
 
     // Difficulty ramp
-    const base = this.baseSpeed + this.distance * 0.45;
+    const base =
+      (this.baseSpeed + this.distance * (tier?.speedRamp ?? 0.45)) *
+      (tier?.speedMultiplier ?? 1);
     this.speed = base * this.speedMultiplier;
 
     // Distance scaled to "meters"
@@ -598,14 +682,17 @@ export class Game {
     // this.updateParticles(dt);
 
     // Spawn obstacles (gets a bit denser over time)
-    const obstacleInterval = Math.max(0.55, 1.8 - this.distance * 0.01);
+    const obstacleInterval = Math.max(
+      tier?.obstacleMin ?? 0.55,
+      (tier?.obstacleBase ?? 1.8) - this.distance * (tier?.obstacleRamp ?? 0.01)
+    );
     if (this.timeSinceObstacle > obstacleInterval) {
       this.spawnObstacle();
       this.timeSinceObstacle = 0;
     }
 
     // Spawn pickups
-    const pickupInterval = 0.85;
+    const pickupInterval = tier?.pickupInterval ?? 0.85;
     if (this.timeSincePickup > pickupInterval) {
       this.spawnPickup();
       this.timeSincePickup = 0;
@@ -739,7 +826,7 @@ export class Game {
     const goalieSpeed =
       this.goalie.freezeTime > 0
         ? this.goalie.baseSpeed * 0.3
-        : this.goalie.baseSpeed;
+        : this.goalie.baseSpeed * (tier?.goalieSpeed ?? 1);
     this.goalie.speed = goalieSpeed;
     this.goalie.x += this.goalie.direction * this.goalie.speed * dt;
     if (this.goalie.x < goalLeft) {

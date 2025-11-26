@@ -365,6 +365,13 @@ canvas {
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.6), inset 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
+.hud-block--tier {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 130px;
+}
+
 .hud-label {
   font-size: 9px;
   letter-spacing: 0.08em;
@@ -376,6 +383,12 @@ canvas {
 .hud-value {
   font-size: 16px;
   font-weight: 700;
+}
+
+.hud-subvalue {
+  font-size: 12px;
+  color: color-mix(in srgb, var(--accent) 75%, white 35%);
+  text-shadow: 0 0 12px rgba(45, 252, 138, 0.3);
 }
 
 .shot-meter {
