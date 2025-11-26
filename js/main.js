@@ -2233,6 +2233,9 @@ function startVariantRun(variant) {
 function startRun(preset = activeSessionPreset) {
   activeSessionPreset = preset || activeSessionPreset;
   if (!ensureProfileSetup("Customize your striker before the first run.")) return;
+  if (typeof game?.setSessionConfig === "function") {
+    game.setSessionConfig(activeSessionPreset);
+  }
   setActiveScreen(null); // close menus
   pauseBanner.classList.add("hidden");
   pauseMenu?.classList.add("hidden");
