@@ -22,7 +22,9 @@ import {
   getLevelProgress,
   updateStreak,
   logSessionEvent,
-  logRunEvent
+  logRunEvent,
+  ensureGoalProgress,
+  updateProgressionTracks
 } from "./playerData.js";
 import { InputManager } from "./input.js";
 
@@ -46,7 +48,12 @@ const levelMeterFill = document.getElementById("levelMeterFill");
 const levelMeterLabel = document.getElementById("levelMeterLabel");
 const levelNumber = document.getElementById("levelNumber");
 const shortGoalsEl = document.getElementById("shortGoals");
+const midGoalsEl = document.getElementById("midGoals");
 const longGoalsEl = document.getElementById("longGoals");
+const unlockProgressEl = document.getElementById("unlockProgress");
+const skillPathLabel = document.getElementById("skillPathLabel");
+const skillPointLabel = document.getElementById("skillPointLabel");
+const skillPathButtons = document.querySelectorAll("[data-skill-path]");
 const clubLeaderboardEl = document.getElementById("clubLeaderboard");
 const insightListEl = document.getElementById("insightList");
 const notificationListEl = document.getElementById("notificationList");
@@ -185,17 +192,143 @@ const missionsIcon = document.getElementById("missionsIcon");
 
 const activePressables = new Set();
 
-const SHORT_GOALS = [
-  { id: "left_foot", label: "Score 3 goals with your left foot", progress: 0, target: 3 },
-  { id: "drill_accuracy", label: "Complete 3 drills at 90% accuracy", progress: 0, target: 3 },
-  { id: "quick_win", label: "Finish a 2-minute sprint", progress: 0, target: 1 }
-];
+const SKILL_PATH_LABELS = {
+  finisher: "Finisher",
+  playmaker: "Playmaker",
+  wall: "Defensive Wall"
+};
 
-const LONG_GOALS = [
-  { id: "division_promo", label: "Win promotion to Division 3", progress: 0.45, target: 1 },
-  { id: "unlock_cosmetics", label: "Unlock 3 cosmetic kits", progress: 0.66, target: 3 },
-  { id: "skill_tree", label: "Invest 5 points in Finisher tree", progress: 0.4, target: 5 }
-];
+function buildGoalBuckets() {
+  ensureGoalProgress(playerData);
+  const goals = playerData.goalProgress;
+  const skillPathName = SKILL_PATH_LABELS[playerData.skillTree?.path] || "Finisher";
+
+  const shortGoals = [
+    {
+      id: "left_foot",
+      label: "Score 3 goals with your left foot",
+      detail: "Lean on finesse or curved shots this session.",
+      progress: goals.session.leftFootGoals,
+      target: 3,
+      tag: "Session"
+    },
+    {
+      id: "drill_accuracy",
+      label: "Complete 3 passing drills at 90%+ accuracy",
+      detail: "Each 450m sprint counts as a drill.",
+      progress: goals.session.drillAccuracy,
+      target: 3,
+      tag: "Session"
+    },
+    {
+      id: "quick_win",
+      label: "Finish 2 sprint runs without a tackle",
+      detail: "Complete quick 600m runs cleanly to bank XP.",
+      progress: goals.session.sprintFinishes,
+      target: 2,
+      tag: "Session"
+    }
+  ];
+
+  const midGoals = [
+    {
+      id: "division_promo",
+      label: "Win promotion to Division 3",
+      detail: "Keep distance and goals climbing each week.",
+      progress: goals.mid.promotion,
+      target: 1,
+      tag: "Weekly / Season"
+    },
+    {
+      id: "weekly_training",
+      label: "Complete your weekly training plan",
+      detail: "4 focused runs above 800m to finish the plan.",
+      progress: goals.mid.trainingPlan,
+      target: 4,
+      tag: "Weekly"
+    },
+    {
+      id: "weekly_form",
+      label: "Stack 5 form points",
+      detail: "Multi-goal runs raise your form meter for the club.",
+      progress: goals.mid.weeklyForm,
+      target: 5,
+      tag: "Weekly"
+    }
+  ];
+
+  const longGoals = [
+    {
+      id: "stadiums",
+      label: "Unlock new stadiums, teams, and drills",
+      detail: "Levels open up fresh arenas and practice modes.",
+      progress: goals.long.stadiums,
+      target: 3,
+      tag: "Long-term"
+    },
+    {
+      id: "collections",
+      label: "Complete kit, boot, and badge collections",
+      detail: "Unlock cards and cosmetics to fill each set.",
+      progress: goals.long.collections,
+      target: 5,
+      tag: "Collections"
+    },
+    {
+      id: "skill_tree",
+      label: `Invest 9 points in the ${skillPathName} tree`,
+      detail: "Level ups award points you can spend across the tree.",
+      progress: goals.long.skillPoints,
+      target: 9,
+      tag: skillPathName
+    },
+    {
+      id: "special_moves",
+      label: "Unlock 4 special moves",
+      detail: "Skill path milestones award unique finishers.",
+      progress: goals.long.specialMoves,
+      target: 4,
+      tag: "Special"
+    }
+  ];
+
+  const unlockRows = [
+    {
+      id: "mode_unlocks",
+      label: "Player level unlocks modes and drills",
+      detail: `Level ${Math.min(5, playerData.level + 1)} unlock preview`,
+      progress: Math.min(1, (playerData.level - 1) / 4),
+      target: 1,
+      tag: "Level"
+    },
+    {
+      id: "stadium_unlocks",
+      label: "Stadium progression",
+      detail: `${playerData.unlocks?.stadiumsUnlocked || 1} / 3 arenas opened`,
+      progress: (playerData.unlocks?.stadiumsUnlocked || 1) / 3,
+      target: 1,
+      tag: "Arena"
+    },
+    {
+      id: "drill_unlocks",
+      label: "Training facility upgrades",
+      detail: `${playerData.unlocks?.drillsUnlocked || 1} / 4 drills available`,
+      progress: (playerData.unlocks?.drillsUnlocked || 1) / 4,
+      target: 1,
+      tag: "Upgrade"
+    },
+    {
+      id: "team_unlocks",
+      label: "Team & coach boosts",
+      detail: `${playerData.unlocks?.teamsUnlocked || 1} / 4 squads activated`,
+      progress: (playerData.unlocks?.teamsUnlocked || 1) / 4,
+      target: 1,
+      tag: "Club"
+    }
+  ];
+
+  return { shortGoals, midGoals, longGoals, unlockRows };
+}
 
 const CLUB_LEADERBOARD = [
   { name: "Neon Strikers", points: 1240 },
@@ -229,6 +362,7 @@ let missionHasClaimable = false;
 let missionCelebrateTimeout = null;
 
 let playerData = loadPlayerData();
+ensureGoalProgress(playerData);
 
 let renderScale = 1;
 let logicalWidth = canvas?.width || 540;
@@ -361,16 +495,35 @@ function renderGoalList(goals = [], container) {
   container.innerHTML = "";
   goals.forEach((goal) => {
     const item = document.createElement("li");
-    const progress = Math.min(1, goal.progress / (goal.target || 1));
-    item.innerHTML = `
+    const ratio = Math.max(0, Math.min(1, goal.target ? goal.progress / goal.target : goal.progress));
+    const progressLabel = goal.target
+      ? `${Math.min(goal.progress, goal.target)} / ${goal.target}`
+      : `${Math.round(ratio * 100)}%`;
+    const text = document.createElement("div");
+    text.className = "goal-list__label";
+    text.innerHTML = `
       <span>${goal.label}</span>
-      <span class="progress-label">${Math.round(progress * 100)}%</span>
+      ${goal.detail ? `<p class="progress-label">${goal.detail}</p>` : ""}
     `;
+    const meta = document.createElement("div");
+    meta.className = "goal-list__meta";
+    if (goal.tag) {
+      const tag = document.createElement("span");
+      tag.className = "pill pill--tiny";
+      tag.textContent = goal.tag;
+      meta.appendChild(tag);
+    }
+    const pctLabel = document.createElement("span");
+    pctLabel.className = "progress-label";
+    pctLabel.textContent = progressLabel;
+    meta.appendChild(pctLabel);
+    item.appendChild(text);
+    item.appendChild(meta);
     const bar = document.createElement("div");
     bar.className = "progress-bar";
     const fill = document.createElement("div");
     fill.className = "progress-bar__fill";
-    fill.style.width = `${progress * 100}%`;
+    fill.style.width = `${ratio * 100}%`;
     bar.appendChild(fill);
     item.appendChild(bar);
     container.appendChild(item);
@@ -390,8 +543,39 @@ function renderProgression() {
     levelMeterLabel.textContent = `${progress.xpIntoLevel} / ${progress.levelXpNeeded} XP to next`;
   if (levelNumber) levelNumber.textContent = level.toString();
 
-  renderGoalList(SHORT_GOALS, shortGoalsEl);
-  renderGoalList(LONG_GOALS, longGoalsEl);
+  const { shortGoals, midGoals, longGoals, unlockRows } = buildGoalBuckets();
+  renderGoalList(shortGoals, shortGoalsEl);
+  renderGoalList(midGoals, midGoalsEl);
+  renderGoalList(longGoals, longGoalsEl);
+  renderGoalList(unlockRows, unlockProgressEl);
+
+  if (skillPathLabel) {
+    const pathLabel = SKILL_PATH_LABELS[playerData.skillTree?.path] || "Finisher";
+    skillPathLabel.textContent = `${pathLabel} path selected`;
+  }
+  if (skillPointLabel) {
+    const earned = playerData.skillTree?.pointsEarned || 0;
+    const spent = playerData.skillTree?.pointsSpent || 0;
+    skillPointLabel.textContent = `${spent} spent · ${Math.max(0, earned - spent)} unspent points`;
+  }
+  skillPathButtons.forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.skillPath === playerData.skillTree?.path);
+  });
+}
+
+function setSkillPath(path) {
+  if (!SKILL_PATH_LABELS[path]) return;
+  playerData.skillTree = {
+    ...playerData.skillTree,
+    path
+  };
+  savePlayerData(playerData);
+  renderProgression();
+  triggerCelebration({
+    title: `${SKILL_PATH_LABELS[path]} path equipped`,
+    copy: "Skill points now flow into this tree for stronger bonuses.",
+    tag: "Skill tree"
+  });
 }
 
 function renderClubLeaderboard() {
@@ -1516,6 +1700,15 @@ function applyRunResults(payload) {
     goals: payload.goals,
     coins: runCoins
   });
+  updateProgressionTracks(
+    playerData,
+    {
+      distance: payload.distance,
+      goals: payload.goals,
+      coins: runCoins
+    },
+    { levelBefore, levelAfter }
+  );
 
   const history = Array.isArray(playerData.recentRunCoins)
     ? playerData.recentRunCoins
@@ -1715,6 +1908,16 @@ btnPlayV2?.addEventListener("click", () => {
   startVariantRun("v2");
 });
 
+skillPathButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const path = btn.dataset.skillPath;
+    setSkillPath(path);
+    skillPathButtons.forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.skillPath === path);
+    });
+  });
+});
+
 btnOpenBuilder?.addEventListener("click", () => {
   openPlayerBuilder("Claim your kit and ball look.");
 });
@@ -1840,6 +2043,7 @@ btnResetProgress.addEventListener("click", () => {
     buildGameInstance();
     renderTeamScreen();
     renderMissions();
+    renderProgression();
     updateProfileUI();
   }
 });

@@ -2541,6 +2541,10 @@ canvas {
   gap: 16px;
 }
 
+.progression-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
 .core-loop-grid {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
@@ -2646,6 +2650,61 @@ canvas {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
+}
+
+.goal-list__label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.goal-list__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.goal-buckets--wide {
+  grid-column: span 2;
+}
+
+.pill--tiny {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.skill-tree {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  padding: 12px;
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.skill-tree__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.skill-tree__paths {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.skill-path {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e8f7ff;
+}
+
+.skill-path.is-active {
+  border-color: #2dfc8a;
+  box-shadow: 0 0 0 1px rgba(45, 252, 138, 0.4);
 }
 
 .inline-toast {
