@@ -61,6 +61,9 @@ const SESSION_PRESETS = {
   }
 };
 let activeSessionPreset = SESSION_PRESETS.quick;
+const commentator = new CommentarySystem();
+let lastMarketValueResult = null;
+let lastDodgedCount = 0;
 
 function formatDuration(ms) {
   const totalSeconds = Math.max(0, Math.round(ms / 1000));
@@ -75,6 +78,135 @@ function sessionDurationHint(preset) {
   if (!preset?.targetDurationMs) return "No cap";
   const minutes = Math.round(preset.targetDurationMs / 60000);
   return `${minutes}-min cap`;
+}
+
+/**
+ * Calculates a player's "Transfer Market Value" based on run performance.
+ * @param {number} distance - Distance run in meters.
+ * @param {number} goals - Goals scored.
+ * @param {number} coins - Coins collected.
+ * @returns {object} - Contains formatted value string and a rank title.
+ */
+function calculateMarketValue(distance, goals, coins) {
+  const valueRaw = distance * 100 + goals * 5000 + coins * 50;
+
+  const formatter = new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    maximumFractionDigits: 0
+  });
+
+  let formattedValue = formatter.format(valueRaw);
+  let rank = "Sunday League Amateur";
+
+  if (valueRaw > 100000000) rank = "G.O.A.T Contender";
+  else if (valueRaw > 50000000) rank = "World Class Superstar";
+  else if (valueRaw > 10000000) rank = "Top 5 League Starter";
+  else if (valueRaw > 1000000) rank = "Wonderkid Prospect";
+  else if (valueRaw > 100000) rank = "Academy Graduate";
+
+  return {
+    value: formattedValue,
+    rank,
+    raw: valueRaw
+  };
+}
+
+class CommentarySystem {
+  constructor() {
+    this.commentaryBox = document.getElementById("commentary-display");
+    this.timers = [];
+  }
+
+  shout(eventType) {
+    const lines = {
+      tackle: [
+        "Crunching tackle!",
+        "Won the ball cleanly!",
+        "Solid defense!",
+        "No way past him!"
+      ],
+      goal: ["WHAT A SCREAMER!", "Top bins!", "The keeper had no chance!", "Magisterial finish!"],
+      nearMiss: ["Ooh, that was close!", "Living dangerously!", "By the barest of margins!"],
+      start: ["The whistle blows!", "And we are underway!", "Can he go all the way?"]
+    };
+
+    if (!lines[eventType]) return;
+    const text = lines[eventType][Math.floor(Math.random() * lines[eventType].length)];
+    this.display(text, eventType === "goal");
+  }
+
+  display(text, isHighExcitement) {
+    if (!this.commentaryBox) return;
+    this.timers.forEach((t) => clearTimeout(t));
+    this.timers = [];
+
+    this.commentaryBox.innerText = text;
+    this.commentaryBox.style.opacity = "1";
+    this.commentaryBox.style.transform = "scale(1.1)";
+    this.commentaryBox.style.color = isHighExcitement ? "#ff00de" : "#ffffff";
+
+    const t1 = setTimeout(() => {
+      this.commentaryBox.style.opacity = "0";
+      this.commentaryBox.style.transform = "scale(1)";
+    }, 2000);
+
+    this.timers.push(t1);
+  }
+}
+
+/**
+ * Generates a shareable image of the player's stats on a canvas.
+ * @param {string} playerName - The user's name.
+ * @param {string} marketValue - The value calculated from the run.
+ * @param {string} rank - The rank title from the market value calculation.
+ */
+function generateShareCard(playerName, marketValue, rank) {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = 600;
+  canvas.height = 400;
+
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "#00ffcc";
+  ctx.lineWidth = 10;
+  ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#00ffcc";
+  ctx.font = "bold 60px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(marketValue, canvas.width / 2, 120);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "30px sans-serif";
+  ctx.fillText(playerName, canvas.width / 2, 180);
+
+  ctx.fillStyle = "#aaa";
+  ctx.font = "italic 24px sans-serif";
+  ctx.fillText(rank, canvas.width / 2, 220);
+
+  ctx.fillStyle = "#ff0055";
+  ctx.fillRect(0, 300, canvas.width, 100);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 28px sans-serif";
+  ctx.fillText("NEW RECORD TRANSFER FEE AGREED!", canvas.width / 2, 360);
+
+  const dataURL = canvas.toDataURL("image/png");
+
+  const imgElement = document.createElement("img");
+  imgElement.src = dataURL;
+  imgElement.style.border = "2px solid white";
+
+  const container = document.getElementById("share-card-container");
+  if (container) {
+    container.innerHTML = "";
+    container.appendChild(imgElement);
+  }
+
+  return dataURL;
 }
 
 const canvas = document.getElementById("gameCanvas");
@@ -176,6 +308,12 @@ const goSessionDuration = document.getElementById("goSessionDuration");
 const goSessionMode = document.getElementById("goSessionMode");
 const btnContinue = document.getElementById("btnContinue");
 const continueCostLabel = document.getElementById("continueCostLabel");
+const marketValueLabel = document.getElementById("marketValueLabel");
+const marketRankLabel = document.getElementById("marketRankLabel");
+const marketValueNote = document.getElementById("marketValueNote");
+const shareCardContainer = document.getElementById("share-card-container");
+const btnShareCard = document.getElementById("btnShareCard");
+if (shareCardContainer) shareCardContainer.textContent = "Generate your viral transfer card after a run.";
 
 // Buttons
 const btnPlay = document.getElementById("btnPlay");
@@ -2241,6 +2379,8 @@ function startRun(preset = activeSessionPreset) {
   pauseMenu?.classList.add("hidden");
   sessionStartTime = Date.now();
   resetContinueState();
+  lastDodgedCount = 0;
+  commentator.shout("start");
   updateStreak(playerData);
   renderStreakUI();
   renderInsights();
@@ -2408,6 +2548,7 @@ function updateGameOverUI(payload) {
   const projectedBest = Math.max(playerData.bestDistance, payload.distance);
   const availableTokens = getAvailableTokensForContinue(runCoins);
   const preset = payload.sessionConfig || activeSessionPreset;
+  const marketValueResult = calculateMarketValue(payload.distance, payload.goals, payload.coins);
 
   goDistance.textContent = `${payload.distance} m`;
   goGoals.textContent = `${payload.goals}`;
@@ -2416,6 +2557,16 @@ function updateGameOverUI(payload) {
   goCoinsDistance.textContent = `${distanceBonus}`;
   goCoinsGoals.textContent = `${goalBonus}`;
   goCoinsTotal.textContent = `${netCoins}`;
+  if (marketValueLabel) marketValueLabel.textContent = marketValueResult.value;
+  if (marketRankLabel) marketRankLabel.textContent = marketValueResult.rank;
+  if (marketValueNote)
+    marketValueNote.textContent = `Scout report: ${marketValueResult.rank} · Value factors distance, goals, and coins.`;
+  lastMarketValueResult = {
+    ...marketValueResult,
+    distance: payload.distance,
+    goals: payload.goals,
+    coins: payload.coins
+  };
   if (goSessionSummary) {
     const endCopy = payload.endReason === "sessionComplete" ? " · Session complete" : "";
     goSessionSummary.textContent = `${preset.label}${endCopy}`;
@@ -2446,6 +2597,10 @@ function updateGameOverUI(payload) {
 }
 
 function handleGameStats(stats) {
+  if (typeof stats.opponentsDodged === "number") {
+    if (stats.opponentsDodged > lastDodgedCount) commentator.shout("nearMiss");
+    lastDodgedCount = stats.opponentsDodged;
+  }
   hudDistance.textContent = `${stats.distance} m`;
   hudGoals.textContent = stats.goals.toString();
   hudBest.textContent = `${stats.bestDistance} m`;
@@ -2513,6 +2668,7 @@ function handleGameState(state) {
 }
 
 function handleGameGoal() {
+  commentator.shout("goal");
   triggerCelebration({
     title: "Net ripper!",
     copy: "+20 XP, replay saved, and crowd roar triggered.",
@@ -2607,6 +2763,7 @@ function handleInputAction(action) {
     game.handleMove("right");
     completeTutorialStep("move");
   } else if (actionType === "tackle") {
+    commentator.shout("tackle");
     game.handleMove("tackle");
     completeTutorialStep("pass");
   } else if (actionType === "juke") {
@@ -2787,6 +2944,20 @@ btnGoToTeam.addEventListener("click", () => {
 btnGoToMenu.addEventListener("click", () => {
   finalizePendingGameOver();
   setActiveScreen("mainMenu");
+});
+
+btnShareCard?.addEventListener("click", () => {
+  const profile = playerData.profile || {};
+  const playerName = getProfileLabel(profile);
+  const marketValue =
+    lastMarketValueResult || calculateMarketValue(pendingGameOverPayload?.distance || 0, 0, 0);
+  const dataUrl = generateShareCard(playerName, marketValue.value, marketValue.rank);
+  if (dataUrl) {
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = `${playerName.replace(/\s+/g, "_") || "runner"}_transfer_card.png`;
+    link.click();
+  }
 });
 
 btnContinue?.addEventListener("click", () => {
