@@ -176,6 +176,184 @@
               </div>
               <div id="weeklyMissions" class="mission-list"></div>
             </div>
+
+            <div class="panel panel--accent" id="coreLoopPanel">
+              <div class="panel__header panel__header--spaced">
+                <div class="panel__title-with-icon">
+                  <div class="panel__icon" aria-hidden="true">🔁</div>
+                  <h3>Core Loop Snapshot</h3>
+                </div>
+                <span class="pill pill--soft" id="coreLoopSpeed">1-tap ready</span>
+              </div>
+              <div class="core-loop-grid">
+                <div class="core-loop-step">
+                  <p class="eyebrow">Step 1</p>
+                  <h4>Play instantly</h4>
+                  <p>Tap play or press Start below. Minimal friction, quick load.</p>
+                  <button class="btn btn--primary btn--small" data-action="startRun">Jump In</button>
+                </div>
+                <div class="core-loop-step">
+                  <p class="eyebrow">Step 2</p>
+                  <h4>Earn &amp; celebrate</h4>
+                  <p>Goals trigger slow-mo, confetti, and instant XP gains.</p>
+                  <div class="celebration-chip" id="celebrationChip">+120 XP · Crowd roar</div>
+                </div>
+                <div class="core-loop-step">
+                  <p class="eyebrow">Step 3</p>
+                  <h4>Upgrade fast</h4>
+                  <p>Use XP &amp; coins to level cards and unlock new drills.</p>
+                  <div class="progress-bar">
+                    <div class="progress-bar__fill" id="loopXpFill"></div>
+                  </div>
+                  <p class="progress-label" id="loopXpLabel">Level 1 · 0 / 120 XP</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel" id="progressionPanel">
+              <div class="panel__header panel__header--spaced">
+                <div class="panel__title-with-icon">
+                  <div class="panel__icon" aria-hidden="true">📈</div>
+                  <h3>Goals &amp; Progression</h3>
+                </div>
+                <span class="pill pill--soft" id="progressionSummary">Session ready</span>
+              </div>
+              <div class="progression-grid">
+                <div>
+                  <p class="eyebrow">Season level</p>
+                  <div class="level-row">
+                    <div class="level-number" id="levelNumber">1</div>
+                    <div class="level-meter">
+                      <div class="level-meter__fill" id="levelMeterFill"></div>
+                    </div>
+                  </div>
+                  <p class="progress-label" id="levelMeterLabel">0 / 120 XP to next</p>
+                </div>
+                <div class="goal-buckets">
+                  <h4>Short goals</h4>
+                  <ul id="shortGoals" class="goal-list"></ul>
+                </div>
+                <div class="goal-buckets">
+                  <h4>Mid / long goals</h4>
+                  <ul id="longGoals" class="goal-list"></ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel" id="retentionPanel">
+              <div class="panel__header panel__header--spaced">
+                <div class="panel__title-with-icon">
+                  <div class="panel__icon" aria-hidden="true">🔥</div>
+                  <h3>Daily &amp; Weekly Pull</h3>
+                </div>
+                <span class="pill pill--soft" id="streakLabel">Streak: 0</span>
+              </div>
+              <div class="retention-grid">
+                <div class="retention-card">
+                  <p class="eyebrow">Streak boosts</p>
+                  <p class="retention-value" id="streakValue">0 days</p>
+                  <p class="retention-note" id="streakNote">Login to ignite streak XP bonus.</p>
+                </div>
+                <div class="retention-card">
+                  <p class="eyebrow">Daily set</p>
+                  <p class="retention-value" id="dailySet">3 rotating drills</p>
+                  <p class="retention-note">Easy / Medium / Hard missions refresh every day.</p>
+                </div>
+                <div class="retention-card">
+                  <p class="eyebrow">Weekly questline</p>
+                  <p class="retention-value" id="weeklySet">Play 10 · Score 20 · Win 5</p>
+                  <p class="retention-note">Complete to claim a neon reward chest.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel" id="socialPanel">
+              <div class="panel__header panel__header--spaced">
+                <div class="panel__title-with-icon">
+                  <div class="panel__icon" aria-hidden="true">🤝</div>
+                  <h3>Social &amp; Competition</h3>
+                </div>
+                <span class="pill pill--soft">Clubs · Leaderboards · Co-op</span>
+              </div>
+              <div class="social-grid">
+                <div>
+                  <h4>Club sprint</h4>
+                  <ul id="clubLeaderboard" class="leaderboard"></ul>
+                </div>
+                <div>
+                  <h4>Shareable moments</h4>
+                  <p class="retention-note">Every perfect shot gets clipped for quick sharing.</p>
+                  <p class="retention-note">Ghost replays are available for friend races.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel" id="rewardPanel">
+              <div class="panel__header panel__header--spaced">
+                <div class="panel__title-with-icon">
+                  <div class="panel__icon" aria-hidden="true">🎁</div>
+                  <h3>Reward Flow</h3>
+                </div>
+                <span class="pill pill--soft" id="rewardPulse">Fresh loot</span>
+              </div>
+              <div class="reward-grid">
+                <div class="reward-track">
+                  <p class="eyebrow">Post-match breakdown</p>
+                  <p class="reward-line" id="rewardLine">Coins, XP, and surprise bonuses drop every run.</p>
+                  <div class="progress-bar">
+                    <div class="progress-bar__fill progress-bar__fill--accent" id="rewardMeter"></div>
+                  </div>
+                </div>
+                <div class="reward-track">
+                  <p class="eyebrow">Ethical guardrails</p>
+                  <p class="retention-note">No predatory loot boxes. Cosmetic-first economy with clear odds.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel" id="onboardingPanel">
+              <div class="panel__header panel__header--spaced">
+                <div class="panel__title-with-icon">
+                  <div class="panel__icon" aria-hidden="true">🎯</div>
+                  <h3>Onboarding &amp; Difficulty</h3>
+                </div>
+                <span class="pill pill--soft" id="onboardingHint">Adaptive assists ready</span>
+              </div>
+              <div class="onboarding-grid">
+                <div class="onboarding-step">
+                  <h4>Guided tutorial</h4>
+                  <p>Interactive steps for pass, shoot, move, and upgrade with clear next actions.</p>
+                </div>
+                <div class="onboarding-step">
+                  <h4>Adaptive curve</h4>
+                  <p>Failsafe: back-to-back losses temporarily soften AI and widen tackle windows.</p>
+                </div>
+                <div class="onboarding-step">
+                  <h4>Early win moment</h4>
+                  <p>First match bias ensures you feel the thrill quickly.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel" id="insightsPanel">
+              <div class="panel__header panel__header--spaced">
+                <div class="panel__title-with-icon">
+                  <div class="panel__icon" aria-hidden="true">📊</div>
+                  <h3>Metrics &amp; Notifications</h3>
+                </div>
+                <span class="pill pill--soft">Respectful pings</span>
+              </div>
+              <div class="insights-grid">
+                <div>
+                  <p class="eyebrow">Session stats</p>
+                  <ul class="insight-list" id="insightList"></ul>
+                </div>
+                <div>
+                  <p class="eyebrow">Opt-in notifications</p>
+                  <ul class="notification-list" id="notificationList"></ul>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -329,6 +507,15 @@
     <footer class="app-footer">
       <span>Demo build – original IP only. No licensed clubs, logos or likenesses.</span>
     </footer>
+  </div>
+
+  <div id="celebrationOverlay" class="celebration-overlay hidden" aria-live="polite">
+    <div class="celebration-overlay__confetti"></div>
+    <div class="celebration-overlay__card">
+      <p class="pill pill--soft" id="celebrationTag">Goal!</p>
+      <h3 id="celebrationTitle">Slow-mo finish</h3>
+      <p id="celebrationCopy">Crowd roars, XP surges, and the replay saves automatically.</p>
+    </div>
   </div>
 
   <div id="playerBuilder" class="builder-overlay">

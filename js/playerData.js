@@ -254,6 +254,20 @@ function defaultMissions(now = new Date()) {
 function defaultData() {
   return {
     coins: 0,
+    xp: 0,
+    level: 1,
+    streak: {
+      days: 0,
+      lastLogin: null,
+      shield: 1
+    },
+    insights: {
+      totalRuns: 0,
+      totalSessions: 0,
+      lastSessionAt: null,
+      lastRunAt: null,
+      recentSessionLengths: []
+    },
     bestDistance: 0,
     totalGoals: 0,
     unlockedCards: ["street_striker"],
@@ -490,4 +504,124 @@ export function estimateRunsForCost(data, cost) {
       ? history.reduce((sum, val) => sum + val, 0) / history.length
       : 70;
   return Math.max(1, Math.ceil(cost / average));
+}
+
+// Lightweight progression + streak helpers to layer meta-game systems without
+// touching core gameplay loops.
+const XP_BASE = 120;
+const XP_GROWTH = 1.25;
+
+export function getLevelForXp(xp = 0) {
+  let level = 1;
+  let threshold = XP_BASE;
+  let xpRemaining = xp;
+
+  while (xpRemaining >= threshold) {
+    xpRemaining -= threshold;
+    level += 1;
+    threshold = Math.round(threshold * XP_GROWTH);
+  }
+
+  return level;
+}
+
+export function getLevelProgress(data) {
+  const xp = data.xp || 0;
+  let level = 1;
+  let threshold = XP_BASE;
+  let spentXp = 0;
+
+  while (spentXp + threshold <= xp) {
+    spentXp += threshold;
+    level += 1;
+    threshold = Math.round(threshold * XP_GROWTH);
+  }
+
+  const xpIntoLevel = xp - spentXp;
+  const progress = Math.max(0, Math.min(1, xpIntoLevel / threshold));
+
+  return {
+    level,
+    xp,
+    levelStartXp: spentXp,
+    levelXpNeeded: threshold,
+    xpIntoLevel,
+    nextThreshold: threshold,
+    progress
+  };
+}
+
+export function addExperience(data, amount) {
+  if (Number.isNaN(amount) || amount <= 0) {
+    return { levelBefore: getLevelForXp(data.xp || 0), levelAfter: getLevelForXp(data.xp || 0), gained: 0 };
+  }
+
+  const levelBefore = getLevelForXp(data.xp || 0);
+  data.xp = Math.max(0, Math.round((data.xp || 0) + amount));
+  data.level = getLevelForXp(data.xp);
+  const levelAfter = data.level;
+  return { levelBefore, levelAfter, gained: amount };
+}
+
+export function updateStreak(data, now = new Date()) {
+  const todayKey = getDayKey(now);
+  const lastLogin = data.streak?.lastLogin;
+
+  const streak = {
+    days: data.streak?.days || 0,
+    lastLogin,
+    shield: data.streak?.shield ?? 1
+  };
+
+  if (!lastLogin) {
+    streak.days = 1;
+  } else {
+    const last = new Date(lastLogin);
+    const diffDays = Math.round((now - last) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) {
+      // same day
+    } else if (diffDays === 1) {
+      streak.days += 1;
+    } else {
+      if (streak.shield > 0) {
+        streak.shield -= 1;
+      } else {
+        streak.days = 1;
+      }
+    }
+  }
+
+  streak.lastLogin = todayKey;
+  data.streak = streak;
+  return streak;
+}
+
+export function logSessionEvent(data, { sessionLengthMs = 0 } = {}) {
+  const now = new Date();
+  const insights = data.insights || {};
+  const updated = {
+    ...insights,
+    totalRuns: insights.totalRuns || 0,
+    totalSessions: (insights.totalSessions || 0) + 1,
+    lastSessionAt: now.toISOString(),
+    recentSessionLengths: Array.isArray(insights.recentSessionLengths)
+      ? [...insights.recentSessionLengths.slice(-4), sessionLengthMs]
+      : [sessionLengthMs]
+  };
+
+  data.insights = updated;
+  return updated;
+}
+
+export function logRunEvent(data) {
+  const now = new Date();
+  const insights = data.insights || {};
+  const updated = {
+    ...insights,
+    totalRuns: (insights.totalRuns || 0) + 1,
+    lastRunAt: now.toISOString()
+  };
+
+  data.insights = updated;
+  return updated;
 }
