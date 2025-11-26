@@ -33,9 +33,9 @@ function hexToRgba(hex, alpha = 1) {
 }
 
 function buildKitPalette(custom = {}) {
-  const primary = custom.primary || "#1f3a74";
-  const secondary = custom.secondary || "#80223c";
-  const trim = custom.trim || "#0bd3c7";
+  const primary = custom.primary || "#0c9c9c";
+  const secondary = custom.secondary || "#e86842";
+  const trim = custom.trim || "#f7f8fa";
 
   return {
     primary,
@@ -43,8 +43,90 @@ function buildKitPalette(custom = {}) {
     secondary,
     secondaryShadow: custom.secondaryShadow || shadeColor(secondary, -18),
     trim,
-    sockStripe: custom.sockStripe || "#f2f4ff",
-    boot: custom.boot || "#0f1e46"
+    sockStripe: custom.sockStripe || "#0c9c9c",
+    boot: custom.boot || "#0b5054"
+  };
+}
+
+const PLAYER_SPRITES = {
+  idle: [
+    "..HHHHHH....",
+    ".HHHHHHHH...",
+    ".HssssssH...",
+    ".HssssssH...",
+    ".HssssssH...",
+    "..SssssS....",
+    ".ssppppss...",
+    ".ssppppss...",
+    ".ppwwwwpp...",
+    ".pppppppp...",
+    ".ooooOOOO...",
+    ".ooOOooOO...",
+    ".sskkkss....",
+    ".sskkkss....",
+    ".bb....bb...",
+    ".bb....bb..."
+  ],
+  run1: [
+    "..HHHHHH....",
+    ".HHHHHHHH...",
+    ".HssssssH...",
+    ".HssssssH...",
+    ".HssssssH...",
+    "..SssssS....",
+    ".ssppppss...",
+    ".ssppppss...",
+    ".ppwwwwpp...",
+    ".pppppppp...",
+    "..ooooOOOO..",
+    "..ooOOooOO..",
+    "...sskkkss..",
+    ".sskkkss....",
+    ".bb....bb...",
+    "..bb..bb...."
+  ],
+  run2: [
+    "..HHHHHH....",
+    ".HHHHHHHH...",
+    ".HssssssH...",
+    ".HssssssH...",
+    ".HssssssH...",
+    "..SssssS....",
+    ".ssppppss...",
+    ".ssppppss...",
+    ".ppwwwwpp...",
+    ".pppppppp...",
+    "..ooooOOOO..",
+    "..ooOOooOO..",
+    ".sskkkss....",
+    "...sskkkss..",
+    "..bb..bb....",
+    "..bb..bb...."
+  ]
+};
+
+function buildPixelPlayerColors(kit, palette) {
+  const sockBase = kit.sockStripe || "#f7f8fa";
+  const sockShadow = shadeColor(sockBase, -22);
+  const shorts = kit.secondary || palette.kitSecondary;
+  const shortsShadow = kit.secondaryShadow || shadeColor(shorts, -16);
+  const boot = kit.boot || palette.shadow;
+
+  return {
+    H: "#3b2413",
+    h: "#2a1a12",
+    s: palette.playerSkin,
+    S: palette.playerSkinShade,
+    p: kit.primary || palette.kitPrimary,
+    P: kit.primaryShadow || shadeColor(kit.primary || palette.kitPrimary, -18),
+    w: kit.trim || palette.kitTrim,
+    W: shadeColor(kit.trim || palette.kitTrim, -12),
+    o: shorts,
+    O: shortsShadow,
+    k: sockBase,
+    K: sockShadow,
+    b: boot,
+    B: shadeColor(boot, -18)
   };
 }
 
@@ -73,11 +155,11 @@ export class Game {
       shadow: "#0a0f16",
       playerSkin: "#f5d8b5",
       playerSkinShade: "#d3b08a",
-      kitPrimary: "#1f3a74",
-      kitPrimaryDark: "#162747",
-      kitSecondary: "#80223c",
-      kitSecondaryDark: "#4e0f26",
-      kitTrim: "#0bd3c7",
+      kitPrimary: "#0c9c9c",
+      kitPrimaryDark: "#0b6c6e",
+      kitSecondary: "#e86842",
+      kitSecondaryDark: "#bf4f2f",
+      kitTrim: "#f7f8fa",
       net: "#e8f7ff",
       glow: "#2dfc8a",
       crowdJersey: ["#0f9b7f", "#1f3a74", "#ed4b88", "#ffc857", "#f1f5f9"],
@@ -1424,6 +1506,9 @@ export class Game {
     const w = this.player.width;
     const p = this.palette;
     const kit = this.kit;
+    const jerseyNumber = `${this.playerCardMeta?.rating || 10}`.padStart(2, "0").slice(-2);
+    const numberColor = kit.sockStripe || kit.trim || "#f9fafb";
+    const pixelColors = buildPixelPlayerColors(kit, p);
 
     // Chunky shadow
     this.drawPixelRect(ctx, x + w * 0.2, y + h, w * 0.6, this.pixelSize * 2, p.shadow);
@@ -1434,8 +1519,8 @@ export class Game {
         P: kit.primaryShadow || shadeColor(kit.primary, -18),
         s: p.playerSkin,
         S: p.playerSkinShade,
-        h: "#2a252d",
-        H: "#1c1820",
+        h: "#3b2413",
+        H: "#2a1a12",
         b: kit.boot || p.shadow,
         q: kit.secondary,
         Q: kit.secondaryShadow || shadeColor(kit.secondary, -18)
@@ -1458,44 +1543,11 @@ export class Game {
       return;
     }
 
-    const sprite = [
-      "....hhhH....",
-      "...hhhHHH...",
-      "..HHHHHHHH..",
-      "..HHHHHHHH..",
-      "..ssssssss..",
-      "..sse..ess..",
-      "..ssssssss..",
-      "...sttts....",
-      ".pppppppppp.",
-      ".ppppnnpppp.",
-      ".pPpttPpPpP.",
-      ".pppppppppp.",
-      ".pppppppppp.",
-      ".qqqqqqqqqq.",
-      ".qqqQQQQqqq.",
-      ".ttpppppptt.",
-      ".pppppppppp.",
-      ".pppppppppp.",
-      "bbb......bbb",
-      "bbb......bbb"
-    ];
+    const running = this.runState === RUN_STATE.RUNNING || this.player.isJuking;
+    const frameIndex = Math.floor((this.elapsedTime * 8) % 2);
+    const sprite = running ? (frameIndex === 0 ? PLAYER_SPRITES.run1 : PLAYER_SPRITES.run2) : PLAYER_SPRITES.idle;
 
-    const jerseyNumber = `${this.playerCardMeta?.rating || 10}`.padStart(2, "0").slice(-2);
-    const numberColor = kit.sockStripe || kit.trim || "#f9fafb";
-    const colors = {
-      h: "#2d2b32",
-      H: "#1a1622",
-      s: p.playerSkin,
-      e: "#0f172a",
-      t: kit.trim || p.kitTrim,
-      p: kit.primary || p.kitPrimary,
-      P: kit.primaryShadow || shadeColor(kit.primary, -18),
-      q: kit.secondary || p.kitSecondary,
-      Q: kit.secondaryShadow || shadeColor(kit.secondary, -18),
-      n: numberColor,
-      b: kit.boot || p.shadow
-    };
+    const colors = { ...pixelColors, n: numberColor };
 
     this.drawSpriteMatrix(ctx, sprite, colors, x, y, w, h);
 
@@ -1511,92 +1563,19 @@ export class Game {
   drawStandingDefender(ctx, x, y, width, height) {
     const p = this.palette;
     const kit = this.kit;
+    const colors = buildPixelPlayerColors(kit, p);
     this.drawPixelRect(ctx, x + width * 0.18, y + height, width * 0.64, this.pixelSize * 2.2, p.shadow);
-
-    const legW = width * 0.17;
-    const sockH = height * 0.08;
-    const bootH = height * 0.08;
-
-    // Left leg
-    this.drawPixelRect(ctx, x + width * 0.2, y + height * 0.54, legW, height * 0.22, p.playerSkin);
-    this.drawPixelRect(ctx, x + width * 0.2, y + height * 0.76, legW, sockH, kit.secondary || p.kitSecondary);
-    this.drawPixelRect(ctx, x + width * 0.2, y + height * 0.76 + sockH * 0.55, legW, this.pixelSize, kit.trim || p.kitTrim);
-    this.drawPixelRect(ctx, x + width * 0.18, y + height * 0.84, legW + this.pixelSize * 0.6, bootH, kit.boot || p.shadow);
-
-    // Right leg
-    this.drawPixelRect(ctx, x + width * 0.6, y + height * 0.52, legW, height * 0.24, p.playerSkin);
-    this.drawPixelRect(ctx, x + width * 0.6, y + height * 0.76, legW, sockH, kit.secondary || p.kitSecondary);
-    this.drawPixelRect(ctx, x + width * 0.6, y + height * 0.76 + sockH * 0.55, legW, this.pixelSize, kit.trim || p.kitTrim);
-    this.drawPixelRect(ctx, x + width * 0.58, y + height * 0.84, legW + this.pixelSize * 0.6, bootH, kit.boot || p.shadow);
-
-    // Shorts
-    const shortH = height * 0.18;
-    this.drawPixelRect(ctx, x + width * 0.2, y + height * 0.44, width * 0.57, shortH, kit.secondary || p.kitSecondary);
-    this.drawPixelRect(ctx, x + width * 0.2, y + height * 0.44 + shortH * 0.6, width * 0.57, this.pixelSize, kit.trim || p.kitTrim);
-
-    // Torso with dual-tone jersey
-    const torsoX = x + width * 0.18;
-    const torsoW = width * 0.64;
-    const torsoH = height * 0.32;
-    this.drawPixelRect(ctx, torsoX, y + height * 0.18, torsoW, torsoH, kit.primary || p.kitPrimary);
-    this.drawPixelRect(ctx, torsoX, y + height * 0.18, torsoW, this.pixelSize * 1.5, shadeColor(kit.primary || p.kitPrimary, 18));
-    this.drawPixelRect(ctx, torsoX + torsoW * 0.05, y + height * 0.26, torsoW * 0.9, this.pixelSize, kit.trim || p.kitTrim);
-    this.drawPixelRect(ctx, torsoX + torsoW * 0.32, y + height * 0.18, this.pixelSize * 1.6, torsoH, kit.trim || p.kitTrim);
-
-    // Arms folded across chest
-    this.drawPixelRect(ctx, torsoX - width * 0.08, y + height * 0.24, width * 0.26, height * 0.14, p.playerSkin);
-    this.drawPixelRect(ctx, torsoX + torsoW - width * 0.12, y + height * 0.22, width * 0.24, height * 0.16, p.playerSkin);
-    this.drawPixelRect(ctx, torsoX - width * 0.04, y + height * 0.3, width * 0.24, this.pixelSize * 1.4, kit.trim || p.kitTrim);
-
-    // Neck and head with hair + features
-    const headSize = width * 0.28;
-    const headX = x + width * 0.36;
-    const headY = y + height * 0.02;
-    this.drawPixelRect(ctx, headX + headSize * 0.12, headY + headSize * 0.22, headSize * 0.72, this.pixelSize * 1.4, p.playerSkinShade);
-    this.drawPixelRect(ctx, headX, headY, headSize, headSize, p.playerSkin);
-    this.drawPixelRect(ctx, headX, headY, headSize, this.pixelSize * 2, "#1f2937");
-    this.drawPixelRect(ctx, headX + headSize * 0.18, headY + headSize * 0.42, this.pixelSize, this.pixelSize, '#0f172a');
-    this.drawPixelRect(ctx, headX + headSize * 0.64, headY + headSize * 0.42, this.pixelSize, this.pixelSize, '#0f172a');
-    this.drawPixelRect(ctx, headX + headSize * 0.38, headY + headSize * 0.52, this.pixelSize * 1.6, this.pixelSize, '#0f172a');
+    this.drawSpriteMatrix(ctx, PLAYER_SPRITES.idle, colors, x, y, width, height);
   }
 
   drawDefender(ctx, x, y, width, height) {
     const p = this.palette;
     const kit = this.kit;
+    const colors = buildPixelPlayerColors(kit, p);
     this.drawPixelRect(ctx, x + width * 0.08, y + height * 0.9, width * 0.82, this.pixelSize * 2, p.shadow);
-
-    // Sliding torso with trim and number banding
-    const bodyH = height * 0.22;
-    this.drawPixelRect(ctx, x + width * 0.1, y + height * 0.48, width * 0.74, bodyH, kit.primary || p.kitPrimary);
-    this.drawPixelRect(ctx, x + width * 0.1, y + height * 0.48, width * 0.74, this.pixelSize * 1.2, shadeColor(kit.primary || p.kitPrimary, 16));
-    this.drawPixelRect(ctx, x + width * 0.14, y + height * 0.56, width * 0.66, this.pixelSize, kit.trim || p.kitTrim);
-    this.drawPixelRect(ctx, x + width * 0.4, y + height * 0.48, this.pixelSize * 1.4, bodyH, kit.trim || p.kitTrim);
-
-    // Leading leg and trailing leg with socks
-    this.drawPixelRect(ctx, x + width * 0.7, y + height * 0.5, width * 0.18, height * 0.12, p.playerSkin);
-    this.drawPixelRect(ctx, x + width * 0.68, y + height * 0.6, width * 0.2, height * 0.08, kit.secondary || p.kitSecondary);
-    this.drawPixelRect(ctx, x + width * 0.68, y + height * 0.66, width * 0.2, this.pixelSize, kit.trim || p.kitTrim);
-
-    this.drawPixelRect(ctx, x + width * 0.12, y + height * 0.62, width * 0.18, height * 0.12, p.playerSkin);
-    this.drawPixelRect(ctx, x + width * 0.1, y + height * 0.72, width * 0.22, height * 0.08, kit.secondary || p.kitSecondary);
-    this.drawPixelRect(ctx, x + width * 0.1, y + height * 0.78, width * 0.22, this.pixelSize, kit.trim || p.kitTrim);
-
-    // Boots
-    this.drawPixelRect(ctx, x + width * 0.66, y + height * 0.7, width * 0.22, height * 0.08, kit.boot || p.shadow);
-    this.drawPixelRect(ctx, x + width * 0.08, y + height * 0.82, width * 0.24, height * 0.08, kit.boot || p.shadow);
-
-    // Arms reaching forward/back
-    this.drawPixelRect(ctx, x + width * 0.08, y + height * 0.42, width * 0.22, height * 0.12, p.playerSkin);
-    this.drawPixelRect(ctx, x + width * 0.6, y + height * 0.4, width * 0.22, height * 0.12, p.playerSkin);
-    this.drawPixelRect(ctx, x + width * 0.08, y + height * 0.5, width * 0.2, this.pixelSize * 1.2, kit.trim || p.kitTrim);
-
-    // Head with hair and mask shading
-    const headSize = width * 0.26;
-    this.drawPixelRect(ctx, x + width * 0.32, y + height * 0.3, headSize, headSize, p.playerSkin);
-    this.drawPixelRect(ctx, x + width * 0.3, y + height * 0.3, headSize * 1.02, this.pixelSize * 1.8, "#111827");
-    this.drawPixelRect(ctx, x + width * 0.36, y + height * 0.36, this.pixelSize, this.pixelSize, '#0f172a');
-    this.drawPixelRect(ctx, x + width * 0.5, y + height * 0.36, this.pixelSize, this.pixelSize, '#0f172a');
-    this.drawPixelRect(ctx, x + width * 0.42, y + height * 0.42, this.pixelSize * 1.4, this.pixelSize, '#0f172a');
+    const frameIndex = Math.floor((this.elapsedTime * 9) % 2);
+    const sprite = frameIndex === 0 ? PLAYER_SPRITES.run1 : PLAYER_SPRITES.run2;
+    this.drawSpriteMatrix(ctx, sprite, colors, x, y, width, height);
   }
 
   drawObstacles(ctx) {
