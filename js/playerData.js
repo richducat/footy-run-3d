@@ -408,6 +408,7 @@ function defaultData() {
     goalProgress: defaultGoalProgress(),
     skillTree: defaultSkillTree(),
     unlocks: defaultUnlocks(),
+    onboarding: defaultOnboarding(),
     profile: {
       displayName: "",
       email: "",
@@ -433,6 +434,14 @@ export function loadPlayerData() {
     const data = {
       ...defaults,
       ...parsed,
+      onboarding: {
+        ...defaultOnboarding(),
+        ...(parsed.onboarding || {}),
+        tutorialSteps: {
+          ...defaultOnboarding().tutorialSteps,
+          ...(parsed.onboarding?.tutorialSteps || {})
+        }
+      },
       profile: {
         ...defaults.profile,
         ...(parsed.profile || {})
@@ -473,6 +482,22 @@ export function savePlayerData(data) {
 
 export function getCardById(id) {
   return PLAYER_CARDS.find((card) => card.id === id) || null;
+}
+
+export function defaultOnboarding() {
+  return {
+    tutorialSteps: {
+      move: false,
+      pass: false,
+      shoot: false,
+      upgrade: false
+    },
+    lossStreak: 0,
+    adaptiveAssistActive: false,
+    firstRunPlayed: false,
+    firstWinAwarded: false,
+    lastRunWasBoosted: false
+  };
 }
 
 export function getCardLevel(data, cardId) {
@@ -863,4 +888,87 @@ export function logRunEvent(data) {
 
   data.insights = updated;
   return updated;
+}
+
+export function markTutorialStep(data, step) {
+  if (!step) return false;
+  const defaults = defaultOnboarding();
+  const onboarding = {
+    ...defaults,
+    ...(data.onboarding || {}),
+    tutorialSteps: {
+      ...defaults.tutorialSteps,
+      ...(data.onboarding?.tutorialSteps || {})
+    }
+  };
+
+  if (onboarding.tutorialSteps[step]) return false;
+  onboarding.tutorialSteps[step] = true;
+  data.onboarding = onboarding;
+  return true;
+}
+
+export function getOnboardingProgress(data) {
+  const defaults = defaultOnboarding();
+  const onboarding = {
+    ...defaults,
+    ...(data.onboarding || {}),
+    tutorialSteps: {
+      ...defaults.tutorialSteps,
+      ...(data.onboarding?.tutorialSteps || {})
+    }
+  };
+
+  const stepsComplete = Object.values(onboarding.tutorialSteps).filter(Boolean).length;
+  const totalSteps = Object.keys(defaults.tutorialSteps).length;
+
+  return {
+    ...onboarding,
+    stepsComplete,
+    totalSteps,
+    tutorialComplete: stepsComplete >= totalSteps
+  };
+}
+
+export function recordRunOutcome(data, { win = false, usedBeginnerBoost = false } = {}) {
+  const progress = getOnboardingProgress(data);
+
+  const next = {
+    ...progress,
+    firstRunPlayed: true,
+    lastRunWasBoosted: usedBeginnerBoost
+  };
+
+  if (win) {
+    next.lossStreak = 0;
+    next.adaptiveAssistActive = false;
+    next.firstWinAwarded = true;
+  } else {
+    next.lossStreak = (progress.lossStreak || 0) + 1;
+    next.adaptiveAssistActive = next.lossStreak >= 2;
+  }
+
+  data.onboarding = {
+    ...data.onboarding,
+    ...next,
+    tutorialSteps: {
+      ...progress.tutorialSteps
+    }
+  };
+
+  return data.onboarding;
+}
+
+export function getAssistProfile(data) {
+  const progress = getOnboardingProgress(data);
+  const adaptiveEase = progress.adaptiveAssistActive;
+  const beginnerBias = !progress.firstWinAwarded;
+
+  return {
+    speedScale: adaptiveEase ? 0.93 : 1,
+    obstacleEase: adaptiveEase ? 1.2 : 1,
+    pickupBoost: adaptiveEase ? 1.15 : 1,
+    goalieScale: beginnerBias ? 0.85 : adaptiveEase ? 0.92 : 1,
+    shotGainBoost: adaptiveEase ? 1.08 : 1
+  };
 }

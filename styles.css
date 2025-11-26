@@ -2830,6 +2830,53 @@ canvas {
   background: rgba(255, 255, 255, 0.02);
 }
 
+.tutorial-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: grid;
+  gap: 6px;
+}
+
+.tutorial-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #cbd5e1;
+}
+
+.tutorial-list__status {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  color: #9ca3af;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tutorial-list__item--complete .tutorial-list__status {
+  background: #2dfc8a;
+  color: #0b1120;
+  border-color: rgba(45, 252, 138, 0.4);
+  box-shadow: 0 0 0 1px rgba(45, 252, 138, 0.3);
+}
+
+.tutorial-list__item--complete .tutorial-list__label {
+  color: #e5e7eb;
+}
+
+.onboarding-note {
+  font-size: 14px;
+  color: #cbd5e1;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
 .insights-grid {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
