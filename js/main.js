@@ -61,7 +61,7 @@ const SESSION_PRESETS = {
   }
 };
 let activeSessionPreset = SESSION_PRESETS.quick;
-const commentator = new CommentarySystem();
+let commentator = null;
 let lastMarketValueResult = null;
 let lastDodgedCount = 0;
 
@@ -154,6 +154,8 @@ class CommentarySystem {
     this.timers.push(t1);
   }
 }
+
+commentator = new CommentarySystem();
 
 /**
  * Generates a shareable image of the player's stats on a canvas.
