@@ -86,6 +86,12 @@ const hudTierName = document.getElementById("hudTierName");
 const hudTierNote = document.getElementById("hudTierNote");
 const hudSessionLabel = document.getElementById("hudSessionLabel");
 const hudSessionTimer = document.getElementById("hudSessionTimer");
+const hudV2 = document.getElementById("hudV2");
+const hudV2Coins = document.getElementById("hudV2Coins");
+const hudV2Score = document.getElementById("hudV2Score");
+const hudV2Multiplier = document.getElementById("hudV2Multiplier");
+const hudV2Lives = document.getElementById("hudV2Lives");
+const btnPauseV2 = document.getElementById("btnPauseV2");
 const shotMeterFill = document.getElementById("shotMeterFill");
 const pauseBanner = document.getElementById("pauseBanner");
 const pauseMenu = document.getElementById("pauseMenu");
@@ -628,9 +634,16 @@ function setActiveScreen(id) {
     screens[id].classList.add("screen--active");
   }
 
-  const inRun = id === null;
-  hudEl.classList.toggle("hidden", !inRun);
+  syncHudVisibility();
   updateTouchControlsVisibility();
+}
+
+function syncHudVisibility() {
+  const inRun = currentScreenId === null;
+  const isV2 = visualVariant === "v2";
+
+  hudEl.classList.toggle("hidden", !inRun || isV2);
+  hudV2?.classList.toggle("hidden", !inRun || !isV2);
 }
 
 function focusMissionsPanel() {
@@ -1689,8 +1702,9 @@ function updateTouchControlsVisibility() {
 function setVisualVariant(nextVariant) {
   if (visualVariant === nextVariant) return;
   visualVariant = nextVariant;
+  document.documentElement.dataset.visualVariant = visualVariant;
   buildGameInstance();
-  updateVariantToggleUI();
+  applyVisualVariantTheme();
 }
 
 function updateVariantToggleUI() {
@@ -1702,6 +1716,12 @@ function updateVariantToggleUI() {
   buttons.forEach(({ el, variant }) => {
     el?.classList.toggle("variant-toggle__button--active", visualVariant === variant);
   });
+}
+
+function applyVisualVariantTheme() {
+  document.documentElement.dataset.visualVariant = visualVariant;
+  updateVariantToggleUI();
+  syncHudVisibility();
 }
 
 function syncSessionLabels(preset) {
@@ -2412,6 +2432,17 @@ function handleGameStats(stats) {
   const pct = (stats.shotMeter / 100) * 100;
   shotMeterFill.style.width = `${Math.min(100, Math.max(0, pct))}%`;
   shotMeterFill.classList.toggle("shot-meter__fill--ready", !!stats.shotReady);
+
+  if (hudV2Coins) hudV2Coins.textContent = `${stats.coins ?? 0}`;
+  if (hudV2Score) hudV2Score.textContent = `${stats.distance}`;
+  if (hudV2Multiplier) {
+    const multiplier = Math.max(1, (stats.goals || 0) + 1);
+    hudV2Multiplier.textContent = `x${multiplier}`;
+  }
+  if (hudV2Lives) {
+    const lives = stats.lives ?? 3;
+    hudV2Lives.textContent = `${lives}`;
+  }
 }
 
 function handleGameState(state) {
@@ -2661,6 +2692,10 @@ btnPause.addEventListener("click", () => {
   togglePause();
 });
 
+btnPauseV2?.addEventListener("click", () => {
+  togglePause();
+});
+
 pauseMenuResumeBtn?.addEventListener("click", () => {
   togglePause();
 });
@@ -2861,7 +2896,7 @@ function loop(timestamp) {
 
 // Bootstrap
 buildGameInstance();
-updateVariantToggleUI();
+applyVisualVariantTheme();
 renderTeamScreen();
 renderMissions();
 renderEvents();
