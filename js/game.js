@@ -166,6 +166,22 @@ export class Game {
       crowdShadow: "#050912"
     };
 
+    if (this.visualVariant === "v2") {
+      this.palette = {
+        ...this.palette,
+        turfDark: "#3d9a46",
+        turfMid: "#48b157",
+        turfLight: "#63c56a",
+        turfHighlight: "#7bd67f",
+        touchline: "#5bb45e",
+        chalk: "#ffffff",
+        net: "#f5f9ff",
+        glow: "#5ed4ff",
+        crowdJersey: ["#3b7dce", "#ff9f43", "#f65050", "#4ac37a", "#f1f5f9"],
+        crowdShadow: "#143018"
+      };
+    }
+
     // Layered rendering buffers to keep static detail cheap
     this.visualVariant = options.visualVariant || "v1";
     this.pitchLayer = null;
@@ -1211,8 +1227,11 @@ export class Game {
     ctx.stroke();
     ctx.restore();
 
-    this.drawCrowdBand(ctx, horizon);
-    this.drawAdBoards(ctx, horizon);
+    const haze = ctx.createLinearGradient(0, horizon - this.pixelSize * 8, 0, horizon + this.pixelSize * 18);
+    haze.addColorStop(0, "rgba(255,255,255,0.55)");
+    haze.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = haze;
+    ctx.fillRect(0, horizon - this.pixelSize * 8, this.width, this.pixelSize * 26);
   }
 
   drawConvergingLaneMarkers(ctx, geometry) {
@@ -1319,6 +1338,23 @@ export class Game {
   drawAtmosphericBackdrop(ctx) {
     const { horizon } = this.getFieldGeometry();
     const bandHeight = horizon * 0.8;
+
+    if (this.visualVariant === "v2") {
+      const dawnSky = ctx.createLinearGradient(0, 0, 0, horizon * 1.5);
+      dawnSky.addColorStop(0, "#e8e6d6");
+      dawnSky.addColorStop(0.4, "#d2e2f7");
+      dawnSky.addColorStop(1, "#9ad1ff");
+      ctx.fillStyle = dawnSky;
+      ctx.fillRect(0, 0, this.width, horizon * 1.6);
+
+      const haze = ctx.createLinearGradient(0, horizon * 0.4, 0, this.height);
+      haze.addColorStop(0, "rgba(255,255,255,0.65)");
+      haze.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = haze;
+      ctx.fillRect(0, 0, this.width, this.height);
+
+      return;
+    }
 
     const rimLight = ctx.createLinearGradient(0, 0, 0, bandHeight);
     rimLight.addColorStop(0, "rgba(45,252,138,0.24)");
@@ -1668,6 +1704,36 @@ export class Game {
     this.drawSpriteMatrix(ctx, sprite, colors, x, y, width, height);
   }
 
+  drawCone(ctx, x, y, width, height) {
+    const radius = width / 2;
+    const baseY = y + height;
+    const grad = ctx.createLinearGradient(0, y, 0, baseY);
+    grad.addColorStop(0, "#ff6647");
+    grad.addColorStop(0.5, "#ff3c2b");
+    grad.addColorStop(1, "#b72312");
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(x, baseY);
+    ctx.lineTo(x + radius, y);
+    ctx.lineTo(x + width, baseY);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    const stripeHeight = height * 0.18;
+    ctx.fillRect(x + width * 0.16, y + height * 0.38, width * 0.68, stripeHeight);
+    ctx.fillRect(x + width * 0.24, y + height * 0.62, width * 0.52, stripeHeight);
+
+    const shadow = ctx.createRadialGradient(x + radius, baseY, width * 0.1, x + radius, baseY, width);
+    shadow.addColorStop(0, "rgba(0,0,0,0.3)");
+    shadow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = shadow;
+    ctx.beginPath();
+    ctx.ellipse(x + radius, baseY + height * 0.08, radius, height * 0.16, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   drawObstacles(ctx) {
     for (const o of this.obstacles) {
       const depthScale = this.depthScale(o.y + o.height);
@@ -1676,7 +1742,10 @@ export class Game {
       const x = this.laneX(o.lane, o.y + height) - width / 2;
       const y = o.y;
 
-      if (o.type === "ground") {
+      if (this.visualVariant === "v2") {
+        const coneHeight = height * (o.type === "ground" ? 0.8 : 1);
+        this.drawCone(ctx, x, y + (height - coneHeight), width * 0.82, coneHeight);
+      } else if (o.type === "ground") {
         this.drawDefender(ctx, x, y, width, height);
       } else {
         this.drawStandingDefender(ctx, x, y, width, height);
