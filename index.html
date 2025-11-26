@@ -577,6 +577,9 @@
                 </div>
                 <div>
                   <p class="eyebrow">Opt-in notifications</p>
+                  <p class="progress-label" id="notificationSettingsNote">
+                    You control timing and topics so nudges stay helpful and non-spammy.
+                  </p>
                   <ul class="notification-list" id="notificationList"></ul>
                 </div>
               </div>
@@ -608,6 +611,44 @@
             <p class="screen-subtitle">
               Local-only settings for this demo build.
             </p>
+            <div class="settings-group">
+              <h4>Notification preferences</h4>
+              <p class="settings-note">
+                Customize timing or mute categories entirely. We cap sends to avoid spammy experiences.
+              </p>
+              <label class="setting-row">
+                <span>Enable respectful notifications</span>
+                <input type="checkbox" id="settingNotifyEnable" checked />
+              </label>
+              <label class="setting-row">
+                <span>League reminders</span>
+                <input type="checkbox" id="settingNotifyLeague" checked />
+              </label>
+              <label class="setting-row">
+                <span>Training streak nudges</span>
+                <input type="checkbox" id="settingNotifyStreak" checked />
+              </label>
+              <label class="setting-row">
+                <span>Event alerts</span>
+                <input type="checkbox" id="settingNotifyEvent" checked />
+              </label>
+              <label class="setting-row setting-row--split">
+                <span>Daily limit</span>
+                <select id="settingNotifyDailyCap">
+                  <option value="1">1 per day</option>
+                  <option value="2" selected>2 per day (default)</option>
+                  <option value="3">3 per day</option>
+                </select>
+              </label>
+              <label class="setting-row setting-row--split">
+                <span>Preferred time</span>
+                <select id="settingNotifyWindow">
+                  <option value="morning">Mornings (8–11am)</option>
+                  <option value="afternoon">Afternoons (12–3pm)</option>
+                  <option value="evening" selected>Evenings (6–9pm)</option>
+                </select>
+              </label>
+            </div>
             <div class="settings-group">
               <label class="setting-row">
                 <span>Show tutorial tips (not yet implemented)</span>

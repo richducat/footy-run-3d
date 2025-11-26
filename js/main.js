@@ -29,7 +29,8 @@ import {
   markTutorialStep,
   getOnboardingProgress,
   recordRunOutcome,
-  getAssistProfile
+  getAssistProfile,
+  defaultNotificationPrefs
 } from "./playerData.js";
 import { InputManager } from "./input.js";
 
@@ -196,6 +197,13 @@ const btnCloseBuilder = document.getElementById("btnCloseBuilder");
 const btnOpenBuilder = document.getElementById("btnOpenBuilder");
 const btnShufflePreset = document.getElementById("btnShufflePreset");
 const featureJumpButtons = document.querySelectorAll("[data-feature-target], [data-feature-action]");
+const notificationSettingsNote = document.getElementById("notificationSettingsNote");
+const notificationMasterToggle = document.getElementById("settingNotifyEnable");
+const notificationLeagueToggle = document.getElementById("settingNotifyLeague");
+const notificationStreakToggle = document.getElementById("settingNotifyStreak");
+const notificationEventToggle = document.getElementById("settingNotifyEvent");
+const notificationWindowSelect = document.getElementById("settingNotifyWindow");
+const notificationDailyCapSelect = document.getElementById("settingNotifyDailyCap");
 
 // Login / save
 const loginEmailInput = document.getElementById("loginEmail");
@@ -499,19 +507,19 @@ const SHAREABLE_MOMENTS = [
 const RESPECTFUL_NOTIFICATIONS = [
   {
     title: "League ending soon",
-    copy: "Your weekly league ends in 3h – one more run could promote you.",
-    time: "Today",
+    copy: "Your weekly league ends in 3 hours—one more match could promote you.",
+    time: "Today · 7:00 PM",
     type: "reminder"
   },
   {
     title: "Training streak",
     copy: "You’re 1 training away from completing your streak.",
-    time: "1d ago",
+    time: "Today · 5:00 PM",
     type: "streak"
   },
   {
     title: "New event",
-    copy: "World Cup Penalty Shootout is live. Earn limited neon boots.",
+    copy: "New event: World Cup Penalty Shootout is live.",
     time: "3d ago",
     type: "event"
   }
@@ -592,6 +600,7 @@ renderCoopGoals();
 renderPvPQueues();
 renderShareableMoments();
 renderNotifications();
+syncNotificationSettingsUI();
 renderInsights();
 renderStreakUI();
 
@@ -890,10 +899,72 @@ function renderShareableMoments() {
   renderLeaderboardList(shareListEl, SHAREABLE_MOMENTS);
 }
 
+function getNotificationPrefs() {
+  return {
+    ...defaultNotificationPrefs(),
+    ...(playerData.notificationPrefs || {})
+  };
+}
+
+function getNotificationWindowLabel(windowKey) {
+  switch (windowKey) {
+    case "morning":
+      return "mornings (8–11am)";
+    case "afternoon":
+      return "afternoons (12–3pm)";
+    case "evening":
+    default:
+      return "evenings (6–9pm)";
+  }
+}
+
+function filterNotificationsForPrefs(prefs) {
+  return RESPECTFUL_NOTIFICATIONS.filter((note) => {
+    if (note.type === "reminder" && !prefs.leagueReminders) return false;
+    if (note.type === "streak" && !prefs.trainingStreaks) return false;
+    if (note.type === "event" && !prefs.eventAlerts) return false;
+    return true;
+  });
+}
+
 function renderNotifications() {
   if (!notificationListEl) return;
+  const prefs = getNotificationPrefs();
   notificationListEl.innerHTML = "";
-  RESPECTFUL_NOTIFICATIONS.forEach((note) => {
+
+  const schedule = document.createElement("li");
+  schedule.classList.add("notification-list__meta");
+  schedule.innerHTML = `
+    <div>
+      <strong>${prefs.enabled ? "Respectful schedule" : "Notifications muted"}</strong>
+      <p class="progress-label">${
+        prefs.enabled
+          ? `Max ${prefs.maxPerDay} per day in ${getNotificationWindowLabel(prefs.preferredWindow)}.`
+          : "No pings until you re-enable them in Settings."
+      }</p>
+    </div>
+    <span class="pill pill--soft">${prefs.enabled ? "Opt-in" : "Muted"}</span>
+  `;
+  notificationListEl.appendChild(schedule);
+
+  if (!prefs.enabled) return;
+
+  const allowedNotifications = filterNotificationsForPrefs(prefs).slice(0, Math.max(1, prefs.maxPerDay));
+
+  if (!allowedNotifications.length) {
+    const li = document.createElement("li");
+    li.classList.add("notification-list__meta");
+    li.innerHTML = `
+      <div>
+        <strong>All categories muted</strong>
+        <p class="progress-label">Turn on at least one topic so we can send a timely, non-spammy ping.</p>
+      </div>
+    `;
+    notificationListEl.appendChild(li);
+    return;
+  }
+
+  allowedNotifications.forEach((note) => {
     const li = document.createElement("li");
     li.innerHTML = `
       <div>
@@ -904,6 +975,55 @@ function renderNotifications() {
     `;
     notificationListEl.appendChild(li);
   });
+}
+
+function syncNotificationSettingsUI() {
+  const prefs = getNotificationPrefs();
+  const topicInputs = [notificationLeagueToggle, notificationStreakToggle, notificationEventToggle, notificationWindowSelect, notificationDailyCapSelect];
+
+  if (notificationMasterToggle) notificationMasterToggle.checked = !!prefs.enabled;
+  if (notificationLeagueToggle) {
+    notificationLeagueToggle.checked = !!prefs.leagueReminders;
+    notificationLeagueToggle.disabled = !prefs.enabled;
+  }
+  if (notificationStreakToggle) {
+    notificationStreakToggle.checked = !!prefs.trainingStreaks;
+    notificationStreakToggle.disabled = !prefs.enabled;
+  }
+  if (notificationEventToggle) {
+    notificationEventToggle.checked = !!prefs.eventAlerts;
+    notificationEventToggle.disabled = !prefs.enabled;
+  }
+  if (notificationDailyCapSelect) {
+    notificationDailyCapSelect.value = String(prefs.maxPerDay);
+    notificationDailyCapSelect.disabled = !prefs.enabled;
+  }
+  if (notificationWindowSelect) {
+    notificationWindowSelect.value = prefs.preferredWindow;
+    notificationWindowSelect.disabled = !prefs.enabled;
+  }
+
+  if (notificationSettingsNote) {
+    notificationSettingsNote.textContent = prefs.enabled
+      ? `Up to ${prefs.maxPerDay} pings per day in ${getNotificationWindowLabel(prefs.preferredWindow)}. Toggle topics off anytime.`
+      : "Notifications are muted. You can re-enable them whenever you're ready.";
+  }
+  topicInputs
+    .filter(Boolean)
+    .forEach((input) => {
+      input.closest?.(".setting-row")?.classList.toggle("setting-row--disabled", !prefs.enabled && input !== notificationMasterToggle);
+    });
+}
+
+function updateNotificationPrefs(partialPrefs = {}) {
+  playerData.notificationPrefs = {
+    ...defaultNotificationPrefs(),
+    ...(playerData.notificationPrefs || {}),
+    ...partialPrefs
+  };
+  savePlayerData(playerData);
+  syncNotificationSettingsUI();
+  renderNotifications();
 }
 
 function renderInsights() {
@@ -2494,6 +2614,31 @@ btnShufflePreset?.addEventListener("click", () => {
     });
   });
 
+notificationMasterToggle?.addEventListener("change", (event) => {
+  updateNotificationPrefs({ enabled: event.target.checked });
+});
+
+notificationLeagueToggle?.addEventListener("change", (event) => {
+  updateNotificationPrefs({ leagueReminders: event.target.checked });
+});
+
+notificationStreakToggle?.addEventListener("change", (event) => {
+  updateNotificationPrefs({ trainingStreaks: event.target.checked });
+});
+
+notificationEventToggle?.addEventListener("change", (event) => {
+  updateNotificationPrefs({ eventAlerts: event.target.checked });
+});
+
+notificationDailyCapSelect?.addEventListener("change", (event) => {
+  const value = Math.max(1, Number(event.target.value) || defaultNotificationPrefs().maxPerDay);
+  updateNotificationPrefs({ maxPerDay: value });
+});
+
+notificationWindowSelect?.addEventListener("change", (event) => {
+  updateNotificationPrefs({ preferredWindow: event.target.value });
+});
+
 btnTeam.addEventListener("click", () => {
   renderTeamScreen();
   setActiveScreen("teamScreen");
@@ -2584,6 +2729,8 @@ btnResetProgress.addEventListener("click", () => {
     renderTeamScreen();
     renderMissions();
     renderProgression();
+    renderNotifications();
+    syncNotificationSettingsUI();
     updateProfileUI();
   }
 });
