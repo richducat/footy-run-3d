@@ -1334,8 +1334,11 @@ export class Game {
 
   drawSoccerBall(ctx, x, y, radius) {
     const accent = this.ballAccent || "#f2f4ff";
+    const base = "#f8fafc";
+    const seamDark = "#0f172a";
     const r = Math.max(radius, this.pixelSize * 4);
     const detailPx = Math.max(1, this.pixelSize);
+
     const shadow = ctx.createRadialGradient(
       x + detailPx * 0.6,
       y + detailPx * 0.9,
@@ -1355,24 +1358,32 @@ export class Game {
     ctx.ellipse(x, y + r * 0.35, r * 0.95, r * 0.55, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Shell with soft spherical shading
-    const shell = ctx.createRadialGradient(x - r * 0.25, y - r * 0.35, r * 0.15, x, y, r * 1.05);
-    shell.addColorStop(0, shadeColor(accent, 8));
-    shell.addColorStop(0.55, accent);
-    shell.addColorStop(1, shadeColor(accent, -24));
+    // Shell with soft spherical shading and a slightly tinted base
+    const shell = ctx.createRadialGradient(
+      x - r * 0.28,
+      y - r * 0.38,
+      r * 0.12,
+      x,
+      y,
+      r * 1.05
+    );
+    shell.addColorStop(0, shadeColor(base, 12));
+    shell.addColorStop(0.5, base);
+    shell.addColorStop(0.9, shadeColor(accent, -6));
+    shell.addColorStop(1, shadeColor(accent, -18));
     ctx.fillStyle = shell;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
 
-    // Central pentagon
-    const drawPatch = (cx, cy, scale, rotation = 0, color = "#0f172a") => {
+    // Classic pentagon/hexagon panels
+    const drawPentagon = (cx, cy, scale, rotation = 0, color = seamDark) => {
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(rotation);
       ctx.beginPath();
       for (let i = 0; i < 5; i++) {
-        const angle = (-Math.PI / 2 + (i * Math.PI * 2) / 5);
+        const angle = -Math.PI / 2 + (i * Math.PI * 2) / 5;
         const px = Math.cos(angle) * r * scale;
         const py = Math.sin(angle) * r * scale;
         i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
@@ -1386,13 +1397,38 @@ export class Game {
       ctx.restore();
     };
 
-    drawPatch(x, y, 0.24);
-    drawPatch(x + r * 0.35, y - r * 0.08, 0.14, Math.PI / 6, "#1f2937");
-    drawPatch(x - r * 0.3, y - r * 0.12, 0.14, Math.PI / 3, "#1f2937");
-    drawPatch(x + r * 0.08, y + r * 0.3, 0.15, -Math.PI / 4, "#111827");
+    drawPentagon(x, y, 0.22);
+    drawPentagon(x + r * 0.36, y - r * 0.04, 0.14, Math.PI / 8, "#1f2937");
+    drawPentagon(x - r * 0.32, y - r * 0.1, 0.14, Math.PI / 3, "#111827");
+    drawPentagon(x + r * 0.08, y + r * 0.32, 0.15, -Math.PI / 6, "#0b1224");
+
+    // Accent-colored trim hexes to keep the kit personalization without losing the classic look
+    const drawHex = (cx, cy, scale, rotation = 0) => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 2 + (i * Math.PI) / 3;
+        const px = Math.cos(angle) * r * scale;
+        const py = Math.sin(angle) * r * scale;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = shadeColor(accent, -5);
+      ctx.fill();
+      ctx.lineWidth = Math.max(1, detailPx * 0.75);
+      ctx.strokeStyle = "rgba(15,23,42,0.55)";
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    drawHex(x - r * 0.12, y - r * 0.42, 0.12, Math.PI / 3);
+    drawHex(x + r * 0.42, y + r * 0.05, 0.1, Math.PI / 2);
+    drawHex(x - r * 0.28, y + r * 0.34, 0.11, Math.PI / 4);
 
     // Seams wrapping the sphere
-    ctx.strokeStyle = "rgba(15,23,42,0.6)";
+    ctx.strokeStyle = "rgba(15,23,42,0.7)";
     ctx.lineWidth = Math.max(1, detailPx * 0.85);
     const seam = (start, end, cpx, cpy) => {
       ctx.beginPath();
@@ -1400,12 +1436,19 @@ export class Game {
       ctx.quadraticCurveTo(cpx, cpy, end[0], end[1]);
       ctx.stroke();
     };
-    seam([x - r * 0.6, y], [x + r * 0.6, y + r * 0.06], x, y - r * 0.3);
-    seam([x, y - r * 0.65], [x + r * 0.05, y + r * 0.6], x + r * 0.25, y - r * 0.1);
-    seam([x - r * 0.4, y + r * 0.38], [x + r * 0.5, y - r * 0.28], x + r * 0.1, y + r * 0.32);
+    seam([x - r * 0.6, y - r * 0.02], [x + r * 0.6, y + r * 0.08], x, y - r * 0.34);
+    seam([x - r * 0.18, y - r * 0.64], [x + r * 0.1, y + r * 0.62], x + r * 0.28, y - r * 0.08);
+    seam([x - r * 0.42, y + r * 0.4], [x + r * 0.46, y - r * 0.28], x + r * 0.08, y + r * 0.32);
 
     // Glossy highlight
-    const gleam = ctx.createRadialGradient(x - r * 0.28, y - r * 0.34, r * 0.08, x - r * 0.12, y - r * 0.12, r * 0.45);
+    const gleam = ctx.createRadialGradient(
+      x - r * 0.26,
+      y - r * 0.34,
+      r * 0.08,
+      x - r * 0.12,
+      y - r * 0.12,
+      r * 0.45
+    );
     gleam.addColorStop(0, "rgba(255,255,255,0.9)");
     gleam.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = gleam;
