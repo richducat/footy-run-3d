@@ -319,6 +319,17 @@ function missionStateFromDefs(defs) {
   }));
 }
 
+export function defaultNotificationPrefs() {
+  return {
+    enabled: true,
+    leagueReminders: true,
+    trainingStreaks: true,
+    eventAlerts: true,
+    preferredWindow: "evening",
+    maxPerDay: 2
+  };
+}
+
 function defaultGoalProgress() {
   return {
     session: {
@@ -409,6 +420,7 @@ function defaultData() {
     skillTree: defaultSkillTree(),
     unlocks: defaultUnlocks(),
     onboarding: defaultOnboarding(),
+    notificationPrefs: defaultNotificationPrefs(),
     profile: {
       displayName: "",
       email: "",
@@ -457,6 +469,10 @@ export function loadPlayerData() {
       skillTree: {
         ...defaults.skillTree,
         ...(parsed.skillTree || {})
+      },
+      notificationPrefs: {
+        ...defaultNotificationPrefs(),
+        ...(parsed.notificationPrefs || {})
       },
       unlocks: {
         ...defaults.unlocks,
