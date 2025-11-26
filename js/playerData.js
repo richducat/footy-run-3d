@@ -426,7 +426,7 @@ function defaultData() {
       email: "",
       lastManualSave: null,
       lastAutoSave: null,
-      builderCompleted: false,
+      builderCompleted: true,
       guestId: null,
       guestCreatedAt: null,
       isGuest: true,

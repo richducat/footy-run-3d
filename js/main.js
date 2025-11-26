@@ -1875,8 +1875,11 @@ function closePlayerBuilder() {
 
 function ensureProfileSetup(reason = "") {
   if (!playerData.profile?.builderCompleted) {
-    openPlayerBuilder(reason);
-    return false;
+    playerData.profile = {
+      ...playerData.profile,
+      builderCompleted: true
+    };
+    savePlayerData(playerData);
   }
   return true;
 }
@@ -2966,7 +2969,12 @@ renderKitPresets();
 syncSessionLabels(activeSessionPreset);
 
 if (!playerData.profile?.builderCompleted) {
-  openPlayerBuilder("Pick your kit colors to start your career.");
+  // Default to a ready-to-play profile; the builder can still be opened manually.
+  playerData.profile = {
+    ...playerData.profile,
+    builderCompleted: true
+  };
+  savePlayerData(playerData);
 }
 
 input = new InputManager(canvas, handleInputAction);
