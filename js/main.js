@@ -25,7 +25,11 @@ import {
   logSessionEvent,
   logRunEvent,
   ensureGoalProgress,
-  updateProgressionTracks
+  updateProgressionTracks,
+  markTutorialStep,
+  getOnboardingProgress,
+  recordRunOutcome,
+  getAssistProfile
 } from "./playerData.js";
 import { InputManager } from "./input.js";
 
@@ -120,6 +124,11 @@ const celebrationOverlay = document.getElementById("celebrationOverlay");
 const celebrationTitle = document.getElementById("celebrationTitle");
 const celebrationCopy = document.getElementById("celebrationCopy");
 const celebrationTag = document.getElementById("celebrationTag");
+const onboardingHint = document.getElementById("onboardingHint");
+const tutorialChecklist = document.getElementById("tutorialChecklist");
+const tutorialNextStep = document.getElementById("tutorialNextStep");
+const adaptiveNote = document.getElementById("adaptiveNote");
+const earlyWinNote = document.getElementById("earlyWinNote");
 
 // Screens
 const screens = {
@@ -918,6 +927,53 @@ function renderInsights() {
   });
 }
 
+function renderOnboardingPanel() {
+  const progress = getOnboardingProgress(playerData);
+  if (onboardingHint) {
+    onboardingHint.textContent = progress.adaptiveAssistActive
+      ? "Adaptive assist: easing defenders"
+      : progress.firstWinAwarded
+        ? "Adaptive assists ready"
+        : "Beginner win locked in";
+  }
+
+  if (tutorialChecklist) {
+    tutorialChecklist.querySelectorAll("[data-step]").forEach((item) => {
+      const step = item.dataset.step;
+      const done = progress.tutorialSteps?.[step];
+      item.classList.toggle("tutorial-list__item--complete", !!done);
+      const status = item.querySelector(".tutorial-list__status");
+      if (status) status.textContent = done ? "✓" : "•";
+      const label = item.querySelector(".tutorial-list__label");
+      if (label) label.textContent = done ? `${label.dataset.short} (done)` : label.dataset.short;
+    });
+  }
+
+  if (tutorialNextStep) {
+    tutorialNextStep.textContent = "Next: Play your first match.";
+  }
+
+  if (adaptiveNote) {
+    adaptiveNote.textContent = progress.adaptiveAssistActive
+      ? "We’re dropping pressure after the recent losses—lighter keeper speed and extra pickups are on."
+      : "Difficulty scales gently until you’re ready for tougher presses.";
+  }
+
+  if (earlyWinNote) {
+    earlyWinNote.textContent = progress.firstWinAwarded
+      ? "First win secured—future matches ramp normally."
+      : "Beginner boost active so your opening match or drills end in a win.";
+  }
+}
+
+function completeTutorialStep(step) {
+  const updated = markTutorialStep(playerData, step);
+  if (updated) {
+    savePlayerData(playerData);
+    renderOnboardingPanel();
+  }
+}
+
 function renderStreakUI() {
   const streak = playerData.streak || { days: 0, shield: 1 };
   const bonuses = getStreakBonuses(streak);
@@ -1467,6 +1523,7 @@ function buildGameInstance() {
   const kitColors = getKitColorsFromProfile();
   const perks = getEffectivePerks(selectedCard, level);
   const tuning = getLevelTuning(selectedCard, level);
+  const assistProfile = getAssistProfile(playerData);
 
   game = new Game(canvas, {
     playerCard: selectedCard,
@@ -1475,6 +1532,7 @@ function buildGameInstance() {
     ballAccent: kitColors.ballAccent,
     perks,
     tuning,
+    assistProfile,
     bestDistance: playerData.bestDistance,
     pixelRatio: renderScale,
     logicalWidth,
@@ -1485,6 +1543,16 @@ function buildGameInstance() {
     onGoal: handleGameGoal,
     onGameOver: handleGameOver
   });
+
+  applyAssistProfile();
+}
+
+function applyAssistProfile() {
+  if (!game) return;
+  const assistProfile = getAssistProfile(playerData);
+  if (typeof game.setAssistProfile === "function") {
+    game.setAssistProfile(assistProfile);
+  }
 }
 
 function updateTouchControlsVisibility() {
@@ -1849,6 +1917,7 @@ function renderTeamScreen() {
             updateCoinsHeader();
             renderTeamScreen();
             buildGameInstance();
+            completeTutorialStep("upgrade");
           }
         });
         actions.appendChild(upgradeBtn);
@@ -2008,7 +2077,8 @@ function startRun(preset = activeSessionPreset) {
   renderStreakUI();
   renderInsights();
   savePlayerData(playerData);
-  game.startRun({ sessionConfig: activeSessionPreset });
+  applyAssistProfile();
+  game.startRun();
   updateTouchControlsVisibility();
   syncSessionLabels(activeSessionPreset);
 }
@@ -2049,6 +2119,17 @@ function exitRun({ saveProgress = false } = {}) {
   updateTouchControlsVisibility();
 }
 
+function evaluateRunOutcome(payload) {
+  const baselineWin = payload.goals > 0 || payload.distance >= 350 || payload.coins >= 120;
+  const progress = getOnboardingProgress(playerData);
+  const usedBeginnerBoost = !baselineWin && !progress.firstWinAwarded;
+
+  return {
+    win: baselineWin || usedBeginnerBoost,
+    usedBeginnerBoost
+  };
+}
+
 function calculateRunCoins(payload) {
   const distanceBonus = Math.floor(payload.distance / 20);
   const goalBonus = payload.goals * 20;
@@ -2064,6 +2145,7 @@ function getAvailableTokensForContinue(runCoins) {
 }
 
 function applyRunResults(payload) {
+  const outcome = evaluateRunOutcome(payload);
   const { runCoins, distanceBonus, goalBonus, coinBonus } = calculateRunCoins(payload);
   const netCoins = Math.max(0, runCoins - continueSpendTotal);
   const previousBest = playerData.bestDistance;
@@ -2078,6 +2160,7 @@ function applyRunResults(payload) {
   const totalXp = Math.round(xpEarned * streakBonuses.xpBonus);
   const { levelBefore, levelAfter } = addExperience(playerData, totalXp);
   logRunEvent(playerData);
+  recordRunOutcome(playerData, outcome);
   updateMissionsAfterRun(playerData, {
     distance: payload.distance,
     goals: payload.goals,
@@ -2108,6 +2191,8 @@ function applyRunResults(payload) {
   renderMissions();
   renderProgression();
   renderInsights();
+  renderOnboardingPanel();
+  applyAssistProfile();
   updateProfileUI("Progress auto-saved after the match.");
 
   const earnedCoinsNote =
@@ -2124,11 +2209,13 @@ function applyRunResults(payload) {
   if (rewardMeter) rewardMeter.style.width = `${Math.min(100, netCoins % 150)}%`;
   if (rewardLine) rewardLine.textContent = `+${totalXp} XP · ${netCoins} coins · ${payload.goals} goals`;
 
-  if (payload.distance > previousBest) {
-    goBestNote.textContent = "New personal best for this device!";
-  } else {
-    goBestNote.textContent = `Best distance so far: ${playerData.bestDistance} m`;
-  }
+  const baseBestNote =
+    payload.distance > previousBest
+      ? "New personal best for this device!"
+      : `Best distance so far: ${playerData.bestDistance} m`;
+  goBestNote.textContent = outcome.usedBeginnerBoost
+    ? `${baseBestNote} Beginner boost secured an early win to build momentum.`
+    : baseBestNote;
 
   const streakCoinCopy = streakCoinBonus > 0 ? ` +${streakCoinBonus}% streak coin boost.` : "";
   if (earnedCoinsNote) {
@@ -2291,16 +2378,31 @@ function handleInputAction(action) {
     return;
   }
 
-  if (actionType === "primary" && game.isShotReady()) {
-    const aimBias = Math.max(-1, Math.min(1, (detail.dx || 0) / 140));
-    game.attemptShot(aimBias);
+  if (actionType === "primary") {
+    completeTutorialStep("pass");
+    if (game.isShotReady()) {
+      const aimBias = Math.max(-1, Math.min(1, (detail.dx || 0) / 140));
+      const shotTaken = game.attemptShot(aimBias);
+      if (shotTaken) {
+        completeTutorialStep("shoot");
+      }
+    }
     return;
   }
 
-  if (actionType === "moveLeft") game.handleMove("left");
-  else if (actionType === "moveRight") game.handleMove("right");
-  else if (actionType === "tackle") game.handleMove("tackle");
-  else if (actionType === "juke") game.handleMove("juke");
+  if (actionType === "moveLeft") {
+    game.handleMove("left");
+    completeTutorialStep("move");
+  } else if (actionType === "moveRight") {
+    game.handleMove("right");
+    completeTutorialStep("move");
+  } else if (actionType === "tackle") {
+    game.handleMove("tackle");
+    completeTutorialStep("pass");
+  } else if (actionType === "juke") {
+    game.handleMove("juke");
+    completeTutorialStep("move");
+  }
 }
 
 // Button wiring
@@ -2615,6 +2717,7 @@ updateVariantToggleUI();
 renderTeamScreen();
 renderMissions();
 renderEvents();
+renderOnboardingPanel();
 setActiveScreen("mainMenu");
 closeAuthSheet();
 updateProfileUI();

@@ -182,11 +182,13 @@ export class Game {
     const tuning = options.tuning || {};
     this.baseSpeed = 200 * (tuning.sprintSpeed || 1); // px/s
     this.shotGainRate = tuning.shotGainRate || 1;
+    this.baseShotGainRate = this.shotGainRate;
     this.reviveInvulnDuration =
       tuning.reviveInvulnDuration == null ? 0.9 : tuning.reviveInvulnDuration;
     this.jukeCooldownDuration = tuning.jukeCooldown || 1;
     this.tackleDurationBase = tuning.tackleDuration || 0.55;
     this.jukeDurationBase = tuning.jukeDuration || 0.42;
+    this.assistProfile = options.assistProfile || {};
     this.runState = RUN_STATE.IDLE;
 
     this.difficultyTiers = [
@@ -252,6 +254,7 @@ export class Game {
       }
     ];
     this.activeTier = this.getDifficultyTier();
+    this.setAssistProfile(this.assistProfile);
 
     // Player card tuning
     const playerCard = options.playerCard || {};
@@ -463,16 +466,19 @@ export class Game {
     }
   }
 
-  startRun(options = {}) {
-    const { sessionConfig } = options;
-    if (sessionConfig) {
-      this.sessionConfig = {
-        ...this.sessionConfig,
-        ...sessionConfig
-      };
-      this.sessionSpeedScalar = this.sessionConfig.speedScalar || 1;
-    }
+  setAssistProfile(profile = {}) {
+    const defaults = {
+      speedScale: 1,
+      obstacleEase: 1,
+      pickupBoost: 1,
+      goalieScale: 1,
+      shotGainBoost: 1
+    };
+    this.assistProfile = { ...defaults, ...profile };
+    this.shotGainRate = this.baseShotGainRate * (this.assistProfile.shotGainBoost || 1);
+  }
 
+  startRun() {
     this.runState = RUN_STATE.RUNNING;
     this.obstacles = [];
     this.pickups = [];
@@ -715,6 +721,7 @@ export class Game {
   update(dt) {
     this.activeTier = this.getDifficultyTier();
     const tier = this.activeTier;
+    const assist = this.assistProfile || {};
     this.elapsedTime += dt;
     if (this.runState === RUN_STATE.RUNNING) {
       this.runElapsed += dt;
@@ -745,8 +752,9 @@ export class Game {
     // Difficulty ramp
     const base =
       (this.baseSpeed + this.distance * (tier?.speedRamp ?? 0.45)) *
-      (tier?.speedMultiplier ?? 1);
-    this.speed = base * this.speedMultiplier * this.sessionSpeedScalar;
+      (tier?.speedMultiplier ?? 1) *
+      (assist.speedScale || 1);
+    this.speed = base * this.speedMultiplier;
 
     // Distance scaled to "meters"
     this.distance += this.speed * dt * 0.05;
@@ -802,17 +810,18 @@ export class Game {
     // this.updateParticles(dt);
 
     // Spawn obstacles (gets a bit denser over time)
-    const obstacleInterval = Math.max(
-      tier?.obstacleMin ?? 0.55,
-      (tier?.obstacleBase ?? 1.8) - this.distance * (tier?.obstacleRamp ?? 0.01)
-    );
+    const obstacleInterval =
+      Math.max(
+        tier?.obstacleMin ?? 0.55,
+        (tier?.obstacleBase ?? 1.8) - this.distance * (tier?.obstacleRamp ?? 0.01)
+      ) * (assist.obstacleEase || 1);
     if (this.timeSinceObstacle > obstacleInterval) {
       this.spawnObstacle();
       this.timeSinceObstacle = 0;
     }
 
     // Spawn pickups
-    const pickupInterval = tier?.pickupInterval ?? 0.85;
+    const pickupInterval = (tier?.pickupInterval ?? 0.85) / (assist.pickupBoost || 1);
     if (this.timeSincePickup > pickupInterval) {
       this.spawnPickup();
       this.timeSincePickup = 0;
@@ -946,7 +955,7 @@ export class Game {
     const goalieSpeed =
       this.goalie.freezeTime > 0
         ? this.goalie.baseSpeed * 0.3
-        : this.goalie.baseSpeed * (tier?.goalieSpeed ?? 1);
+        : this.goalie.baseSpeed * (tier?.goalieSpeed ?? 1) * (assist.goalieScale || 1);
     this.goalie.speed = goalieSpeed;
     this.goalie.x += this.goalie.direction * this.goalie.speed * dt;
     if (this.goalie.x < goalLeft) {

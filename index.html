@@ -528,15 +528,36 @@
               <div class="onboarding-grid">
                 <div class="onboarding-step">
                   <h4>Guided tutorial</h4>
-                  <p>Interactive steps for pass, shoot, move, and upgrade with clear next actions.</p>
+                  <p>Interactive, four-step warmup that can be cleared in under a minute.</p>
+                  <ul class="tutorial-list" id="tutorialChecklist">
+                    <li data-step="move">
+                      <span class="tutorial-list__status">•</span>
+                      <span class="tutorial-list__label" data-short="Move">Move</span>
+                    </li>
+                    <li data-step="pass">
+                      <span class="tutorial-list__status">•</span>
+                      <span class="tutorial-list__label" data-short="Pass">Pass</span>
+                    </li>
+                    <li data-step="shoot">
+                      <span class="tutorial-list__status">•</span>
+                      <span class="tutorial-list__label" data-short="Shoot">Shoot</span>
+                    </li>
+                    <li data-step="upgrade">
+                      <span class="tutorial-list__status">•</span>
+                      <span class="tutorial-list__label" data-short="Upgrade">Upgrade</span>
+                    </li>
+                  </ul>
+                  <p class="onboarding-note" id="tutorialNextStep">Next: Play your first match.</p>
                 </div>
                 <div class="onboarding-step">
                   <h4>Adaptive curve</h4>
-                  <p>Failsafe: back-to-back losses temporarily soften AI and widen tackle windows.</p>
+                  <p class="onboarding-note" id="adaptiveNote">
+                    Failsafe: back-to-back losses temporarily soften AI and widen tackle windows.
+                  </p>
                 </div>
                 <div class="onboarding-step">
                   <h4>Early win moment</h4>
-                  <p>First match bias ensures you feel the thrill quickly.</p>
+                  <p class="onboarding-note" id="earlyWinNote">First match bias ensures you feel the thrill quickly.</p>
                 </div>
               </div>
             </div>
