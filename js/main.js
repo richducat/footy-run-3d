@@ -28,6 +28,9 @@ import {
 } from "./playerData.js";
 import { InputManager } from "./input.js";
 
+const DEV_CODE = "everett";
+const DEV_TOKEN_STASH = 999999;
+
 const canvas = document.getElementById("gameCanvas");
 const hudEl = document.getElementById("hud");
 const hudDistance = document.getElementById("hudDistance");
@@ -95,6 +98,7 @@ const btnPlayV2 = document.getElementById("btnPlayV2");
 const btnTeam = document.getElementById("btnTeam");
 const btnSettings = document.getElementById("btnSettings");
 const btnMissions = document.getElementById("btnMissions");
+const btnDevCode = document.getElementById("btnDevCode");
 const btnPause = document.getElementById("btnPause");
 const btnReplay = document.getElementById("btnReplay");
 const btnGoToTeam = document.getElementById("btnGoToTeam");
@@ -363,6 +367,7 @@ let missionCelebrateTimeout = null;
 
 let playerData = loadPlayerData();
 ensureGoalProgress(playerData);
+enforceDevTokenFloor();
 
 let renderScale = 1;
 let logicalWidth = canvas?.width || 540;
@@ -487,7 +492,32 @@ function updateMissionCelebrationState(hasClaimable) {
 }
 
 function updateCoinsHeader() {
+  enforceDevTokenFloor();
   headerCoinsValue.textContent = playerData.coins.toString();
+}
+
+function enforceDevTokenFloor() {
+  if (playerData?.devTokensUnlocked && playerData.coins < DEV_TOKEN_STASH) {
+    playerData.coins = DEV_TOKEN_STASH;
+    savePlayerData(playerData);
+  }
+}
+
+function handleDevCodeEntry() {
+  const entry = prompt("Enter dev code to load sandbox tokens:");
+  if (entry == null) return;
+
+  const normalized = entry.trim().toLowerCase();
+  if (normalized === DEV_CODE) {
+    playerData.devTokensUnlocked = true;
+    playerData.coins = Math.max(playerData.coins, DEV_TOKEN_STASH);
+    savePlayerData(playerData);
+    updateCoinsHeader();
+    updateProfileUI("Developer token stash applied locally.");
+    alert("Dev code accepted. Tokens topped up.");
+  } else if (normalized) {
+    alert("Code not recognized.");
+  }
 }
 
 function renderGoalList(goals = [], container) {
@@ -1965,6 +1995,10 @@ btnTeam.addEventListener("click", () => {
 btnMissions?.addEventListener("click", () => {
   setActiveScreen("mainMenu");
   focusMissionsPanel();
+});
+
+btnDevCode?.addEventListener("click", () => {
+  handleDevCodeEntry();
 });
 
 btnSettings.addEventListener("click", () => {

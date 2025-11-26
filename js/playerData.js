@@ -291,6 +291,7 @@ function defaultMissions(now = new Date()) {
 function defaultData() {
   return {
     coins: 0,
+    devTokensUnlocked: false,
     xp: 0,
     level: 1,
     streak: {
