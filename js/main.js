@@ -2478,8 +2478,11 @@ function handleGameStats(stats) {
   if (hudV3TeamName) hudV3TeamName.textContent = stats.teamName || "Club";
   if (hudV3OpponentName) hudV3OpponentName.textContent = stats.opponentName || "MLS XI";
   if (hudV3TeamScore) hudV3TeamScore.textContent = `${stats.teamScore ?? 0}`;
-  if (hudV3OpponentScore) hudV3OpponentScore.textContent = "0";
-  if (hudV3Regulation && stats.regulation) hudV3Regulation.textContent = stats.regulation;
+  if (hudV3OpponentScore) hudV3OpponentScore.textContent = `${stats.opponentScore ?? 0}`;
+  if (hudV3Regulation && stats.regulation)
+    hudV3Regulation.textContent = `${stats.regulation} · Cards ours:${stats.penaltiesForOpponent ?? 0} theirs:${
+      stats.penaltiesForPlayer ?? 0
+    }`;
 
   const hypeValue = Math.max(0, Math.min(100, stats.hype ?? 0));
   if (hudV3HypeFill) hudV3HypeFill.style.width = `${hypeValue}%`;

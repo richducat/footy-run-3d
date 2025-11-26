@@ -363,6 +363,16 @@ export class Game {
       freezeTime: 0
     };
 
+    // Team upgrades + special moments
+    this.helperPlayers = [];
+    this.helperActive = false;
+    this.helperAutoGoalTimer = 0;
+    this.nextBallBlastGoal = 10;
+    this.ballBarrageTime = 0;
+    this.opponentScore = 0;
+    this.penaltiesAgainstOpponent = 0;
+    this.penaltiesAgainstPlayer = 0;
+  
     // Callbacks for UI / meta
     this.onStats = options.onStats || (() => {});
     this.onState = options.onState || (() => {});
@@ -375,6 +385,7 @@ export class Game {
     this.distance = 0;
     this.coinsThisRun = 0;
     this.goalsThisRun = 0;
+    this.opponentScore = 0;
     this.opponentsDodged = 0;
     this.ballsCollected = 0;
     this.ballSteals = 0;
@@ -388,6 +399,13 @@ export class Game {
     this.activeShot = null;
     this.shotResultFlash = 0;
     this.shotResultLabel = "";
+    this.helperPlayers = [];
+    this.helperActive = false;
+    this.helperAutoGoalTimer = 0;
+    this.nextBallBlastGoal = 10;
+    this.ballBarrageTime = 0;
+    this.penaltiesAgainstOpponent = 0;
+    this.penaltiesAgainstPlayer = 0;
 
     this.reviveInvulnTime = 0;
   }
@@ -745,6 +763,22 @@ export class Game {
     }
   }
 
+  collectPickup(pickup, options = {}) {
+    const { fromHelper = false } = options;
+    if (pickup.type === "coin") {
+      const gain = Math.max(1, Math.round(this.coinMultiplier));
+      this.coinsThisRun += gain;
+      this.shotMeter += 10 * this.shotGainMultiplier * this.shotGainRate;
+      this.addHype(fromHelper ? 1 : 2);
+    } else if (pickup.type === "ball") {
+      this.shotMeter += 25 * this.shotGainMultiplier * this.shotGainRate;
+      this.ballsCollected += 1;
+      this.addHype(fromHelper ? 4 : 8);
+    } else if (pickup.type === "card") {
+      this.handleCardPickup(pickup.cardColor);
+    }
+  }
+
   spawnObstacle() {
     const lane = Math.floor(Math.random() * this.lanes);
     const tier = this.activeTier || this.getDifficultyTier();
@@ -768,13 +802,19 @@ export class Game {
     const lane = Math.floor(Math.random() * this.lanes);
     const tier = this.activeTier || this.getDifficultyTier();
     const ballChance = tier?.ballPickupChance ?? 0.3;
-    const type = Math.random() < ballChance ? "ball" : "coin";
-    this.pickups.push({
-      lane,
-      y: -40,
-      radius: 14,
-      type
-    });
+    const cardChance = tier?.cardPickupChance ?? 0.08;
+    const roll = Math.random();
+    let type = "coin";
+    if (roll < cardChance) {
+      type = "card";
+    } else if (roll < cardChance + ballChance) {
+      type = "ball";
+    }
+    const pickup = { lane, y: -40, radius: 14, type };
+    if (type === "card") {
+      pickup.cardColor = Math.random() < 0.7 ? "yellow" : "red";
+    }
+    this.pickups.push(pickup);
   }
 
   getDifficultyTier() {
@@ -810,6 +850,92 @@ export class Game {
     this.goalFlashTime = 0.7;
     this.addHype(22);
     this.onGoal(this.goalsThisRun);
+    this.checkSquadSplit();
+    this.checkBallBarrage();
+  }
+
+  checkSquadSplit() {
+    if (this.helperActive || this.goalsThisRun < 3) return;
+    this.activateHelperSquad();
+  }
+
+  activateHelperSquad() {
+    const baseLane = this.player.lane;
+    const leftLane = Math.max(0, baseLane - 1);
+    const rightLane = Math.min(this.lanes - 1, baseLane + 1);
+
+    this.helperPlayers = [
+      { lane: leftLane, laneOffset: 0, phase: 0.5, yOffset: -6 },
+      { lane: rightLane, laneOffset: 0, phase: 1.4, yOffset: 6 }
+    ];
+    this.helperActive = true;
+    this.helperAutoGoalTimer = 5;
+    this.addHype(24);
+    this.shotResultLabel = "Tri-squad deployed";
+    this.shotResultFlash = 1.2;
+  }
+
+  checkBallBarrage() {
+    if (this.goalsThisRun < this.nextBallBlastGoal) return;
+    this.triggerBallBarrage();
+    this.nextBallBlastGoal += 10;
+  }
+
+  triggerBallBarrage() {
+    this.ballBarrageTime = 3;
+    this.obstacles = [];
+    this.timeSinceObstacle = 0;
+    this.spawnBallCluster();
+    this.addHype(30);
+    this.shotResultLabel = "Ball barrage!";
+    this.shotResultFlash = 1.4;
+  }
+
+  spawnBallCluster() {
+    const rows = 3;
+    const spacing = 80;
+    for (let r = 0; r < rows; r++) {
+      for (let lane = 0; lane < this.lanes; lane++) {
+        this.pickups.push({
+          lane,
+          y: this.height * 0.12 + r * spacing,
+          radius: 14,
+          type: "ball"
+        });
+      }
+    }
+  }
+
+  handleCardPickup(color = "yellow") {
+    const penaltyValue = color === "red" ? 2 : 1;
+    const favorsPlayer = Math.random() < 0.5;
+
+    if (favorsPlayer) {
+      for (let i = 0; i < penaltyValue; i++) {
+        this.scoreGoal();
+      }
+      this.penaltiesAgainstOpponent += 1;
+      this.shotResultLabel = `${color === "red" ? "Red" : "Yellow"} card on rivals!`;
+    } else {
+      this.opponentScore += penaltyValue;
+      this.penaltiesAgainstPlayer += 1;
+      this.shotResultLabel = `${color === "red" ? "Red" : "Yellow"} card on us...`;
+    }
+
+    this.shotResultFlash = 1;
+    this.checkFreeKick();
+  }
+
+  checkFreeKick() {
+    if (this.penaltiesAgainstOpponent < 3) return;
+    this.penaltiesAgainstOpponent = 0;
+    this.grantFreeKick();
+  }
+
+  grantFreeKick() {
+    this.shotResultLabel = "Free kick awarded!";
+    this.shotResultFlash = 1.2;
+    this.scoreGoal();
   }
 
   isShotReady() {
@@ -897,12 +1023,16 @@ export class Game {
       teamName: this.teamName,
       opponentName: this.opponentName,
       teamScore: this.goalsThisRun,
+      opponentScore: this.opponentScore,
       hype: Math.round(this.hype),
       slideTackles: this.slideTackles,
       slideTackleStreak: this.slideTackleStreak,
       superTime: this.slideSuperTime,
       superActive: this.slideSuperTime > 0,
-      regulation: "MLS regulation: clean tackles, no handballs"
+      penaltiesForOpponent: this.penaltiesAgainstOpponent,
+      penaltiesForPlayer: this.penaltiesAgainstPlayer,
+      squadSplit: this.helperActive,
+      regulation: "MLS regulation with bonus cards and free kicks"
     };
 
     // Always push last known stats so HUD can show IDLE state too
@@ -949,6 +1079,14 @@ export class Game {
     if (this.goalFlashTime > 0) this.goalFlashTime -= dt;
     if (this.shotResultFlash > 0) this.shotResultFlash -= dt;
     if (this.goalie.freezeTime > 0) this.goalie.freezeTime = Math.max(0, this.goalie.freezeTime - dt);
+    if (this.ballBarrageTime > 0) this.ballBarrageTime = Math.max(0, this.ballBarrageTime - dt);
+    if (this.helperActive) {
+      this.helperAutoGoalTimer -= dt;
+      if (this.helperAutoGoalTimer <= 0) {
+        this.scoreGoal();
+        this.helperAutoGoalTimer = 6;
+      }
+    }
 
     // Player animation: tackle & juke
     this.player.laneOffset = 0;
@@ -978,19 +1116,35 @@ export class Game {
       this.player.yOffset = 0;
     }
 
+    if (this.helperActive) {
+      const baseLane = this.player.lane;
+      this.helperPlayers = this.helperPlayers.map((h, idx) => {
+        const offset = idx === 0 ? -1 : 1;
+        const targetLane = Math.max(0, Math.min(this.lanes - 1, baseLane + offset));
+        return {
+          ...h,
+          lane: targetLane,
+          laneOffset: Math.sin((this.elapsedTime + h.phase) * 2) * 6,
+          yOffset: Math.sin((this.elapsedTime + h.phase) * 3) * 6
+        };
+      });
+    }
+
     // Dots/trail FX disabled
     // this.updatePlayerTrail(dt);
     // this.updateParticles(dt);
 
     // Spawn obstacles (gets a bit denser over time)
-    const obstacleInterval =
-      Math.max(
-        tier?.obstacleMin ?? 0.55,
-        (tier?.obstacleBase ?? 1.8) - this.distance * (tier?.obstacleRamp ?? 0.01)
-      ) * (assist.obstacleEase || 1);
-    if (this.timeSinceObstacle > obstacleInterval) {
-      this.spawnObstacle();
-      this.timeSinceObstacle = 0;
+    if (this.ballBarrageTime <= 0) {
+      const obstacleInterval =
+        Math.max(
+          tier?.obstacleMin ?? 0.55,
+          (tier?.obstacleBase ?? 1.8) - this.distance * (tier?.obstacleRamp ?? 0.01)
+        ) * (assist.obstacleEase || 1);
+      if (this.timeSinceObstacle > obstacleInterval) {
+        this.spawnObstacle();
+        this.timeSinceObstacle = 0;
+      }
     }
 
     // Spawn pickups
@@ -1039,6 +1193,12 @@ export class Game {
       this.player.laneOffset;
     const playerRect = { x: playerX, y: playerY, w: playerWidth, h: playerHeight };
 
+    const helperRects = (this.helperActive ? this.helperPlayers : []).map((h) => {
+      const hx = this.laneX(h.lane, playerY + playerHeight) - playerWidth / 2 + (h.laneOffset || 0);
+      const hy = playerY + (h.yOffset || 0);
+      return { x: hx, y: hy, w: playerWidth, h: playerHeight };
+    });
+
     this.updateLooseBalls(dt, playerRect);
 
     // Obstacles
@@ -1049,6 +1209,17 @@ export class Game {
       const scaledHeight = o.height * depthScale;
       const ox = this.laneX(o.lane, o.y + scaledHeight) - scaledWidth / 2;
       const oy = o.y;
+
+      const helperHit = helperRects.some((h) =>
+        this.rectsOverlap(h.x, h.y, h.w, h.h, ox, oy, scaledWidth, scaledHeight)
+      );
+      if (helperHit) {
+        this.opponentsDodged += 1;
+        this.addHype(6);
+        this.obstacles.splice(i, 1);
+        i -= 1;
+        continue;
+      }
 
       if (
         this.rectsOverlap(
@@ -1126,17 +1297,16 @@ export class Game {
           playerHeight
         )
       ) {
-        if (p.type === "coin") {
-          const gain = Math.max(1, Math.round(this.coinMultiplier));
-          this.coinsThisRun += gain;
-          this.shotMeter += 10 * this.shotGainMultiplier * this.shotGainRate;
-          this.addHype(2);
-        } else if (p.type === "ball") {
-          this.shotMeter += 25 * this.shotGainMultiplier * this.shotGainRate;
-          this.ballsCollected += 1;
-          this.addHype(8);
-        }
+        this.collectPickup(p);
+        this.pickups.splice(i, 1);
+        continue;
+      }
 
+      const helperGrab = helperRects.some((h) =>
+        this.circleRectOverlap(px, py, p.radius * depthScale, h.x, h.y, h.w, h.h)
+      );
+      if (helperGrab) {
+        this.collectPickup(p, { fromHelper: true });
         this.pickups.splice(i, 1);
       }
     }
@@ -1199,11 +1369,15 @@ export class Game {
       ballsCollected: this.ballsCollected,
       ballSteals: this.ballSteals,
       teamScore: this.goalsThisRun,
+      opponentScore: this.opponentScore,
       hype: Math.round(this.hype),
       slideTackles: this.slideTackles,
       slideTackleStreak: this.slideTackleStreak,
       superTime: this.slideSuperTime,
-      superActive: this.slideSuperTime > 0
+      superActive: this.slideSuperTime > 0,
+      penaltiesForOpponent: this.penaltiesAgainstOpponent,
+      penaltiesForPlayer: this.penaltiesAgainstPlayer,
+      squadSplit: this.helperActive
     });
   }
 
@@ -1977,67 +2151,86 @@ export class Game {
   }
 
   drawPlayer(ctx) {
-    const x =
-      this.laneX(this.player.lane) -
-      this.player.width / 2 +
-      this.player.laneOffset;
-    const y = this.player.baseY + this.player.yOffset;
-    const h = this.player.isTackling ? this.player.height * 0.5 : this.player.height;
-    const w = this.player.width;
-    const p = this.palette;
-    const kit = this.kit;
-    const jerseyNumber = `${this.playerCardMeta?.rating || 10}`.padStart(2, "0").slice(-2);
-    const numberColor = kit.sockStripe || kit.trim || "#f9fafb";
-    const pixelColors = buildPixelPlayerColors(kit, p);
+    const drawRunner = (runner, options = {}) => {
+      const x = this.laneX(runner.lane) - runner.width / 2 + (runner.laneOffset || 0);
+      const y = runner.baseY + (runner.yOffset || 0);
+      const h = runner.isTackling ? runner.height * 0.5 : runner.height;
+      const w = runner.width;
+      const p = this.palette;
+      const kit = this.kit;
+      const jerseyNumber = `${this.playerCardMeta?.rating || 10}`.padStart(2, "0").slice(-2);
+      const numberColor = kit.sockStripe || kit.trim || "#f9fafb";
+      const pixelColors = buildPixelPlayerColors(kit, p);
+      const alpha = options.alpha ?? 1;
 
-    // Chunky shadow
-    this.drawPixelRect(ctx, x + w * 0.2, y + h, w * 0.6, this.pixelSize * 2, p.shadow);
+      ctx.save();
+      ctx.globalAlpha = alpha;
 
-    if (this.player.isTackling) {
-      const tackleColors = {
-        p: kit.primary,
-        P: kit.primaryShadow || shadeColor(kit.primary, -18),
-        s: p.playerSkin,
-        S: p.playerSkinShade,
-        h: "#3b2413",
-        H: "#2a1a12",
-        b: kit.boot || p.shadow,
-        q: kit.secondary,
-        Q: kit.secondaryShadow || shadeColor(kit.secondary, -18)
-      };
+      // Chunky shadow
+      this.drawPixelRect(ctx, x + w * 0.2, y + h, w * 0.6, this.pixelSize * 2, p.shadow);
 
-      const tackleSprite = [
-        "..hhHHhh...",
-        "..ssssss...",
-        "..sSSSSs...",
-        "..pppppppQ",
-        "..pPPpppQQ",
-        "..ppppppQQ",
-        "..pqqqqqQQ",
-        "bppqQQQbbQ",
-        "bppqqQQbbQ",
-        "bbbqQQQbbb"
-      ];
+      if (runner.isTackling) {
+        const tackleColors = {
+          p: kit.primary,
+          P: kit.primaryShadow || shadeColor(kit.primary, -18),
+          s: p.playerSkin,
+          S: p.playerSkinShade,
+          h: "#3b2413",
+          H: "#2a1a12",
+          b: kit.boot || p.shadow,
+          q: kit.secondary,
+          Q: kit.secondaryShadow || shadeColor(kit.secondary, -18)
+        };
 
-      this.drawSpriteMatrix(ctx, tackleSprite, tackleColors, x, y, w, h);
-      return;
+        const tackleSprite = [
+          "..hhHHhh...",
+          "..ssssss...",
+          "..sSSSSs...",
+          "..pppppppQ",
+          "..pPPpppQQ",
+          "..ppppppQQ",
+          "..pqqqqqQQ",
+          "bppqQQQbbQ",
+          "bppqqQQbbQ",
+          "bbbqQQQbbb"
+        ];
+
+        this.drawSpriteMatrix(ctx, tackleSprite, tackleColors, x, y, w, h);
+        ctx.restore();
+        return;
+      }
+
+      const running = this.runState === RUN_STATE.RUNNING || runner.isJuking;
+      const frameIndex = Math.floor((this.elapsedTime * 8) % 2);
+      const sprite = running ? (frameIndex === 0 ? PLAYER_SPRITES.run1 : PLAYER_SPRITES.run2) : PLAYER_SPRITES.idle;
+
+      const colors = { ...pixelColors, n: numberColor };
+
+      this.drawSpriteMatrix(ctx, sprite, colors, x, y, w, h);
+
+      ctx.fillStyle = numberColor;
+      ctx.font = `bold ${Math.round((w / 12) * 2.6)}px 'Press Start 2P', monospace`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(jerseyNumber, x + w * 0.5, y + h * 0.5);
+      ctx.restore();
+    };
+
+    if (this.helperActive) {
+      this.helperPlayers.forEach((h) => {
+        const helperState = {
+          ...this.player,
+          lane: h.lane,
+          laneOffset: h.laneOffset,
+          yOffset: h.yOffset,
+          isTackling: false,
+          isJuking: false
+        };
+        drawRunner(helperState, { alpha: 0.72 });
+      });
     }
 
-    const running = this.runState === RUN_STATE.RUNNING || this.player.isJuking;
-    const frameIndex = Math.floor((this.elapsedTime * 8) % 2);
-    const sprite = running ? (frameIndex === 0 ? PLAYER_SPRITES.run1 : PLAYER_SPRITES.run2) : PLAYER_SPRITES.idle;
-
-    const colors = { ...pixelColors, n: numberColor };
-
-    this.drawSpriteMatrix(ctx, sprite, colors, x, y, w, h);
-
-    ctx.save();
-    ctx.fillStyle = numberColor;
-    ctx.font = `bold ${Math.round((w / 12) * 2.6)}px 'Press Start 2P', monospace`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(jerseyNumber, x + w * 0.5, y + h * 0.5);
-    ctx.restore();
+    drawRunner(this.player);
   }
 
   drawStandingDefender(ctx, x, y, width, height) {
@@ -2123,6 +2316,10 @@ export class Game {
       if (p.type === "coin") {
         glow.addColorStop(0, "rgba(255, 216, 110, 0.8)");
         glow.addColorStop(1, "rgba(255, 216, 110, 0)");
+      } else if (p.type === "card") {
+        const color = p.cardColor === "red" ? "255, 99, 99" : "255, 221, 86";
+        glow.addColorStop(0, `rgba(${color},0.8)`);
+        glow.addColorStop(1, `rgba(${color},0)`);
       } else {
         glow.addColorStop(0, "rgba(255,255,255,0.7)");
         glow.addColorStop(1, "rgba(255,255,255,0)");
@@ -2140,6 +2337,13 @@ export class Game {
         ctx.strokeStyle = "rgba(0,0,0,0.35)";
         ctx.lineWidth = 1.5;
         ctx.stroke();
+      } else if (p.type === "card") {
+        const width = radius * 1.6;
+        const height = radius * 2.2;
+        const baseColor = p.cardColor === "red" ? "#f44336" : "#f4d03f";
+        const edge = p.cardColor === "red" ? "#b71c1c" : "#c9a400";
+        this.drawPixelRect(ctx, x - width / 2, y - height / 2, width, height, baseColor);
+        this.drawPixelRect(ctx, x - width / 2, y - height / 2, width, this.pixelSize * 2, edge);
       } else {
         this.drawSoccerBall(ctx, x, y, radius);
       }
