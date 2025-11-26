@@ -526,7 +526,7 @@ canvas {
   top: 0;
   left: 0;
   right: 0;
-  padding: 8px 10px;
+  padding: 4px 10px;
   pointer-events: none;
   color: #e7ecf5;
   z-index: 2;
@@ -541,7 +541,7 @@ canvas {
 .hud-v3__row {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   align-items: stretch;
 }
 
@@ -550,7 +550,7 @@ canvas {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border-radius: 12px;
   background: rgba(8, 14, 26, 0.58);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -659,13 +659,13 @@ canvas {
 
 .hud-v3__stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 6px;
   width: 100%;
 }
 
 .hud-v3__stat {
-  padding: 8px 10px;
+  padding: 7px 9px;
   border-radius: 10px;
   background: linear-gradient(160deg, rgba(10, 16, 28, 0.75), rgba(6, 12, 20, 0.65));
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -707,7 +707,7 @@ canvas {
 
 @media (max-width: 700px) {
   .hud-v3 {
-    padding: 6px;
+    padding: 4px 8px;
   }
 
   .hud-v3__scorecard {
@@ -725,24 +725,21 @@ canvas {
   }
 
   .hud-v3__stats {
-    grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
-  }
-
-  .hud-v3__stat {
-    padding: 7px 9px;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 5px;
   }
 }
 
 @media (max-width: 520px) {
   .hud-v3 {
-    padding: 6px 8px;
+    padding: 4px 6px;
   }
 
   .hud-v3__scorecard {
     grid-template-columns: 1fr;
     text-align: center;
     row-gap: 4px;
-    padding: 7px 9px;
+    padding: 6px 8px;
   }
 
   .hud-v3__scoreline {
@@ -771,24 +768,24 @@ canvas {
   }
 
   .hud-v3__score {
-    font-size: 21px;
+    font-size: 20px;
   }
 
   .hud-v3__stats {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 5px;
     justify-content: space-between;
   }
 
   .hud-v3__stat {
-    flex: 1 1 calc(50% - 6px);
-    min-width: 140px;
-    padding: 7px 8px;
+    flex: 1 1 calc(50% - 5px);
+    min-width: 120px;
+    padding: 6px 7px;
   }
 
   .hud-v3__stat-value {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .hud-v3__stat-note {
@@ -798,6 +795,25 @@ canvas {
 
   .hud-v3__stat-body {
     gap: 6px;
+  }
+}
+
+@media (max-width: 420px) {
+  .hud-v3__stats {
+    gap: 4px;
+  }
+
+  .hud-v3__stat {
+    flex-basis: calc(50% - 4px);
+    padding: 6px;
+  }
+
+  .hud-v3__stat-label {
+    font-size: 9px;
+  }
+
+  .hud-v3__stat-value {
+    font-size: 14px;
   }
 }
 
