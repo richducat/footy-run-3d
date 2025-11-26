@@ -950,16 +950,24 @@ canvas {
   z-index: -1;
 }
 
+.hero-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 22px;
+}
+
 .start-cta {
   display: flex;
   justify-content: center;
-  margin: 12px auto 18px;
+  margin: 0 auto 10px;
 }
 
 .variant-toggle {
   display: flex;
   justify-content: center;
-  margin: -4px auto 18px;
+  margin: 0 auto 10px;
 }
 
 .variant-toggle__button {
@@ -975,6 +983,14 @@ canvas {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 80%, transparent),
     0 8px 20px color-mix(in srgb, var(--accent) 25%, transparent);
   border-color: color-mix(in srgb, var(--accent) 70%, #0a1524);
+}
+
+.primary-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  max-width: 380px;
+  gap: 10px;
 }
 
 .start-button {
