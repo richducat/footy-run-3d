@@ -195,6 +195,7 @@ const btnSkipBuilder = document.getElementById("btnSkipBuilder");
 const btnCloseBuilder = document.getElementById("btnCloseBuilder");
 const btnOpenBuilder = document.getElementById("btnOpenBuilder");
 const btnShufflePreset = document.getElementById("btnShufflePreset");
+const featureJumpButtons = document.querySelectorAll("[data-feature-target], [data-feature-action]");
 
 // Login / save
 const loginEmailInput = document.getElementById("loginEmail");
