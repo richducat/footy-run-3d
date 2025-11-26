@@ -25,12 +25,56 @@ import {
   logSessionEvent,
   logRunEvent,
   ensureGoalProgress,
-  updateProgressionTracks
+  updateProgressionTracks,
+  markTutorialStep,
+  getOnboardingProgress,
+  recordRunOutcome,
+  getAssistProfile
 } from "./playerData.js";
 import { InputManager } from "./input.js";
 
 const DEV_CODE = "everett";
 const DEV_TOKEN_STASH = 999999;
+
+const SESSION_PRESETS = {
+  quick: {
+    key: "quick",
+    label: "Quick match",
+    targetDurationMs: 3 * 60 * 1000,
+    speedScalar: 0.98,
+    offlineFriendly: false
+  },
+  offline: {
+    key: "offline",
+    label: "Offline drill",
+    targetDurationMs: 2 * 60 * 1000,
+    speedScalar: 0.9,
+    offlineFriendly: true
+  },
+  endless: {
+    key: "endless",
+    label: "Endless run",
+    targetDurationMs: null,
+    speedScalar: 1,
+    offlineFriendly: false
+  }
+};
+let activeSessionPreset = SESSION_PRESETS.quick;
+
+function formatDuration(ms) {
+  const totalSeconds = Math.max(0, Math.round(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60)
+    .toString()
+    .padStart(1, "0");
+  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
+
+function sessionDurationHint(preset) {
+  if (!preset?.targetDurationMs) return "No cap";
+  const minutes = Math.round(preset.targetDurationMs / 60000);
+  return `${minutes}-min cap`;
+}
 
 const canvas = document.getElementById("gameCanvas");
 const hudEl = document.getElementById("hud");
@@ -39,6 +83,8 @@ const hudGoals = document.getElementById("hudGoals");
 const hudBest = document.getElementById("hudBest");
 const hudTierName = document.getElementById("hudTierName");
 const hudTierNote = document.getElementById("hudTierNote");
+const hudSessionLabel = document.getElementById("hudSessionLabel");
+const hudSessionTimer = document.getElementById("hudSessionTimer");
 const shotMeterFill = document.getElementById("shotMeterFill");
 const pauseBanner = document.getElementById("pauseBanner");
 const pauseMenu = document.getElementById("pauseMenu");
@@ -78,6 +124,11 @@ const celebrationOverlay = document.getElementById("celebrationOverlay");
 const celebrationTitle = document.getElementById("celebrationTitle");
 const celebrationCopy = document.getElementById("celebrationCopy");
 const celebrationTag = document.getElementById("celebrationTag");
+const onboardingHint = document.getElementById("onboardingHint");
+const tutorialChecklist = document.getElementById("tutorialChecklist");
+const tutorialNextStep = document.getElementById("tutorialNextStep");
+const adaptiveNote = document.getElementById("adaptiveNote");
+const earlyWinNote = document.getElementById("earlyWinNote");
 
 // Screens
 const screens = {
@@ -98,6 +149,9 @@ const goCoinsGoals = document.getElementById("goCoinsGoals");
 const goCoinsTotal = document.getElementById("goCoinsTotal");
 const goBestNote = document.getElementById("goBestNote");
 const goContinueNote = document.getElementById("goContinueNote");
+const goSessionSummary = document.getElementById("goSessionSummary");
+const goSessionDuration = document.getElementById("goSessionDuration");
+const goSessionMode = document.getElementById("goSessionMode");
 const btnContinue = document.getElementById("btnContinue");
 const continueCostLabel = document.getElementById("continueCostLabel");
 
@@ -110,6 +164,9 @@ const btnMissions = document.getElementById("btnMissions");
 const btnDevCode = document.getElementById("btnDevCode");
 const btnPause = document.getElementById("btnPause");
 const btnReplay = document.getElementById("btnReplay");
+const btnQuickSession = document.getElementById("btnQuickSession");
+const btnOfflineDrill = document.getElementById("btnOfflineDrill");
+const btnEndless = document.getElementById("btnEndless");
 const btnGoToTeam = document.getElementById("btnGoToTeam");
 const btnGoToMenu = document.getElementById("btnGoToMenu");
 const btnResetProgress = document.getElementById("btnResetProgress");
@@ -544,6 +601,7 @@ let continueCost = 10;
 let continueSpendTotal = 0;
 let pendingGameOverPayload = null;
 let visualVariant = "v1";
+let sessionStartTime = null;
 
 function resetContinueState() {
   continueCost = 10;
@@ -868,6 +926,53 @@ function renderInsights() {
     li.innerHTML = `<span>${row.label}</span><span class="progress-label">${row.value}</span>`;
     insightListEl.appendChild(li);
   });
+}
+
+function renderOnboardingPanel() {
+  const progress = getOnboardingProgress(playerData);
+  if (onboardingHint) {
+    onboardingHint.textContent = progress.adaptiveAssistActive
+      ? "Adaptive assist: easing defenders"
+      : progress.firstWinAwarded
+        ? "Adaptive assists ready"
+        : "Beginner win locked in";
+  }
+
+  if (tutorialChecklist) {
+    tutorialChecklist.querySelectorAll("[data-step]").forEach((item) => {
+      const step = item.dataset.step;
+      const done = progress.tutorialSteps?.[step];
+      item.classList.toggle("tutorial-list__item--complete", !!done);
+      const status = item.querySelector(".tutorial-list__status");
+      if (status) status.textContent = done ? "✓" : "•";
+      const label = item.querySelector(".tutorial-list__label");
+      if (label) label.textContent = done ? `${label.dataset.short} (done)` : label.dataset.short;
+    });
+  }
+
+  if (tutorialNextStep) {
+    tutorialNextStep.textContent = "Next: Play your first match.";
+  }
+
+  if (adaptiveNote) {
+    adaptiveNote.textContent = progress.adaptiveAssistActive
+      ? "We’re dropping pressure after the recent losses—lighter keeper speed and extra pickups are on."
+      : "Difficulty scales gently until you’re ready for tougher presses.";
+  }
+
+  if (earlyWinNote) {
+    earlyWinNote.textContent = progress.firstWinAwarded
+      ? "First win secured—future matches ramp normally."
+      : "Beginner boost active so your opening match or drills end in a win.";
+  }
+}
+
+function completeTutorialStep(step) {
+  const updated = markTutorialStep(playerData, step);
+  if (updated) {
+    savePlayerData(playerData);
+    renderOnboardingPanel();
+  }
 }
 
 function renderStreakUI() {
@@ -1419,6 +1524,7 @@ function buildGameInstance() {
   const kitColors = getKitColorsFromProfile();
   const perks = getEffectivePerks(selectedCard, level);
   const tuning = getLevelTuning(selectedCard, level);
+  const assistProfile = getAssistProfile(playerData);
 
   game = new Game(canvas, {
     playerCard: selectedCard,
@@ -1427,6 +1533,7 @@ function buildGameInstance() {
     ballAccent: kitColors.ballAccent,
     perks,
     tuning,
+    assistProfile,
     bestDistance: playerData.bestDistance,
     pixelRatio: renderScale,
     logicalWidth,
@@ -1437,6 +1544,16 @@ function buildGameInstance() {
     onGoal: handleGameGoal,
     onGameOver: handleGameOver
   });
+
+  applyAssistProfile();
+}
+
+function applyAssistProfile() {
+  if (!game) return;
+  const assistProfile = getAssistProfile(playerData);
+  if (typeof game.setAssistProfile === "function") {
+    game.setAssistProfile(assistProfile);
+  }
 }
 
 function updateTouchControlsVisibility() {
@@ -1465,6 +1582,16 @@ function updateVariantToggleUI() {
   buttons.forEach(({ el, variant }) => {
     el?.classList.toggle("variant-toggle__button--active", visualVariant === variant);
   });
+}
+
+function syncSessionLabels(preset) {
+  const hint = sessionDurationHint(preset);
+  if (hudSessionLabel) hudSessionLabel.textContent = preset?.label || "Session";
+  if (hudSessionTimer) hudSessionTimer.textContent = `${formatDuration(0)} · ${hint}`;
+  if (goSessionSummary) goSessionSummary.textContent = preset?.label || "Session";
+  if (goSessionDuration) goSessionDuration.textContent = `${formatDuration(0)}`;
+  if (goSessionMode)
+    goSessionMode.textContent = preset?.offlineFriendly ? "Offline ready" : "Connected play";
 }
 
 function updateBuilderPreview() {
@@ -1791,6 +1918,7 @@ function renderTeamScreen() {
             updateCoinsHeader();
             renderTeamScreen();
             buildGameInstance();
+            completeTutorialStep("upgrade");
           }
         });
         actions.appendChild(upgradeBtn);
@@ -1935,22 +2063,25 @@ function startVariantRun(variant) {
   if (variant && variant !== visualVariant) {
     setVisualVariant(variant);
   }
-  startRun();
+  startRun(activeSessionPreset);
 }
 
-function startRun() {
+function startRun(preset = activeSessionPreset) {
+  activeSessionPreset = preset || activeSessionPreset;
   if (!ensureProfileSetup("Customize your striker before the first run.")) return;
   setActiveScreen(null); // close menus
   pauseBanner.classList.add("hidden");
   pauseMenu?.classList.add("hidden");
+  sessionStartTime = Date.now();
   resetContinueState();
   updateStreak(playerData);
-  logSessionEvent(playerData, { sessionLengthMs: 0 });
   renderStreakUI();
   renderInsights();
   savePlayerData(playerData);
+  applyAssistProfile();
   game.startRun();
   updateTouchControlsVisibility();
+  syncSessionLabels(activeSessionPreset);
 }
 
 function togglePause() {
@@ -1989,6 +2120,17 @@ function exitRun({ saveProgress = false } = {}) {
   updateTouchControlsVisibility();
 }
 
+function evaluateRunOutcome(payload) {
+  const baselineWin = payload.goals > 0 || payload.distance >= 350 || payload.coins >= 120;
+  const progress = getOnboardingProgress(playerData);
+  const usedBeginnerBoost = !baselineWin && !progress.firstWinAwarded;
+
+  return {
+    win: baselineWin || usedBeginnerBoost,
+    usedBeginnerBoost
+  };
+}
+
 function calculateRunCoins(payload) {
   const distanceBonus = Math.floor(payload.distance / 20);
   const goalBonus = payload.goals * 20;
@@ -2004,6 +2146,7 @@ function getAvailableTokensForContinue(runCoins) {
 }
 
 function applyRunResults(payload) {
+  const outcome = evaluateRunOutcome(payload);
   const { runCoins, distanceBonus, goalBonus, coinBonus } = calculateRunCoins(payload);
   const netCoins = Math.max(0, runCoins - continueSpendTotal);
   const previousBest = playerData.bestDistance;
@@ -2018,6 +2161,7 @@ function applyRunResults(payload) {
   const totalXp = Math.round(xpEarned * streakBonuses.xpBonus);
   const { levelBefore, levelAfter } = addExperience(playerData, totalXp);
   logRunEvent(playerData);
+  recordRunOutcome(playerData, outcome);
   updateMissionsAfterRun(playerData, {
     distance: payload.distance,
     goals: payload.goals,
@@ -2048,6 +2192,8 @@ function applyRunResults(payload) {
   renderMissions();
   renderProgression();
   renderInsights();
+  renderOnboardingPanel();
+  applyAssistProfile();
   updateProfileUI("Progress auto-saved after the match.");
 
   const earnedCoinsNote =
@@ -2064,11 +2210,13 @@ function applyRunResults(payload) {
   if (rewardMeter) rewardMeter.style.width = `${Math.min(100, netCoins % 150)}%`;
   if (rewardLine) rewardLine.textContent = `+${totalXp} XP · ${netCoins} coins · ${payload.goals} goals`;
 
-  if (payload.distance > previousBest) {
-    goBestNote.textContent = "New personal best for this device!";
-  } else {
-    goBestNote.textContent = `Best distance so far: ${playerData.bestDistance} m`;
-  }
+  const baseBestNote =
+    payload.distance > previousBest
+      ? "New personal best for this device!"
+      : `Best distance so far: ${playerData.bestDistance} m`;
+  goBestNote.textContent = outcome.usedBeginnerBoost
+    ? `${baseBestNote} Beginner boost secured an early win to build momentum.`
+    : baseBestNote;
 
   const streakCoinCopy = streakCoinBonus > 0 ? ` +${streakCoinBonus}% streak coin boost.` : "";
   if (earnedCoinsNote) {
@@ -2092,6 +2240,7 @@ function updateGameOverUI(payload) {
   const netCoins = Math.max(0, runCoins - continueSpendTotal);
   const projectedBest = Math.max(playerData.bestDistance, payload.distance);
   const availableTokens = getAvailableTokensForContinue(runCoins);
+  const preset = payload.sessionConfig || activeSessionPreset;
 
   goDistance.textContent = `${payload.distance} m`;
   goGoals.textContent = `${payload.goals}`;
@@ -2100,6 +2249,16 @@ function updateGameOverUI(payload) {
   goCoinsDistance.textContent = `${distanceBonus}`;
   goCoinsGoals.textContent = `${goalBonus}`;
   goCoinsTotal.textContent = `${netCoins}`;
+  if (goSessionSummary) {
+    const endCopy = payload.endReason === "sessionComplete" ? " · Session complete" : "";
+    goSessionSummary.textContent = `${preset.label}${endCopy}`;
+  }
+  if (goSessionDuration) {
+    const capLabel = preset.targetDurationMs ? sessionDurationHint(preset) : "No cap";
+    goSessionDuration.textContent = `${formatDuration(payload.runDurationMs || 0)} · ${capLabel}`;
+  }
+  if (goSessionMode)
+    goSessionMode.textContent = preset.offlineFriendly ? "Offline ready" : "Connected play";
 
   if (projectedBest > playerData.bestDistance) {
     goBestNote.textContent = "New personal best for this device!";
@@ -2125,6 +2284,11 @@ function handleGameStats(stats) {
   hudBest.textContent = `${stats.bestDistance} m`;
   if (hudTierName) hudTierName.textContent = stats.tierName || "Kickoff Circuit";
   if (hudTierNote) hudTierNote.textContent = stats.tierNote || "Opening pace";
+  if (hudSessionLabel) hudSessionLabel.textContent = stats.sessionLabel || activeSessionPreset.label;
+  if (hudSessionTimer) {
+    const capLabel = stats.targetDurationMs ? sessionDurationHint({ targetDurationMs: stats.targetDurationMs }) : "No cap";
+    hudSessionTimer.textContent = `${formatDuration(stats.runDurationMs || 0)} · ${capLabel}`;
+  }
   const pct = (stats.shotMeter / 100) * 100;
   shotMeterFill.style.width = `${Math.min(100, Math.max(0, pct))}%`;
   shotMeterFill.classList.toggle("shot-meter__fill--ready", !!stats.shotReady);
@@ -2149,6 +2313,9 @@ function handleGameGoal() {
 }
 
 function handleGameOver(payload) {
+  if (payload.sessionConfig) {
+    activeSessionPreset = payload.sessionConfig;
+  }
   pendingGameOverPayload = payload;
   updateGameOverUI(payload);
   setActiveScreen("gameOverScreen");
@@ -2156,8 +2323,13 @@ function handleGameOver(payload) {
 
 function finalizePendingGameOver() {
   if (!pendingGameOverPayload) return;
+  const sessionLengthMs =
+    pendingGameOverPayload.runDurationMs ||
+    (sessionStartTime ? Date.now() - sessionStartTime : 0);
+  logSessionEvent(playerData, { sessionLengthMs });
   applyRunResults(pendingGameOverPayload);
   resetContinueState();
+  sessionStartTime = null;
 }
 
 function handleInputAction(action) {
@@ -2184,13 +2356,12 @@ function handleInputAction(action) {
     } else if (
       currentScreenId === "gameOverScreen" &&
       actionType === "startRun"
-    ) {
-      finalizePendingGameOver();
-      setActiveScreen(null);
-      game.startRun();
+      ) {
+        finalizePendingGameOver();
+        startRun(activeSessionPreset);
+      }
+      return;
     }
-    return;
-  }
 
   // In run (no active overlay screen)
   if (!game) return;
@@ -2208,16 +2379,31 @@ function handleInputAction(action) {
     return;
   }
 
-  if (actionType === "primary" && game.isShotReady()) {
-    const aimBias = Math.max(-1, Math.min(1, (detail.dx || 0) / 140));
-    game.attemptShot(aimBias);
+  if (actionType === "primary") {
+    completeTutorialStep("pass");
+    if (game.isShotReady()) {
+      const aimBias = Math.max(-1, Math.min(1, (detail.dx || 0) / 140));
+      const shotTaken = game.attemptShot(aimBias);
+      if (shotTaken) {
+        completeTutorialStep("shoot");
+      }
+    }
     return;
   }
 
-  if (actionType === "moveLeft") game.handleMove("left");
-  else if (actionType === "moveRight") game.handleMove("right");
-  else if (actionType === "tackle") game.handleMove("tackle");
-  else if (actionType === "juke") game.handleMove("juke");
+  if (actionType === "moveLeft") {
+    game.handleMove("left");
+    completeTutorialStep("move");
+  } else if (actionType === "moveRight") {
+    game.handleMove("right");
+    completeTutorialStep("move");
+  } else if (actionType === "tackle") {
+    game.handleMove("tackle");
+    completeTutorialStep("pass");
+  } else if (actionType === "juke") {
+    game.handleMove("juke");
+    completeTutorialStep("move");
+  }
 }
 
 // Button wiring
@@ -2229,42 +2415,34 @@ window.addEventListener("blur", clearPressedState, { passive: true });
 
 btnPlay.addEventListener("click", () => {
   spawnTapParticles(btnPlay);
+  activeSessionPreset = SESSION_PRESETS.quick;
+  syncSessionLabels(activeSessionPreset);
   startVariantRun("v1");
 });
 
 btnPlayV2?.addEventListener("click", () => {
   spawnTapParticles(btnPlayV2);
+  activeSessionPreset = SESSION_PRESETS.quick;
+  syncSessionLabels(activeSessionPreset);
   startVariantRun("v2");
 });
 
-const highlightFeatureTarget = (targetEl) => {
-  if (!targetEl) return;
-  targetEl.classList.add("feature-highlight");
-  targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
-  window.setTimeout(() => targetEl.classList.remove("feature-highlight"), 1800);
-};
+btnQuickSession?.addEventListener("click", () => {
+  activeSessionPreset = SESSION_PRESETS.quick;
+  syncSessionLabels(activeSessionPreset);
+  startRun(SESSION_PRESETS.quick);
+});
 
-featureJumpButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const action = btn.dataset.featureAction;
-    if (action === "openBuilder") {
-      openPlayerBuilder("Claim your kit and ball look.");
-      highlightFeatureTarget(builderOverlay);
-      return;
-    }
+btnOfflineDrill?.addEventListener("click", () => {
+  activeSessionPreset = SESSION_PRESETS.offline;
+  syncSessionLabels(activeSessionPreset);
+  startRun(SESSION_PRESETS.offline);
+});
 
-    const targetId = btn.dataset.featureTarget;
-    if (!targetId) return;
-
-    const targetEl = document.getElementById(targetId);
-    if (!targetEl) return;
-
-    if (targetEl.tagName?.toLowerCase() === "details") {
-      targetEl.open = true;
-    }
-
-    highlightFeatureTarget(targetEl);
-  });
+btnEndless?.addEventListener("click", () => {
+  activeSessionPreset = SESSION_PRESETS.endless;
+  syncSessionLabels(activeSessionPreset);
+  startRun(SESSION_PRESETS.endless);
 });
 
 skillPathButtons.forEach((btn) => {
@@ -2352,8 +2530,7 @@ pauseMenuQuitBtn?.addEventListener("click", () => {
 
 btnReplay.addEventListener("click", () => {
   finalizePendingGameOver();
-  setActiveScreen(null);
-  game.startRun();
+  startRun(activeSessionPreset);
 });
 
 btnGoToTeam.addEventListener("click", () => {
@@ -2541,12 +2718,14 @@ updateVariantToggleUI();
 renderTeamScreen();
 renderMissions();
 renderEvents();
+renderOnboardingPanel();
 setActiveScreen("mainMenu");
 closeAuthSheet();
 updateProfileUI();
 updateTouchControlsVisibility();
 updateBuilderPreview();
 renderKitPresets();
+syncSessionLabels(activeSessionPreset);
 
 if (!playerData.profile?.builderCompleted) {
   openPlayerBuilder("Pick your kit colors to start your career.");

@@ -182,11 +182,13 @@ export class Game {
     const tuning = options.tuning || {};
     this.baseSpeed = 200 * (tuning.sprintSpeed || 1); // px/s
     this.shotGainRate = tuning.shotGainRate || 1;
+    this.baseShotGainRate = this.shotGainRate;
     this.reviveInvulnDuration =
       tuning.reviveInvulnDuration == null ? 0.9 : tuning.reviveInvulnDuration;
     this.jukeCooldownDuration = tuning.jukeCooldown || 1;
     this.tackleDurationBase = tuning.tackleDuration || 0.55;
     this.jukeDurationBase = tuning.jukeDuration || 0.42;
+    this.assistProfile = options.assistProfile || {};
     this.runState = RUN_STATE.IDLE;
 
     this.difficultyTiers = [
@@ -252,6 +254,7 @@ export class Game {
       }
     ];
     this.activeTier = this.getDifficultyTier();
+    this.setAssistProfile(this.assistProfile);
 
     // Player card tuning
     const playerCard = options.playerCard || {};
@@ -301,6 +304,15 @@ export class Game {
 
     // Systems
     this.elapsedTime = 0;
+    this.runElapsed = 0;
+    this.sessionConfig = options.sessionConfig || {
+      key: "endless",
+      label: "Endless Run",
+      targetDurationMs: null,
+      speedScalar: 1,
+      offlineFriendly: false
+    };
+    this.sessionSpeedScalar = this.sessionConfig.speedScalar || 1;
     this.obstacles = [];
     this.pickups = [];
 
@@ -454,6 +466,18 @@ export class Game {
     }
   }
 
+  setAssistProfile(profile = {}) {
+    const defaults = {
+      speedScale: 1,
+      obstacleEase: 1,
+      pickupBoost: 1,
+      goalieScale: 1,
+      shotGainBoost: 1
+    };
+    this.assistProfile = { ...defaults, ...profile };
+    this.shotGainRate = this.baseShotGainRate * (this.assistProfile.shotGainBoost || 1);
+  }
+
   startRun() {
     this.runState = RUN_STATE.RUNNING;
     this.obstacles = [];
@@ -464,6 +488,8 @@ export class Game {
     this.shotReady = false;
     this.activeShot = null;
     this.resetRunStats();
+    this.elapsedTime = 0;
+    this.runElapsed = 0;
     this.player.lane = 1;
     this.player.isTackling = false;
     this.player.isJuking = false;
@@ -498,7 +524,7 @@ export class Game {
     return true;
   }
 
-  endRun() {
+  endRun(reason = "collision") {
     if (this.runState === RUN_STATE.ENDED) return;
     this.runState = RUN_STATE.ENDED;
     this.shotReady = false;
@@ -511,7 +537,10 @@ export class Game {
       distance: Math.floor(this.distance),
       coins: this.coinsThisRun,
       goals: this.goalsThisRun,
-      bestDistance: Math.floor(this.bestDistance)
+      bestDistance: Math.floor(this.bestDistance),
+      runDurationMs: Math.round(this.runElapsed * 1000),
+      sessionConfig: this.sessionConfig,
+      endReason: reason
     });
   }
 
@@ -692,7 +721,11 @@ export class Game {
   update(dt) {
     this.activeTier = this.getDifficultyTier();
     const tier = this.activeTier;
+    const assist = this.assistProfile || {};
     this.elapsedTime += dt;
+    if (this.runState === RUN_STATE.RUNNING) {
+      this.runElapsed += dt;
+    }
     // Always push last known stats so HUD can show IDLE state too
     this.onStats({
       distance: Math.floor(this.distance),
@@ -703,7 +736,11 @@ export class Game {
       bestDistance: Math.floor(this.bestDistance),
       runState: this.runState,
       tierName: tier?.name,
-      tierNote: tier?.note
+      tierNote: tier?.note,
+      runDurationMs: Math.round(this.runElapsed * 1000),
+      targetDurationMs: this.sessionConfig?.targetDurationMs,
+      sessionLabel: this.sessionConfig?.label,
+      offlineFriendly: !!this.sessionConfig?.offlineFriendly
     });
 
     if (this.runState !== RUN_STATE.RUNNING) {
@@ -715,13 +752,22 @@ export class Game {
     // Difficulty ramp
     const base =
       (this.baseSpeed + this.distance * (tier?.speedRamp ?? 0.45)) *
-      (tier?.speedMultiplier ?? 1);
+      (tier?.speedMultiplier ?? 1) *
+      (assist.speedScale || 1);
     this.speed = base * this.speedMultiplier;
 
     // Distance scaled to "meters"
     this.distance += this.speed * dt * 0.05;
     if (this.distance > this.bestDistance) {
       this.bestDistance = this.distance;
+    }
+
+    if (
+      this.sessionConfig?.targetDurationMs &&
+      this.runElapsed * 1000 >= this.sessionConfig.targetDurationMs
+    ) {
+      this.endRun("sessionComplete");
+      return;
     }
 
     // Timers
@@ -764,17 +810,18 @@ export class Game {
     // this.updateParticles(dt);
 
     // Spawn obstacles (gets a bit denser over time)
-    const obstacleInterval = Math.max(
-      tier?.obstacleMin ?? 0.55,
-      (tier?.obstacleBase ?? 1.8) - this.distance * (tier?.obstacleRamp ?? 0.01)
-    );
+    const obstacleInterval =
+      Math.max(
+        tier?.obstacleMin ?? 0.55,
+        (tier?.obstacleBase ?? 1.8) - this.distance * (tier?.obstacleRamp ?? 0.01)
+      ) * (assist.obstacleEase || 1);
     if (this.timeSinceObstacle > obstacleInterval) {
       this.spawnObstacle();
       this.timeSinceObstacle = 0;
     }
 
     // Spawn pickups
-    const pickupInterval = tier?.pickupInterval ?? 0.85;
+    const pickupInterval = (tier?.pickupInterval ?? 0.85) / (assist.pickupBoost || 1);
     if (this.timeSincePickup > pickupInterval) {
       this.spawnPickup();
       this.timeSincePickup = 0;
@@ -908,7 +955,7 @@ export class Game {
     const goalieSpeed =
       this.goalie.freezeTime > 0
         ? this.goalie.baseSpeed * 0.3
-        : this.goalie.baseSpeed * (tier?.goalieSpeed ?? 1);
+        : this.goalie.baseSpeed * (tier?.goalieSpeed ?? 1) * (assist.goalieScale || 1);
     this.goalie.speed = goalieSpeed;
     this.goalie.x += this.goalie.direction * this.goalie.speed * dt;
     if (this.goalie.x < goalLeft) {

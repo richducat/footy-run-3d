@@ -109,6 +109,11 @@
                 <span class="hud-value" id="hudTierName">Kickoff Circuit</span>
                 <span class="hud-subvalue" id="hudTierNote">Opening pace</span>
               </div>
+              <div class="hud-block hud-block--session">
+                <span class="hud-label">Session</span>
+                <span class="hud-value" id="hudSessionLabel">Quick match</span>
+                <span class="hud-subvalue" id="hudSessionTimer">0:00 · 3-5m</span>
+              </div>
             </div>
             <div class="hud-group hud-group--right">
               <div class="hud-block">
@@ -133,8 +138,8 @@
               <div class="start-cta" aria-live="polite">
                 <button id="btnPlay" class="start-button" aria-label="Start run">
                   <span class="start-button__glow"></span>
-                  <span class="start-button__label">Play</span>
-                  <span class="start-button__hint">Start Run</span>
+                  <span class="start-button__label">Play faster</span>
+                  <span class="start-button__hint">3-min quick match</span>
                 </button>
               </div>
               <div class="variant-toggle" aria-live="polite">
@@ -156,63 +161,44 @@
               </div>
             </div>
 
-            <details id="featureMenu" class="feature-menu" open aria-label="Quick access to feature sections">
-              <summary class="feature-menu__summary">
-                <div class="feature-menu__summary-text">
-                  <p class="eyebrow">Quick navigation</p>
-                  <h3>Jump to the feature you need</h3>
+            <div class="session-presets" aria-label="Short session presets">
+              <div class="session-card session-card--primary">
+                <div class="session-card__header">
+                  <p class="eyebrow">2–5 minute design</p>
+                  <span class="pill pill--soft">Quick match</span>
                 </div>
-                <span class="pill pill--soft">Toggle menu</span>
-              </summary>
-              <div class="feature-menu__grid" role="list">
-                <button class="feature-chip" data-feature-target="btnPlay" type="button" role="listitem">
-                  <span class="feature-icon" aria-hidden="true">🏁</span>
-                  <span class="feature-label">Start a run</span>
-                  <span class="feature-meta">Play instantly</span>
-                </button>
-                <button
-                  class="feature-chip"
-                  data-feature-action="openBuilder"
-                  type="button"
-                  aria-controls="playerBuilder"
-                  role="listitem"
-                >
-                  <span class="feature-icon" aria-hidden="true">🎨</span>
-                  <span class="feature-label">Build your striker</span>
-                  <span class="feature-meta">Customize kit &amp; ball</span>
-                </button>
-                <button class="feature-chip" data-feature-target="missionsPanel" type="button" role="listitem">
-                  <span class="feature-icon" aria-hidden="true">📅</span>
-                  <span class="feature-label">Missions</span>
-                  <span class="feature-meta">Daily &amp; weekly goals</span>
-                </button>
-                <button class="feature-chip" data-feature-target="coreLoopPanel" type="button" role="listitem">
-                  <span class="feature-icon" aria-hidden="true">🔁</span>
-                  <span class="feature-label">Core loop</span>
-                  <span class="feature-meta">Play, earn, upgrade</span>
-                </button>
-                <button class="feature-chip" data-feature-target="eventsPanel" type="button" role="listitem">
-                  <span class="feature-icon" aria-hidden="true">🏆</span>
-                  <span class="feature-label">Live events</span>
-                  <span class="feature-meta">Limited-time rewards</span>
-                </button>
-                <button class="feature-chip" data-feature-target="progressionPanel" type="button" role="listitem">
-                  <span class="feature-icon" aria-hidden="true">📈</span>
-                  <span class="feature-label">Progression</span>
-                  <span class="feature-meta">Levels, perks, boosts</span>
-                </button>
-                <button class="feature-chip" data-feature-target="rewardsAccordion" type="button" role="listitem">
-                  <span class="feature-icon" aria-hidden="true">🎁</span>
-                  <span class="feature-label">Rewards</span>
-                  <span class="feature-meta">Loot &amp; drops</span>
-                </button>
-                <button class="feature-chip" data-feature-target="socialAccordion" type="button" role="listitem">
-                  <span class="feature-icon" aria-hidden="true">🤝</span>
-                  <span class="feature-label">Social</span>
-                  <span class="feature-meta">Clubs &amp; competition</span>
-                </button>
+                <h3>3-minute sprint</h3>
+                <p class="session-card__copy">Short, winnable runs that bank coins and XP fast.</p>
+                <div class="session-card__footer">
+                  <button id="btnQuickSession" class="btn btn--primary">Start quick session</button>
+                  <p class="session-card__hint">Autosaves locally &amp; replays instantly.</p>
+                </div>
               </div>
-            </details>
+              <div class="session-card">
+                <div class="session-card__header">
+                  <p class="eyebrow">Offline friendly</p>
+                  <span class="pill pill--soft">Training</span>
+                </div>
+                <h3>Low-connectivity drills</h3>
+                <p class="session-card__copy">Single-player practice with softer speed and no network needed.</p>
+                <div class="session-card__footer">
+                  <button id="btnOfflineDrill" class="btn btn--ghost">Launch drill</button>
+                  <p class="session-card__hint">Keeps progress on-device until you sync.</p>
+                </div>
+              </div>
+              <div class="session-card">
+                <div class="session-card__header">
+                  <p class="eyebrow">Longer stretch</p>
+                  <span class="pill pill--soft">Endless</span>
+                </div>
+                <h3>Marathon mode</h3>
+                <p class="session-card__copy">Keep running with no cap if you want a deeper session.</p>
+                <div class="session-card__footer">
+                  <button id="btnEndless" class="btn btn--ghost">Go endless</button>
+                  <p class="session-card__hint">Starts faster now, but you can bail anytime.</p>
+                </div>
+              </div>
+            </div>
 
             <div class="info-accordions" aria-label="New rewards and social updates">
               <details class="accordion" id="rewardsAccordion" open>
@@ -542,15 +528,36 @@
               <div class="onboarding-grid">
                 <div class="onboarding-step">
                   <h4>Guided tutorial</h4>
-                  <p>Interactive steps for pass, shoot, move, and upgrade with clear next actions.</p>
+                  <p>Interactive, four-step warmup that can be cleared in under a minute.</p>
+                  <ul class="tutorial-list" id="tutorialChecklist">
+                    <li data-step="move">
+                      <span class="tutorial-list__status">•</span>
+                      <span class="tutorial-list__label" data-short="Move">Move</span>
+                    </li>
+                    <li data-step="pass">
+                      <span class="tutorial-list__status">•</span>
+                      <span class="tutorial-list__label" data-short="Pass">Pass</span>
+                    </li>
+                    <li data-step="shoot">
+                      <span class="tutorial-list__status">•</span>
+                      <span class="tutorial-list__label" data-short="Shoot">Shoot</span>
+                    </li>
+                    <li data-step="upgrade">
+                      <span class="tutorial-list__status">•</span>
+                      <span class="tutorial-list__label" data-short="Upgrade">Upgrade</span>
+                    </li>
+                  </ul>
+                  <p class="onboarding-note" id="tutorialNextStep">Next: Play your first match.</p>
                 </div>
                 <div class="onboarding-step">
                   <h4>Adaptive curve</h4>
-                  <p>Failsafe: back-to-back losses temporarily soften AI and widen tackle windows.</p>
+                  <p class="onboarding-note" id="adaptiveNote">
+                    Failsafe: back-to-back losses temporarily soften AI and widen tackle windows.
+                  </p>
                 </div>
                 <div class="onboarding-step">
                   <h4>Early win moment</h4>
-                  <p>First match bias ensures you feel the thrill quickly.</p>
+                  <p class="onboarding-note" id="earlyWinNote">First match bias ensures you feel the thrill quickly.</p>
                 </div>
               </div>
             </div>
@@ -648,6 +655,16 @@
               </ul>
             </div>
             <p class="stat-note" id="goBestNote"></p>
+            <div class="session-summary">
+              <div>
+                <p class="eyebrow">Session</p>
+                <p id="goSessionSummary" class="session-summary__label">Quick match</p>
+              </div>
+              <div class="session-summary__meta">
+                <span id="goSessionDuration" class="pill pill--soft">0:00</span>
+                <span id="goSessionMode" class="pill pill--ghost">Offline ready</span>
+              </div>
+            </div>
 
             <div class="panel panel--subtle continue-panel">
               <div class="continue-panel__header">
@@ -664,6 +681,8 @@
                 </button>
               </div>
             </div>
+
+            <p class="stat-note stat-note--highlight">Ready for another? Tap Play Again for an instant rematch in the same mode.</p>
 
             <div class="button-row">
               <button id="btnReplay" class="btn btn--primary">Play Again</button>
