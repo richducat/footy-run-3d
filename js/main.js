@@ -17,7 +17,12 @@ import {
   claimMissionReward,
   estimateRunsForCost,
   CARD_LEVEL_CAP,
-  getUpgradeCost
+  getUpgradeCost,
+  addExperience,
+  getLevelProgress,
+  updateStreak,
+  logSessionEvent,
+  logRunEvent
 } from "./playerData.js";
 import { InputManager } from "./input.js";
 
@@ -35,6 +40,25 @@ const pauseMenuResumeBtn = document.getElementById("btnPauseResume");
 const pauseMenuSaveQuitBtn = document.getElementById("btnPauseSaveQuit");
 const pauseMenuQuitBtn = document.getElementById("btnPauseQuit");
 const headerCoinsValue = document.getElementById("headerCoinsValue");
+const loopXpFill = document.getElementById("loopXpFill");
+const loopXpLabel = document.getElementById("loopXpLabel");
+const levelMeterFill = document.getElementById("levelMeterFill");
+const levelMeterLabel = document.getElementById("levelMeterLabel");
+const levelNumber = document.getElementById("levelNumber");
+const shortGoalsEl = document.getElementById("shortGoals");
+const longGoalsEl = document.getElementById("longGoals");
+const clubLeaderboardEl = document.getElementById("clubLeaderboard");
+const insightListEl = document.getElementById("insightList");
+const notificationListEl = document.getElementById("notificationList");
+const streakLabel = document.getElementById("streakLabel");
+const streakValue = document.getElementById("streakValue");
+const streakNote = document.getElementById("streakNote");
+const rewardMeter = document.getElementById("rewardMeter");
+const rewardLine = document.getElementById("rewardLine");
+const celebrationOverlay = document.getElementById("celebrationOverlay");
+const celebrationTitle = document.getElementById("celebrationTitle");
+const celebrationCopy = document.getElementById("celebrationCopy");
+const celebrationTag = document.getElementById("celebrationTag");
 
 // Screens
 const screens = {
@@ -161,6 +185,46 @@ const missionsIcon = document.getElementById("missionsIcon");
 
 const activePressables = new Set();
 
+const SHORT_GOALS = [
+  { id: "left_foot", label: "Score 3 goals with your left foot", progress: 0, target: 3 },
+  { id: "drill_accuracy", label: "Complete 3 drills at 90% accuracy", progress: 0, target: 3 },
+  { id: "quick_win", label: "Finish a 2-minute sprint", progress: 0, target: 1 }
+];
+
+const LONG_GOALS = [
+  { id: "division_promo", label: "Win promotion to Division 3", progress: 0.45, target: 1 },
+  { id: "unlock_cosmetics", label: "Unlock 3 cosmetic kits", progress: 0.66, target: 3 },
+  { id: "skill_tree", label: "Invest 5 points in Finisher tree", progress: 0.4, target: 5 }
+];
+
+const CLUB_LEADERBOARD = [
+  { name: "Neon Strikers", points: 1240 },
+  { name: "Volley Crew", points: 1180 },
+  { name: "Pixel Ultras", points: 1025 },
+  { name: "Touchline Tribe", points: 940 }
+];
+
+const RESPECTFUL_NOTIFICATIONS = [
+  {
+    title: "League ending soon",
+    copy: "Your weekly league ends in 3h – one more run could promote you.",
+    time: "Today",
+    type: "reminder"
+  },
+  {
+    title: "Training streak",
+    copy: "You’re 1 training away from completing your streak.",
+    time: "1d ago",
+    type: "streak"
+  },
+  {
+    title: "New event",
+    copy: "World Cup Penalty Shootout is live. Earn limited neon boots.",
+    time: "3d ago",
+    type: "event"
+  }
+];
+
 let missionHasClaimable = false;
 let missionCelebrateTimeout = null;
 
@@ -183,7 +247,14 @@ function calibrateCanvasResolution() {
   canvas.height = Math.round(logicalHeight * renderScale);
 }
 ensureGuestProfile();
+updateStreak(playerData);
+savePlayerData(playerData);
 updateCoinsHeader();
+renderProgression();
+renderClubLeaderboard();
+renderNotifications();
+renderInsights();
+renderStreakUI();
 
 let game = null;
 let input = null;
@@ -283,6 +354,118 @@ function updateMissionCelebrationState(hasClaimable) {
 
 function updateCoinsHeader() {
   headerCoinsValue.textContent = playerData.coins.toString();
+}
+
+function renderGoalList(goals = [], container) {
+  if (!container) return;
+  container.innerHTML = "";
+  goals.forEach((goal) => {
+    const item = document.createElement("li");
+    const progress = Math.min(1, goal.progress / (goal.target || 1));
+    item.innerHTML = `
+      <span>${goal.label}</span>
+      <span class="progress-label">${Math.round(progress * 100)}%</span>
+    `;
+    const bar = document.createElement("div");
+    bar.className = "progress-bar";
+    const fill = document.createElement("div");
+    fill.className = "progress-bar__fill";
+    fill.style.width = `${progress * 100}%`;
+    bar.appendChild(fill);
+    item.appendChild(bar);
+    container.appendChild(item);
+  });
+}
+
+function renderProgression() {
+  const progress = getLevelProgress(playerData);
+  const level = progress.level;
+  const percent = Math.round(progress.progress * 100);
+
+  if (loopXpFill) loopXpFill.style.width = `${percent}%`;
+  if (loopXpLabel)
+    loopXpLabel.textContent = `Level ${level} · ${progress.xpIntoLevel} / ${progress.levelXpNeeded} XP`;
+  if (levelMeterFill) levelMeterFill.style.width = `${percent}%`;
+  if (levelMeterLabel)
+    levelMeterLabel.textContent = `${progress.xpIntoLevel} / ${progress.levelXpNeeded} XP to next`;
+  if (levelNumber) levelNumber.textContent = level.toString();
+
+  renderGoalList(SHORT_GOALS, shortGoalsEl);
+  renderGoalList(LONG_GOALS, longGoalsEl);
+}
+
+function renderClubLeaderboard() {
+  if (!clubLeaderboardEl) return;
+  clubLeaderboardEl.innerHTML = "";
+  CLUB_LEADERBOARD.forEach((club, index) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span class="leaderboard__rank">${index + 1}</span>
+      <span class="leaderboard__name">${club.name}</span>
+      <span class="leaderboard__score">${club.points} pts</span>
+    `;
+    clubLeaderboardEl.appendChild(li);
+  });
+}
+
+function renderNotifications() {
+  if (!notificationListEl) return;
+  notificationListEl.innerHTML = "";
+  RESPECTFUL_NOTIFICATIONS.forEach((note) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <div>
+        <strong>${note.title}</strong>
+        <p class="progress-label">${note.copy}</p>
+      </div>
+      <span class="progress-label">${note.time}</span>
+    `;
+    notificationListEl.appendChild(li);
+  });
+}
+
+function renderInsights() {
+  if (!insightListEl) return;
+  const insights = playerData.insights || {};
+  const sessionLengths = insights.recentSessionLengths || [];
+  const avgSession =
+    sessionLengths.length > 0
+      ? Math.round(sessionLengths.reduce((sum, val) => sum + val, 0) / sessionLengths.length / 60000)
+      : 0;
+  const rows = [
+    { label: "Runs played", value: insights.totalRuns || 0 },
+    { label: "Sessions", value: insights.totalSessions || 0 },
+    { label: "Avg session", value: `${avgSession || 0}m` }
+  ];
+
+  insightListEl.innerHTML = "";
+  rows.forEach((row) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${row.label}</span><span class="progress-label">${row.value}</span>`;
+    insightListEl.appendChild(li);
+  });
+}
+
+function renderStreakUI() {
+  const streak = playerData.streak || { days: 0, shield: 1 };
+  if (streakLabel) streakLabel.textContent = `Streak: ${streak.days} day${streak.days === 1 ? "" : "s"}`;
+  if (streakValue) streakValue.textContent = `${streak.days} days`; 
+  if (streakNote) {
+    const shieldCopy = streak.shield > 0 ? `Streak shield remaining: ${streak.shield}` : "Shield used";
+    streakNote.textContent = `${shieldCopy}. Earn +10% XP while streaking.`;
+  }
+}
+
+function triggerCelebration({ title, copy, tag = "Goal!", duration = 1400 }) {
+  if (!celebrationOverlay) return;
+  celebrationOverlay.classList.remove("hidden");
+  celebrationTitle.textContent = title;
+  celebrationCopy.textContent = copy;
+  celebrationTag.textContent = tag;
+  window.clearTimeout(celebrationOverlay._hideTimeout);
+  celebrationOverlay._hideTimeout = window.setTimeout(() => {
+    celebrationOverlay.classList.add("hidden");
+  }, duration);
 }
 
 function generateGuestId() {
@@ -1245,6 +1428,11 @@ function startRun() {
   pauseBanner.classList.add("hidden");
   pauseMenu?.classList.add("hidden");
   resetContinueState();
+  updateStreak(playerData);
+  logSessionEvent(playerData, { sessionLengthMs: 0 });
+  renderStreakUI();
+  renderInsights();
+  savePlayerData(playerData);
   game.startRun();
   updateTouchControlsVisibility();
 }
@@ -1307,6 +1495,11 @@ function applyRunResults(payload) {
   if (payload.distance > playerData.bestDistance) {
     playerData.bestDistance = payload.distance;
   }
+  const xpEarned = Math.round(payload.distance * 0.2 + payload.goals * 35 + netCoins * 0.15);
+  const streakBonus = Math.max(1, 1 + (playerData.streak?.days || 0) * 0.02);
+  const totalXp = Math.round(xpEarned * streakBonus);
+  const { levelBefore, levelAfter } = addExperience(playerData, totalXp);
+  logRunEvent(playerData);
   updateMissionsAfterRun(playerData, {
     distance: payload.distance,
     goals: payload.goals,
@@ -1326,6 +1519,8 @@ function applyRunResults(payload) {
   savePlayerData(playerData);
   updateCoinsHeader();
   renderMissions();
+  renderProgression();
+  renderInsights();
   updateProfileUI("Progress auto-saved after the match.");
 
   const earnedCoinsNote =
@@ -1338,6 +1533,8 @@ function applyRunResults(payload) {
   goCoinsDistance.textContent = `${distanceBonus}`;
   goCoinsGoals.textContent = `${goalBonus}`;
   goCoinsTotal.textContent = `${netCoins}`;
+  if (rewardMeter) rewardMeter.style.width = `${Math.min(100, netCoins % 150)}%`;
+  if (rewardLine) rewardLine.textContent = `+${totalXp} XP · ${netCoins} coins · ${payload.goals} goals`;
 
   if (payload.distance > previousBest) {
     goBestNote.textContent = "New personal best for this device!";
@@ -1347,6 +1544,15 @@ function applyRunResults(payload) {
 
   if (earnedCoinsNote) {
     goBestNote.textContent += ` ${earnedCoinsNote}`;
+  }
+
+  if (levelAfter > levelBefore) {
+    triggerCelebration({
+      title: `Level ${levelAfter} unlocked!`,
+      copy: `New perks and rewards are ready. +${totalXp} XP added.`,
+      tag: "Level up",
+      duration: 2000
+    });
   }
 }
 
@@ -1401,7 +1607,12 @@ function handleGameState(state) {
 }
 
 function handleGameGoal() {
-  // Could hook SFX / analytics here
+  triggerCelebration({
+    title: "Net ripper!",
+    copy: "+20 XP, replay saved, and crowd roar triggered.",
+    tag: "Goal",
+    duration: 1200
+  });
 }
 
 function handleGameOver(payload) {
