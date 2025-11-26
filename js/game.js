@@ -304,6 +304,15 @@ export class Game {
 
     // Systems
     this.elapsedTime = 0;
+    this.runElapsed = 0;
+    this.sessionConfig = options.sessionConfig || {
+      key: "endless",
+      label: "Endless Run",
+      targetDurationMs: null,
+      speedScalar: 1,
+      offlineFriendly: false
+    };
+    this.sessionSpeedScalar = this.sessionConfig.speedScalar || 1;
     this.obstacles = [];
     this.pickups = [];
 
@@ -479,6 +488,8 @@ export class Game {
     this.shotReady = false;
     this.activeShot = null;
     this.resetRunStats();
+    this.elapsedTime = 0;
+    this.runElapsed = 0;
     this.player.lane = 1;
     this.player.isTackling = false;
     this.player.isJuking = false;
@@ -513,7 +524,7 @@ export class Game {
     return true;
   }
 
-  endRun() {
+  endRun(reason = "collision") {
     if (this.runState === RUN_STATE.ENDED) return;
     this.runState = RUN_STATE.ENDED;
     this.shotReady = false;
@@ -526,7 +537,10 @@ export class Game {
       distance: Math.floor(this.distance),
       coins: this.coinsThisRun,
       goals: this.goalsThisRun,
-      bestDistance: Math.floor(this.bestDistance)
+      bestDistance: Math.floor(this.bestDistance),
+      runDurationMs: Math.round(this.runElapsed * 1000),
+      sessionConfig: this.sessionConfig,
+      endReason: reason
     });
   }
 
@@ -709,6 +723,9 @@ export class Game {
     const tier = this.activeTier;
     const assist = this.assistProfile || {};
     this.elapsedTime += dt;
+    if (this.runState === RUN_STATE.RUNNING) {
+      this.runElapsed += dt;
+    }
     // Always push last known stats so HUD can show IDLE state too
     this.onStats({
       distance: Math.floor(this.distance),
@@ -719,7 +736,11 @@ export class Game {
       bestDistance: Math.floor(this.bestDistance),
       runState: this.runState,
       tierName: tier?.name,
-      tierNote: tier?.note
+      tierNote: tier?.note,
+      runDurationMs: Math.round(this.runElapsed * 1000),
+      targetDurationMs: this.sessionConfig?.targetDurationMs,
+      sessionLabel: this.sessionConfig?.label,
+      offlineFriendly: !!this.sessionConfig?.offlineFriendly
     });
 
     if (this.runState !== RUN_STATE.RUNNING) {
@@ -739,6 +760,14 @@ export class Game {
     this.distance += this.speed * dt * 0.05;
     if (this.distance > this.bestDistance) {
       this.bestDistance = this.distance;
+    }
+
+    if (
+      this.sessionConfig?.targetDurationMs &&
+      this.runElapsed * 1000 >= this.sessionConfig.targetDurationMs
+    ) {
+      this.endRun("sessionComplete");
+      return;
     }
 
     // Timers

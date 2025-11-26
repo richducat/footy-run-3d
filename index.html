@@ -109,6 +109,11 @@
                 <span class="hud-value" id="hudTierName">Kickoff Circuit</span>
                 <span class="hud-subvalue" id="hudTierNote">Opening pace</span>
               </div>
+              <div class="hud-block hud-block--session">
+                <span class="hud-label">Session</span>
+                <span class="hud-value" id="hudSessionLabel">Quick match</span>
+                <span class="hud-subvalue" id="hudSessionTimer">0:00 · 3-5m</span>
+              </div>
             </div>
             <div class="hud-group hud-group--right">
               <div class="hud-block">
@@ -133,8 +138,8 @@
               <div class="start-cta" aria-live="polite">
                 <button id="btnPlay" class="start-button" aria-label="Start run">
                   <span class="start-button__glow"></span>
-                  <span class="start-button__label">Play</span>
-                  <span class="start-button__hint">Start Run</span>
+                  <span class="start-button__label">Play faster</span>
+                  <span class="start-button__hint">3-min quick match</span>
                 </button>
               </div>
               <div class="variant-toggle" aria-live="polite">
@@ -153,6 +158,45 @@
                 <button id="btnDevCode" class="btn btn--ghost btn--small" aria-label="Enter developer code">
                   Dev code
                 </button>
+              </div>
+            </div>
+
+            <div class="session-presets" aria-label="Short session presets">
+              <div class="session-card session-card--primary">
+                <div class="session-card__header">
+                  <p class="eyebrow">2–5 minute design</p>
+                  <span class="pill pill--soft">Quick match</span>
+                </div>
+                <h3>3-minute sprint</h3>
+                <p class="session-card__copy">Short, winnable runs that bank coins and XP fast.</p>
+                <div class="session-card__footer">
+                  <button id="btnQuickSession" class="btn btn--primary">Start quick session</button>
+                  <p class="session-card__hint">Autosaves locally &amp; replays instantly.</p>
+                </div>
+              </div>
+              <div class="session-card">
+                <div class="session-card__header">
+                  <p class="eyebrow">Offline friendly</p>
+                  <span class="pill pill--soft">Training</span>
+                </div>
+                <h3>Low-connectivity drills</h3>
+                <p class="session-card__copy">Single-player practice with softer speed and no network needed.</p>
+                <div class="session-card__footer">
+                  <button id="btnOfflineDrill" class="btn btn--ghost">Launch drill</button>
+                  <p class="session-card__hint">Keeps progress on-device until you sync.</p>
+                </div>
+              </div>
+              <div class="session-card">
+                <div class="session-card__header">
+                  <p class="eyebrow">Longer stretch</p>
+                  <span class="pill pill--soft">Endless</span>
+                </div>
+                <h3>Marathon mode</h3>
+                <p class="session-card__copy">Keep running with no cap if you want a deeper session.</p>
+                <div class="session-card__footer">
+                  <button id="btnEndless" class="btn btn--ghost">Go endless</button>
+                  <p class="session-card__hint">Starts faster now, but you can bail anytime.</p>
+                </div>
               </div>
             </div>
 
@@ -611,6 +655,16 @@
               </ul>
             </div>
             <p class="stat-note" id="goBestNote"></p>
+            <div class="session-summary">
+              <div>
+                <p class="eyebrow">Session</p>
+                <p id="goSessionSummary" class="session-summary__label">Quick match</p>
+              </div>
+              <div class="session-summary__meta">
+                <span id="goSessionDuration" class="pill pill--soft">0:00</span>
+                <span id="goSessionMode" class="pill pill--ghost">Offline ready</span>
+              </div>
+            </div>
 
             <div class="panel panel--subtle continue-panel">
               <div class="continue-panel__header">
@@ -627,6 +681,8 @@
                 </button>
               </div>
             </div>
+
+            <p class="stat-note stat-note--highlight">Ready for another? Tap Play Again for an instant rematch in the same mode.</p>
 
             <div class="button-row">
               <button id="btnReplay" class="btn btn--primary">Play Again</button>
