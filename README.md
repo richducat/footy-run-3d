@@ -8,6 +8,7 @@ A lightweight HTML5 Temple Run–style soccer runner with mobile-friendly swipe 
 - Unlockable striker cards that modify speed, coin gain, and shot meter fill.
 - In-game HUD, pause, settings, squad selection, and game-over summary screens.
 - Local persistence for coins, best distance, goals, and unlocked cards.
+- V3 street-court visual that swaps stadium grass for an urban asphalt cage inspired by street football.
 
 ## Project structure
 ```

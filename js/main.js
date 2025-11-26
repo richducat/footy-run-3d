@@ -159,6 +159,7 @@ const continueCostLabel = document.getElementById("continueCostLabel");
 // Buttons
 const btnPlay = document.getElementById("btnPlay");
 const btnPlayV2 = document.getElementById("btnPlayV2");
+const btnPlayV3 = document.getElementById("btnPlayV3");
 const btnTeam = document.getElementById("btnTeam");
 const btnSettings = document.getElementById("btnSettings");
 const btnMissions = document.getElementById("btnMissions");
@@ -1696,7 +1697,8 @@ function setVisualVariant(nextVariant) {
 function updateVariantToggleUI() {
   const buttons = [
     { el: btnPlay, variant: "v1" },
-    { el: btnPlayV2, variant: "v2" }
+    { el: btnPlayV2, variant: "v2" },
+    { el: btnPlayV3, variant: "v3" }
   ];
 
   buttons.forEach(({ el, variant }) => {
@@ -2545,6 +2547,13 @@ btnPlayV2?.addEventListener("click", () => {
   activeSessionPreset = SESSION_PRESETS.quick;
   syncSessionLabels(activeSessionPreset);
   startVariantRun("v2");
+});
+
+btnPlayV3?.addEventListener("click", () => {
+  spawnTapParticles(btnPlayV3);
+  activeSessionPreset = SESSION_PRESETS.quick;
+  syncSessionLabels(activeSessionPreset);
+  startVariantRun("v3");
 });
 
 btnQuickSession?.addEventListener("click", () => {
