@@ -259,12 +259,18 @@
                 </div>
                 <span class="pill pill--soft" id="dailyResetNote">Resets daily</span>
               </div>
+              <p class="retention-note" id="dailyChallengeNote">Hard challenge rotates daily.</p>
               <div id="dailyMissions" class="mission-list"></div>
               <div class="panel__header panel__header--spaced">
                 <h3>Weekly Missions</h3>
                 <span class="pill pill--soft" id="weeklyResetNote">Resets weekly</span>
               </div>
               <div id="weeklyMissions" class="mission-list"></div>
+              <div class="panel__header panel__header--spaced">
+                <h3>Big Season Goals</h3>
+                <span class="pill pill--soft" id="journeyNote">Multi-session</span>
+              </div>
+              <div id="journeyMissions" class="mission-list"></div>
             </div>
 
             <div class="panel panel--accent" id="coreLoopPanel">
@@ -296,6 +302,33 @@
                     <div class="progress-bar__fill" id="loopXpFill"></div>
                   </div>
                   <p class="progress-label" id="loopXpLabel">Level 1 · 0 / 120 XP</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel" id="eventsPanel">
+              <div class="panel__header panel__header--spaced">
+                <div class="panel__title-with-icon">
+                  <div class="panel__icon" aria-hidden="true">🏆</div>
+                  <h3>Live Events &amp; Rewards</h3>
+                </div>
+                <span class="pill pill--soft" id="eventStatus">Limited time</span>
+              </div>
+              <div class="event-grid">
+                <div class="event-card">
+                  <p class="eyebrow">Weekend tournament</p>
+                  <h4 id="weekendEventTitle">Cup Weekend</h4>
+                  <p class="retention-note" id="weekendEventCopy">Double coins and leaderboard badge.</p>
+                </div>
+                <div class="event-card">
+                  <p class="eyebrow">Seasonal spotlight</p>
+                  <h4 id="seasonalEventTitle">World Cup Fan Fest</h4>
+                  <p class="retention-note" id="seasonalEventCopy">Time-limited drills themed to global events.</p>
+                </div>
+                <div class="event-card">
+                  <p class="eyebrow">Event-only cosmetics</p>
+                  <h4 id="eventCosmeticTitle">Champions Glow Kit</h4>
+                  <p class="retention-note" id="eventCosmeticCopy">Earn boots and balls you can’t buy elsewhere.</p>
                 </div>
               </div>
             </div>
@@ -379,6 +412,11 @@
                   <p class="eyebrow">Weekly questline</p>
                   <p class="retention-value" id="weeklySet">Play 10 · Score 20 · Win 5</p>
                   <p class="retention-note">Complete to claim a neon reward chest.</p>
+                </div>
+                <div class="retention-card">
+                  <p class="eyebrow">Live events</p>
+                  <p class="retention-value" id="eventTicker">Weekend Cup</p>
+                  <p class="retention-note" id="eventNote">Limited-time tournaments and seasonal drops.</p>
                 </div>
               </div>
             </div>

@@ -21,6 +21,7 @@ import {
   addExperience,
   getLevelProgress,
   updateStreak,
+  getStreakBonuses,
   logSessionEvent,
   logRunEvent,
   ensureGoalProgress,
@@ -191,8 +192,22 @@ const CARD_PIXEL_PALETTES = {
 // Missions
 const dailyMissionsEl = document.getElementById("dailyMissions");
 const weeklyMissionsEl = document.getElementById("weeklyMissions");
+const journeyMissionsEl = document.getElementById("journeyMissions");
 const missionsPanel = document.getElementById("missionsPanel");
 const missionsIcon = document.getElementById("missionsIcon");
+const dailyChallengeNote = document.getElementById("dailyChallengeNote");
+const journeyNote = document.getElementById("journeyNote");
+const dailySet = document.getElementById("dailySet");
+const weeklySet = document.getElementById("weeklySet");
+const eventTicker = document.getElementById("eventTicker");
+const eventNote = document.getElementById("eventNote");
+const eventStatus = document.getElementById("eventStatus");
+const weekendEventTitle = document.getElementById("weekendEventTitle");
+const weekendEventCopy = document.getElementById("weekendEventCopy");
+const seasonalEventTitle = document.getElementById("seasonalEventTitle");
+const seasonalEventCopy = document.getElementById("seasonalEventCopy");
+const eventCosmeticTitle = document.getElementById("eventCosmeticTitle");
+const eventCosmeticCopy = document.getElementById("eventCosmeticCopy");
 
 const activePressables = new Set();
 
@@ -361,6 +376,46 @@ const RESPECTFUL_NOTIFICATIONS = [
     type: "event"
   }
 ];
+
+const SEASONAL_EVENTS = [
+  {
+    name: "Champions League Nights",
+    months: [2, 3, 4],
+    window: "Spring",
+    copy: "Evening fixtures with extra keeper freezes.",
+    cosmetic: "Champions Glow Kit",
+    cosmeticCopy: "Unlock neon-trim boots for scoring 5 goals in a run."
+  },
+  {
+    name: "World Cup Fan Fest",
+    months: [5, 6],
+    window: "Summer",
+    copy: "Flag-themed drills and national anthems.",
+    cosmetic: "Flag Wave Boots",
+    cosmeticCopy: "Score 3 matches during the fest to earn animated laces."
+  },
+  {
+    name: "Holiday Frostbite",
+    months: [11, 0],
+    window: "Winter",
+    copy: "Snowball obstacles and frosted pitches.",
+    cosmetic: "Frosted Ball Trail",
+    cosmeticCopy: "Finish 4 runs to claim the icy ball effect."
+  }
+];
+
+function isWeekend(now = new Date()) {
+  const day = now.getDay();
+  return day === 6 || day === 0;
+}
+
+function getSeasonalEvent(now = new Date()) {
+  const month = now.getMonth();
+  const active =
+    SEASONAL_EVENTS.find((event) => event.months.includes(month)) ||
+    SEASONAL_EVENTS[0];
+  return { ...active, isLive: active.months.includes(month) };
+}
 
 let missionHasClaimable = false;
 let missionCelebrateTimeout = null;
@@ -662,12 +717,68 @@ function renderInsights() {
 
 function renderStreakUI() {
   const streak = playerData.streak || { days: 0, shield: 1 };
-  if (streakLabel) streakLabel.textContent = `Streak: ${streak.days} day${streak.days === 1 ? "" : "s"}`;
-  if (streakValue) streakValue.textContent = `${streak.days} days`; 
+  const bonuses = getStreakBonuses(streak);
+  const xpPercent = Math.round((bonuses.xpBonus - 1) * 100);
+  const coinPercent = Math.round((bonuses.coinBonus - 1) * 100);
+
+  if (streakLabel)
+    streakLabel.textContent = `Streak: ${streak.days} day${streak.days === 1 ? "" : "s"}`;
+  if (streakValue)
+    streakValue.textContent = `${streak.days} days · +${xpPercent}% XP · +${coinPercent}% coins`;
   if (streakNote) {
-    const shieldCopy = streak.shield > 0 ? `Streak shield remaining: ${streak.shield}` : "Shield used";
-    streakNote.textContent = `${shieldCopy}. Earn +10% XP while streaking.`;
+    const shieldCopy = bonuses.shield > 0 ? `Streak shield ready: ${bonuses.shield}` : "Grace used";
+    streakNote.textContent = `${shieldCopy}. Missing a day uses the shield, then restarts at 1 day.`;
   }
+}
+
+function updateMissionSummaries(dailyMissions, weeklyMissions, journeyMissions) {
+  if (dailySet && dailyMissions.length) {
+    dailySet.textContent = dailyMissions.map((m) => m.name).slice(0, 3).join(" · ");
+  }
+  if (weeklySet && weeklyMissions.length) {
+    weeklySet.textContent = weeklyMissions.map((m) => m.name).slice(0, 3).join(" · ");
+  }
+  if (dailyChallengeNote) {
+    const hardMission = dailyMissions.find((m) => m.difficulty === "hard") || dailyMissions[dailyMissions.length - 1];
+    dailyChallengeNote.textContent = hardMission
+      ? `Daily challenge (${hardMission.difficulty || "hard"}): ${hardMission.name}`
+      : "Hard challenge rotates daily.";
+  }
+  if (journeyNote && journeyMissions.length) {
+    const remaining = journeyMissions.filter((m) => !m.claimed).length;
+    journeyNote.textContent = `${remaining} big goals that stack across sessions`;
+  }
+}
+
+function renderEvents() {
+  const now = new Date();
+  const seasonal = getSeasonalEvent(now);
+  const weekendLive = isWeekend(now);
+
+  if (weekendEventTitle) {
+    weekendEventTitle.textContent = weekendLive ? "Weekend Cup (Live)" : "Weekend Cup (Sat-Sun)";
+  }
+  if (weekendEventCopy) {
+    weekendEventCopy.textContent = weekendLive
+      ? "Daily attempts, double coins, and a leaderboard badge until Monday."
+      : "Qualify Friday to get a grace-day shield and bonus training XP.";
+  }
+  if (seasonalEventTitle) {
+    seasonalEventTitle.textContent = seasonal.isLive
+      ? `${seasonal.name} (Live)`
+      : `${seasonal.name} (${seasonal.window})`;
+  }
+  if (seasonalEventCopy) seasonalEventCopy.textContent = seasonal.copy;
+  if (eventCosmeticTitle) eventCosmeticTitle.textContent = seasonal.cosmetic;
+  if (eventCosmeticCopy) eventCosmeticCopy.textContent = seasonal.cosmeticCopy;
+
+  const tickerText = weekendLive ? "Weekend Cup live" : `${seasonal.name} ${seasonal.isLive ? "live" : "next"}`;
+  if (eventTicker) eventTicker.textContent = tickerText;
+  if (eventNote)
+    eventNote.textContent = weekendLive
+      ? "Weekend leaderboard + coin boost active."
+      : `Seasonal drops ${seasonal.isLive ? "active" : "arrive"} ${seasonal.window}.`;
+  if (eventStatus) eventStatus.textContent = weekendLive || seasonal.isLive ? "Live now" : "Upcoming";
 }
 
 function triggerCelebration({ title, copy, tag = "Goal!", duration = 1400 }) {
@@ -1563,7 +1674,20 @@ function renderMissionList(container, missions, cadence) {
     const reward = document.createElement("span");
     reward.className = "mission-card__reward pill pill--soft";
     reward.textContent = `+${mission.reward} coins`;
+    const tags = document.createElement("div");
+    tags.className = "mission-card__tags";
+    const cadenceTag = document.createElement("span");
+    cadenceTag.className = "pill pill--soft mission-card__tag";
+    cadenceTag.textContent = cadence === "daily" ? "Daily" : cadence === "weekly" ? "Weekly" : "Journey";
+    tags.appendChild(cadenceTag);
+    if (mission.difficulty) {
+      const diffTag = document.createElement("span");
+      diffTag.className = `pill pill--soft mission-card__tag mission-card__tag--${mission.difficulty}`;
+      diffTag.textContent = mission.difficulty;
+      tags.appendChild(diffTag);
+    }
     header.appendChild(title);
+    header.appendChild(tags);
     header.appendChild(reward);
 
     const desc = document.createElement("p");
@@ -1629,15 +1753,27 @@ function renderMissions() {
     playerData.missions.weekly?.missions || [],
     "weekly"
   );
+  renderMissionList(
+    journeyMissionsEl,
+    playerData.missions.journey?.missions || [],
+    "journey"
+  );
 
   const allMissions = [
     ...(playerData.missions.daily?.missions || []),
-    ...(playerData.missions.weekly?.missions || [])
+    ...(playerData.missions.weekly?.missions || []),
+    ...(playerData.missions.journey?.missions || [])
   ];
   const hasClaimableMission = allMissions.some(
     (mission) => mission.progress >= mission.goal && !mission.claimed
   );
   updateMissionCelebrationState(hasClaimableMission);
+
+  updateMissionSummaries(
+    playerData.missions.daily?.missions || [],
+    playerData.missions.weekly?.missions || [],
+    playerData.missions.journey?.missions || []
+  );
 }
 
 function startVariantRun(variant) {
@@ -1702,7 +1838,9 @@ function calculateRunCoins(payload) {
   const distanceBonus = Math.floor(payload.distance / 20);
   const goalBonus = payload.goals * 20;
   const runCoins = payload.coins + distanceBonus + goalBonus;
-  return { runCoins, distanceBonus, goalBonus };
+  const bonuses = getStreakBonuses(playerData.streak || {});
+  const boostedCoins = Math.round(runCoins * bonuses.coinBonus);
+  return { runCoins: boostedCoins, distanceBonus, goalBonus, coinBonus: bonuses.coinBonus };
 }
 
 function getAvailableTokensForContinue(runCoins) {
@@ -1711,7 +1849,7 @@ function getAvailableTokensForContinue(runCoins) {
 }
 
 function applyRunResults(payload) {
-  const { runCoins, distanceBonus, goalBonus } = calculateRunCoins(payload);
+  const { runCoins, distanceBonus, goalBonus, coinBonus } = calculateRunCoins(payload);
   const netCoins = Math.max(0, runCoins - continueSpendTotal);
   const previousBest = playerData.bestDistance;
 
@@ -1720,9 +1858,9 @@ function applyRunResults(payload) {
   if (payload.distance > playerData.bestDistance) {
     playerData.bestDistance = payload.distance;
   }
+  const streakBonuses = getStreakBonuses(playerData.streak || {});
   const xpEarned = Math.round(payload.distance * 0.2 + payload.goals * 35 + netCoins * 0.15);
-  const streakBonus = Math.max(1, 1 + (playerData.streak?.days || 0) * 0.02);
-  const totalXp = Math.round(xpEarned * streakBonus);
+  const totalXp = Math.round(xpEarned * streakBonuses.xpBonus);
   const { levelBefore, levelAfter } = addExperience(playerData, totalXp);
   logRunEvent(playerData);
   updateMissionsAfterRun(playerData, {
@@ -1761,6 +1899,7 @@ function applyRunResults(payload) {
     continueSpendTotal > 0
       ? `Earned ${netCoins} tokens after spending ${continueSpendTotal} to continue.`
       : "";
+  const streakCoinBonus = Math.round((coinBonus - 1) * 100);
 
   goCoins.textContent = `${netCoins}`;
   goCoinsInRun.textContent = `${payload.coins}`;
@@ -1776,8 +1915,11 @@ function applyRunResults(payload) {
     goBestNote.textContent = `Best distance so far: ${playerData.bestDistance} m`;
   }
 
+  const streakCoinCopy = streakCoinBonus > 0 ? ` +${streakCoinBonus}% streak coin boost.` : "";
   if (earnedCoinsNote) {
-    goBestNote.textContent += ` ${earnedCoinsNote}`;
+    goBestNote.textContent += ` ${earnedCoinsNote}${streakCoinCopy}`;
+  } else if (streakCoinBonus > 0) {
+    goBestNote.textContent += streakCoinCopy;
   }
 
   if (levelAfter > levelBefore) {
@@ -1791,7 +1933,7 @@ function applyRunResults(payload) {
 }
 
 function updateGameOverUI(payload) {
-  const { runCoins, distanceBonus, goalBonus } = calculateRunCoins(payload);
+  const { runCoins, distanceBonus, goalBonus, coinBonus } = calculateRunCoins(payload);
   const netCoins = Math.max(0, runCoins - continueSpendTotal);
   const projectedBest = Math.max(playerData.bestDistance, payload.distance);
   const availableTokens = getAvailableTokensForContinue(runCoins);
@@ -1815,9 +1957,11 @@ function updateGameOverUI(payload) {
   btnContinue.textContent = `Continue for ${tokenLabel}`;
   const canAfford = availableTokens >= continueCost;
   btnContinue.disabled = !canAfford;
+  const streakCoinBonus = Math.round((coinBonus - 1) * 100);
+  const streakCopy = streakCoinBonus > 0 ? ` (+${streakCoinBonus}% streak coins active)` : "";
   goContinueNote.textContent = canAfford
-    ? `You can spend tokens to keep this run going. Cost increases by 10 each time you continue.`
-    : `You need ${continueCost - availableTokens} more tokens to continue this run.`;
+    ? `You can spend tokens to keep this run going. Cost increases by 10 each time you continue${streakCopy}.`
+    : `You need ${continueCost - availableTokens} more tokens to continue this run${streakCopy}.`;
 }
 
 function handleGameStats(stats) {
@@ -2211,6 +2355,7 @@ buildGameInstance();
 updateVariantToggleUI();
 renderTeamScreen();
 renderMissions();
+renderEvents();
 setActiveScreen("mainMenu");
 closeAuthSheet();
 updateProfileUI();
