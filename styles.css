@@ -520,10 +520,13 @@ canvas {
   display: block;
 }
 
+
 .hud-v3 {
   position: absolute;
-  inset: 0;
-  padding: 12px;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 8px;
   pointer-events: none;
   color: #e7ecf5;
   z-index: 2;
@@ -531,26 +534,32 @@ canvas {
 
 .hud-v3__row {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
   align-items: stretch;
 }
 
 .hud-v3__scorecard {
-  flex: 1;
-  padding: 12px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(18, 25, 40, 0.9), rgba(28, 37, 56, 0.8));
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
-  pointer-events: auto;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(8, 14, 26, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .hud-v3__scoreline {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .hud-v3__club {
@@ -574,24 +583,25 @@ canvas {
 .hud-v3__club-name {
   font-size: 18px;
   font-weight: 800;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
 }
 
 .hud-v3__scorebox {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: linear-gradient(145deg, rgba(34, 182, 152, 0.25), rgba(80, 203, 255, 0.2));
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(24, 37, 62, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .hud-v3__score {
-  font-size: 32px;
+  font-size: 26px;
   font-weight: 900;
   line-height: 1;
-  text-shadow: 0 0 12px rgba(80, 203, 255, 0.4);
+  text-shadow: 0 0 8px rgba(80, 203, 255, 0.4);
 }
 
 .hud-v3__score--muted {
@@ -605,15 +615,15 @@ canvas {
 }
 
 .hud-v3__note {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 12px;
   color: rgba(231, 236, 245, 0.82);
 }
 
 .hud-v3__meter {
   position: relative;
-  margin-top: 10px;
-  height: 16px;
+  margin-top: 6px;
+  height: 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
@@ -627,7 +637,7 @@ canvas {
   height: 100%;
   width: 18%;
   background: linear-gradient(90deg, #0af5c3, #5ed4ff);
-  box-shadow: 0 0 14px rgba(94, 212, 255, 0.6);
+  box-shadow: 0 0 10px rgba(94, 212, 255, 0.5);
   transition: width 160ms ease;
 }
 
@@ -636,25 +646,25 @@ canvas {
   inset: 0;
   display: grid;
   place-items: center;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  text-shadow: 0 0 12px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 .hud-v3__stats {
-  width: 240px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 6px;
+  width: 100%;
 }
 
 .hud-v3__stat {
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: linear-gradient(145deg, rgba(18, 25, 40, 0.92), rgba(18, 25, 40, 0.7));
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(10, 16, 28, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.36);
-  pointer-events: auto;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
 }
 
 .hud-v3__stat-label {
@@ -666,7 +676,7 @@ canvas {
 }
 
 .hud-v3__stat-value {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   display: block;
   margin-top: 4px;
@@ -686,7 +696,35 @@ canvas {
 
 .hud-v3__stat--super {
   border: 1px solid rgba(250, 140, 92, 0.6);
-  background: linear-gradient(145deg, rgba(42, 23, 12, 0.82), rgba(18, 25, 40, 0.78));
+  background: linear-gradient(145deg, rgba(42, 23, 12, 0.7), rgba(18, 25, 40, 0.62));
+}
+
+@media (max-width: 700px) {
+  .hud-v3 {
+    padding: 6px;
+  }
+
+  .hud-v3__scorecard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 6px;
+  }
+
+  .hud-v3__scoreline {
+    width: 100%;
+  }
+
+  .hud-v3__note,
+  .hud-v3__meter {
+    display: none;
+  }
+
+  .hud-v3__stats {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .hud-v3__stat {
+    padding: 7px 9px;
+  }
 }
 
 .hud-v3__stat--super-active {
