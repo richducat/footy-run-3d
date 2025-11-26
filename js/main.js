@@ -59,6 +59,14 @@ const skillPathLabel = document.getElementById("skillPathLabel");
 const skillPointLabel = document.getElementById("skillPointLabel");
 const skillPathButtons = document.querySelectorAll("[data-skill-path]");
 const clubLeaderboardEl = document.getElementById("clubLeaderboard");
+const clubStatusEl = document.getElementById("clubStatus");
+const globalLeaderboardEl = document.getElementById("globalLeaderboard");
+const friendLeaderboardEl = document.getElementById("friendLeaderboard");
+const localLeaderboardEl = document.getElementById("localLeaderboard");
+const tierLeaderboardEl = document.getElementById("tierLeaderboard");
+const coopGoalListEl = document.getElementById("coopGoalList");
+const pvpListEl = document.getElementById("pvpList");
+const shareListEl = document.getElementById("shareList");
 const insightListEl = document.getElementById("insightList");
 const notificationListEl = document.getElementById("notificationList");
 const streakLabel = document.getElementById("streakLabel");
@@ -349,11 +357,85 @@ function buildGoalBuckets() {
   return { shortGoals, midGoals, longGoals, unlockRows };
 }
 
+const CLUB_PROFILE = {
+  name: "Neon Strikers",
+  league: "Gold League",
+  contribution: 320,
+  weeklyNote: "Bonus chest unlocks in 3d",
+  squadNote: "Training sprints raise your club meter."
+};
+
 const CLUB_LEADERBOARD = [
-  { name: "Neon Strikers", points: 1240 },
-  { name: "Volley Crew", points: 1180 },
-  { name: "Pixel Ultras", points: 1025 },
-  { name: "Touchline Tribe", points: 940 }
+  { name: "Neon Strikers", points: 1240, members: 18, momentum: "+120 today", tier: "Gold", isPlayerClub: true },
+  { name: "Volley Crew", points: 1180, members: 16, momentum: "+90 today", tier: "Silver" },
+  { name: "Pixel Ultras", points: 1025, members: 19, momentum: "+70 today", tier: "Silver" },
+  { name: "Touchline Tribe", points: 940, members: 15, momentum: "+60 today", tier: "Bronze" }
+];
+
+const GLOBAL_LEADERBOARD = [
+  { name: "Kai", score: "2,440m", note: "Kickoff Circuit" },
+  { name: "Nova", score: "2,120m", note: "Elite ghost runner" },
+  { name: "You", score: "1,980m", note: "Gold tier" },
+  { name: "Rami", score: "1,940m", note: "Weekend Cup" }
+];
+
+const FRIEND_LEADERBOARD = [
+  { name: "You", score: "1,980m", note: "+2 wins vs. crew" },
+  { name: "Sasha", score: "1,550m", note: "Ghost replay available" },
+  { name: "Leo", score: "1,320m", note: "Training streak" },
+  { name: "Mina", score: "1,080m", note: "Co-op assist boost" }
+];
+
+const LOCAL_LEADERBOARD = [
+  { name: "Borough Ballers", score: "1,760m", note: "Local region" },
+  { name: "Harbor Runners", score: "1,640m", note: "+85 today" },
+  { name: "Skyline FC", score: "1,430m", note: "Night session" },
+  { name: "Streetlights 5", score: "1,280m", note: "Drill specialists" }
+];
+
+const TIER_LEADERBOARD = [
+  { name: "Gold League", score: "1,200 - 2,200 pts", note: "Top flight · live promotion", tag: "You: Rank 14" },
+  { name: "Silver League", score: "650 - 1,199 pts", note: "Balanced pace · friend races" },
+  { name: "Bronze League", score: "0 - 649 pts", note: "Onboarding bracket · no whales" }
+];
+
+const COOP_GOALS = [
+  {
+    name: "Score 1,000 goals this week",
+    description: "As a club, fill the net to trigger the mega chest.",
+    progress: 620,
+    target: 1000,
+    reward: "Epic club chest",
+    contributors: 18
+  },
+  {
+    name: "Complete 45 training drills",
+    description: "Short sessions still move the club meter forward.",
+    progress: 28,
+    target: 45,
+    reward: "Skill point bundle",
+    contributors: 12
+  },
+  {
+    name: "Log 200 assists with friends",
+    description: "Pass to your crew to keep the friend feed buzzing.",
+    progress: 154,
+    target: 200,
+    reward: "Friend feed spotlight",
+    contributors: 21
+  }
+];
+
+const PVP_QUEUES = [
+  { name: "Live Arena", score: "Avg queue 0:22", note: "Real-time head-to-head with mirrored kits" },
+  { name: "Ghost Clash", score: "Beat Sasha's 1,550m", note: "Async replays with fair matchmaking" },
+  { name: "Penalty Duels", score: "Best streak: 7", note: "Quick-fire PK battles for coins" }
+];
+
+const SHAREABLE_MOMENTS = [
+  { name: "Auto clips", score: "Goal lasers & nutmegs", note: "One tap to drop in chat or socials" },
+  { name: "Squad stories", score: "Weekly recap reel", note: "Top goals, fails, and MVP drills" },
+  { name: "Hype stickers", score: "Rally emotes", note: "Ping your club when you're on streak" }
 ];
 
 const RESPECTFUL_NOTIFICATIONS = [
@@ -446,6 +528,11 @@ savePlayerData(playerData);
 updateCoinsHeader();
 renderProgression();
 renderClubLeaderboard();
+renderLeaderboards();
+renderTierLeaderboard();
+renderCoopGoals();
+renderPvPQueues();
+renderShareableMoments();
 renderNotifications();
 renderInsights();
 renderStreakUI();
@@ -664,17 +751,84 @@ function setSkillPath(path) {
 }
 
 function renderClubLeaderboard() {
+  if (clubStatusEl && CLUB_PROFILE) {
+    const contribution = CLUB_PROFILE.contribution ? ` · +${CLUB_PROFILE.contribution} pts from you` : "";
+    clubStatusEl.textContent = `${CLUB_PROFILE.name} · ${CLUB_PROFILE.league}${contribution}`;
+    clubStatusEl.title = `${CLUB_PROFILE.weeklyNote} ${CLUB_PROFILE.squadNote}`;
+  }
+
   if (!clubLeaderboardEl) return;
   clubLeaderboardEl.innerHTML = "";
   CLUB_LEADERBOARD.forEach((club, index) => {
     const li = document.createElement("li");
     li.innerHTML = `
-      <span class="leaderboard__rank">${index + 1}</span>
-      <span class="leaderboard__name">${club.name}</span>
+      <div>
+        <span class="leaderboard__rank">${index + 1}</span>
+        <span class="leaderboard__name">${club.name}</span>
+        ${club.isPlayerClub ? '<span class="pill pill--tiny">Your club</span>' : ""}
+        <p class="progress-label">${club.tier} · ${club.members} members · ${club.momentum}</p>
+      </div>
       <span class="leaderboard__score">${club.points} pts</span>
     `;
     clubLeaderboardEl.appendChild(li);
   });
+}
+
+function renderLeaderboardList(targetEl, rows) {
+  if (!targetEl) return;
+  targetEl.innerHTML = "";
+  rows.forEach((row, index) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <div>
+        <span class="leaderboard__rank">${index + 1}</span>
+        <span class="leaderboard__name">${row.name}</span>
+        ${row.tag ? `<span class="pill pill--tiny">${row.tag}</span>` : ""}
+        <p class="progress-label">${row.note || ""}</p>
+      </div>
+      <span class="leaderboard__score">${row.score || ""}</span>
+    `;
+    targetEl.appendChild(li);
+  });
+}
+
+function renderLeaderboards() {
+  renderLeaderboardList(globalLeaderboardEl, GLOBAL_LEADERBOARD);
+  renderLeaderboardList(friendLeaderboardEl, FRIEND_LEADERBOARD);
+  renderLeaderboardList(localLeaderboardEl, LOCAL_LEADERBOARD);
+}
+
+function renderTierLeaderboard() {
+  renderLeaderboardList(tierLeaderboardEl, TIER_LEADERBOARD);
+}
+
+function renderCoopGoals() {
+  if (!coopGoalListEl) return;
+  coopGoalListEl.innerHTML = "";
+  COOP_GOALS.forEach((goal) => {
+    const progress = Math.min(1, (goal.progress || 0) / (goal.target || 1));
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <div>
+        <div class="goal-list__label">${goal.name}</div>
+        <p class="progress-label">${goal.description}</p>
+        <p class="progress-label">${goal.contributors} contributors · Reward: ${goal.reward}</p>
+        <div class="progress-bar">
+          <div class="progress-bar__fill" style="width: ${Math.round(progress * 100)}%"></div>
+        </div>
+      </div>
+      <span class="pill pill--soft">${goal.progress}/${goal.target}</span>
+    `;
+    coopGoalListEl.appendChild(li);
+  });
+}
+
+function renderPvPQueues() {
+  renderLeaderboardList(pvpListEl, PVP_QUEUES);
+}
+
+function renderShareableMoments() {
+  renderLeaderboardList(shareListEl, SHAREABLE_MOMENTS);
 }
 
 function renderNotifications() {
