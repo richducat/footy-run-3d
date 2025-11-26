@@ -91,6 +91,21 @@ const hudV2Coins = document.getElementById("hudV2Coins");
 const hudV2Score = document.getElementById("hudV2Score");
 const hudV2Multiplier = document.getElementById("hudV2Multiplier");
 const hudV2Lives = document.getElementById("hudV2Lives");
+const hudV3 = document.getElementById("hudV3");
+const hudV3Distance = document.getElementById("hudV3Distance");
+const hudV3Dodged = document.getElementById("hudV3Dodged");
+const hudV3Balls = document.getElementById("hudV3Balls");
+const hudV3BallSteals = document.getElementById("hudV3BallSteals");
+const hudV3TeamName = document.getElementById("hudV3TeamName");
+const hudV3OpponentName = document.getElementById("hudV3OpponentName");
+const hudV3TeamScore = document.getElementById("hudV3TeamScore");
+const hudV3OpponentScore = document.getElementById("hudV3OpponentScore");
+const hudV3HypeFill = document.getElementById("hudV3HypeFill");
+const hudV3HypeLabel = document.getElementById("hudV3HypeLabel");
+const hudV3SlideTackles = document.getElementById("hudV3SlideTackles");
+const hudV3SuperTimer = document.getElementById("hudV3SuperTimer");
+const hudV3SuperCard = document.getElementById("hudV3SuperCard");
+const hudV3Regulation = document.getElementById("hudV3Regulation");
 const btnPauseV2 = document.getElementById("btnPauseV2");
 const shotMeterFill = document.getElementById("shotMeterFill");
 const pauseBanner = document.getElementById("pauseBanner");
@@ -642,9 +657,11 @@ function setActiveScreen(id) {
 function syncHudVisibility() {
   const inRun = currentScreenId === null;
   const isV2 = visualVariant === "v2";
+  const isV3 = visualVariant === "v3";
 
-  hudEl.classList.toggle("hidden", !inRun || isV2);
+  hudEl.classList.toggle("hidden", !inRun || isV2 || isV3);
   hudV2?.classList.toggle("hidden", !inRun || !isV2);
+  hudV3?.classList.toggle("hidden", !inRun || !isV3);
 }
 
 function focusMissionsPanel() {
@@ -1668,6 +1685,8 @@ function buildGameInstance() {
     perks,
     tuning,
     assistProfile,
+    teamName: CLUB_PROFILE?.name,
+    opponentName: "MLS Select XI",
     bestDistance: playerData.bestDistance,
     pixelRatio: renderScale,
     logicalWidth,
@@ -2445,6 +2464,34 @@ function handleGameStats(stats) {
     const lives = stats.lives ?? 3;
     hudV2Lives.textContent = `${lives}`;
   }
+
+  if (hudV3Distance) hudV3Distance.textContent = `${stats.distance} m`;
+  if (hudV3Dodged) hudV3Dodged.textContent = `${stats.opponentsDodged ?? 0}`;
+  if (hudV3Balls) hudV3Balls.textContent = `${stats.ballsCollected ?? 0}`;
+  if (hudV3BallSteals) hudV3BallSteals.textContent = `${stats.ballSteals ?? 0}`;
+  if (hudV3TeamName) hudV3TeamName.textContent = stats.teamName || "Club";
+  if (hudV3OpponentName) hudV3OpponentName.textContent = stats.opponentName || "MLS XI";
+  if (hudV3TeamScore) hudV3TeamScore.textContent = `${stats.teamScore ?? 0}`;
+  if (hudV3OpponentScore) hudV3OpponentScore.textContent = "0";
+  if (hudV3Regulation && stats.regulation) hudV3Regulation.textContent = stats.regulation;
+
+  const hypeValue = Math.max(0, Math.min(100, stats.hype ?? 0));
+  if (hudV3HypeFill) hudV3HypeFill.style.width = `${hypeValue}%`;
+  if (hudV3HypeLabel)
+    hudV3HypeLabel.textContent = `Hype ${hypeValue}% · supporters in full voice`;
+
+  const tackles = stats.slideTackles ?? 0;
+  const streak = stats.slideTackleStreak ?? 0;
+  const streakRemainder = streak % 5;
+  const remainingForSuper = streakRemainder === 0 ? 5 : Math.max(0, 5 - streakRemainder);
+  if (hudV3SlideTackles) hudV3SlideTackles.textContent = `${tackles}`;
+  if (hudV3SuperTimer) {
+    hudV3SuperTimer.textContent = stats.superActive
+      ? `Super active · ${stats.superTime?.toFixed?.(1) || stats.superTime}s`
+      : `Super after ${remainingForSuper} more clean tackles`;
+  }
+  if (hudV3SuperCard)
+    hudV3SuperCard.classList.toggle("hud-v3__stat--super-active", !!stats.superActive);
 }
 
 function handleGameState(state) {
