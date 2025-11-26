@@ -92,6 +92,8 @@
       <div class="game-shell">
         <canvas id="gameCanvas" width="540" height="960"></canvas>
 
+        <div id="commentary-display" class="commentary-display" aria-live="polite"></div>
+
         <!-- HUD (in-game overlay) -->
         <div id="hud" class="hud hidden">
           <div class="hud-row">
@@ -770,6 +772,12 @@
                 <span class="stat-value" id="goCoins">0</span>
               </div>
             </div>
+            <div class="market-value-card">
+              <p class="pill pill--soft">Transfer buzz</p>
+              <p id="marketValueLabel" class="market-value-card__value">£0</p>
+              <p id="marketRankLabel" class="market-value-card__rank">Sunday League Amateur</p>
+              <p id="marketValueNote" class="market-value-card__note">Based on distance, goals, and coins.</p>
+            </div>
             <div class="panel panel--subtle">
               <div class="panel__header panel__header--compact">
                 <h3>Coin Breakdown</h3>
@@ -791,6 +799,18 @@
                 <span id="goSessionDuration" class="pill pill--soft">0:00</span>
                 <span id="goSessionMode" class="pill pill--ghost">Offline ready</span>
               </div>
+            </div>
+
+            <div class="panel panel--subtle share-card-panel">
+              <div class="share-card-panel__header">
+                <div>
+                  <p class="pill pill--soft">Social ready</p>
+                  <h3>Viral transfer card</h3>
+                  <p class="stat-note">Turn your market value into a shareable contract graphic.</p>
+                </div>
+                <button id="btnShareCard" class="btn btn--primary btn--small">Share contract</button>
+              </div>
+              <div id="share-card-container" class="share-card-container" aria-live="polite"></div>
             </div>
 
             <div class="panel panel--subtle continue-panel">
