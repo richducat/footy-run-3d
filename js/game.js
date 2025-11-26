@@ -332,14 +332,7 @@ export class Game {
     // Systems
     this.elapsedTime = 0;
     this.runElapsed = 0;
-    this.sessionConfig = options.sessionConfig || {
-      key: "endless",
-      label: "Endless Run",
-      targetDurationMs: null,
-      speedScalar: 1,
-      offlineFriendly: false
-    };
-    this.sessionSpeedScalar = this.sessionConfig.speedScalar || 1;
+    this.setSessionConfig(options.sessionConfig);
     this.obstacles = [];
     this.pickups = [];
 
@@ -498,6 +491,19 @@ export class Game {
     }
 
     this.palette = { ...this.basePalette };
+  }
+
+  setSessionConfig(config) {
+    const fallback = {
+      key: "endless",
+      label: "Endless Run",
+      targetDurationMs: null,
+      speedScalar: 1,
+      offlineFriendly: false
+    };
+
+    this.sessionConfig = { ...fallback, ...(config || {}) };
+    this.sessionSpeedScalar = this.sessionConfig.speedScalar || 1;
   }
 
   createLayer(drawFn) {
@@ -919,6 +925,7 @@ export class Game {
       (this.baseSpeed + this.distance * (tier?.speedRamp ?? 0.45)) *
       (tier?.speedMultiplier ?? 1) *
       (assist.speedScale || 1) *
+      this.sessionSpeedScalar *
       (superActive ? 1.08 : 1);
     this.speed = base * this.speedMultiplier;
 
