@@ -928,6 +928,7 @@ canvas {
   pointer-events: none;
   transition: opacity 0.2s ease-out;
   background: radial-gradient(circle at top, rgba(5, 30, 20, 0.9), rgba(2, 3, 10, 0.9));
+  z-index: 3;
 }
 
 .screen--active {
