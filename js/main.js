@@ -3171,7 +3171,13 @@ function loop(timestamp) {
 document.addEventListener(
   "touchmove",
   (event) => {
-    event.preventDefault();
+    const isInGameShell = event.target?.closest?.(".game-shell");
+    const inRun = currentScreenId === null;
+
+    // Only block touch scrolling while actively running to keep swipes snappy.
+    if (isInGameShell && inRun) {
+      event.preventDefault();
+    }
   },
   { passive: false }
 );
