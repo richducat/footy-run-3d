@@ -738,17 +738,43 @@ let renderScale = 1;
 let logicalWidth = canvas?.width || 540;
 let logicalHeight = canvas?.height || 960;
 
-function calibrateCanvasResolution() {
+function getViewportDimensions() {
+  let width = window.innerWidth;
+  let height = window.innerHeight;
+
+  if (window.visualViewport) {
+    width = window.visualViewport.width;
+    height = window.visualViewport.height;
+  }
+
+  return { width, height };
+}
+
+function resizeRendererToDisplaySize() {
   if (!canvas) return;
 
+  const { width, height } = getViewportDimensions();
   const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 3);
-  const rect = canvas.getBoundingClientRect();
-  logicalWidth = Math.round(rect.width || canvas.width || logicalWidth);
-  logicalHeight = Math.round(rect.height || canvas.height || logicalHeight);
+
   renderScale = dpr;
+  logicalWidth = Math.round(width);
+  logicalHeight = Math.round(height);
+
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
 
   canvas.width = Math.round(logicalWidth * renderScale);
   canvas.height = Math.round(logicalHeight * renderScale);
+
+  document.documentElement.style.setProperty("--app-height", `${height}px`);
+
+  if (game?.resize) {
+    game.resize(logicalWidth, logicalHeight, renderScale);
+  }
+}
+
+function calibrateCanvasResolution() {
+  resizeRendererToDisplaySize();
 }
 ensureGuestProfile();
 updateStreak(playerData);
@@ -773,6 +799,10 @@ let continueSpendTotal = 0;
 let pendingGameOverPayload = null;
 let visualVariant = "v1";
 let sessionStartTime = null;
+
+window.addEventListener("resize", () => setTimeout(resizeRendererToDisplaySize, 100));
+window.addEventListener("orientationchange", () => setTimeout(resizeRendererToDisplaySize, 200));
+window.visualViewport?.addEventListener("resize", resizeRendererToDisplaySize);
 
 function resetContinueState() {
   continueCost = 10;
@@ -3132,7 +3162,16 @@ function loop(timestamp) {
   requestAnimationFrame(loop);
 }
 
+document.addEventListener(
+  "touchmove",
+  (event) => {
+    event.preventDefault();
+  },
+  { passive: false }
+);
+
 // Bootstrap
+resizeRendererToDisplaySize();
 buildGameInstance();
 applyVisualVariantTheme();
 renderTeamScreen();
