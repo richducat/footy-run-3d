@@ -3677,3 +3677,95 @@ canvas {
     flex-direction: column;
   }
 }
+
+#mobile-ui-layer {
+  display: none;
+}
+
+/* --- Mobile Layout Fixes --- */
+@media screen and (max-width: 768px) {
+  /* 1. Lock the Screen */
+  body,
+  html {
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    background: #111;
+    touch-action: none; /* Disables browser zooming/scrolling */
+  }
+
+  /* 2. Prioritize the Game Canvas */
+  canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 1;
+    object-fit: cover;
+  }
+
+  /* 3. Hide Desktop Clutter */
+  /* This hides the paragraphs, sidebars, and non-essential titles */
+  .description,
+  .instructions,
+  .sidebar,
+  footer,
+  .live-feed-text {
+    display: none !important;
+  }
+
+  /* 4. Create the Mobile HUD Overlay */
+  #mobile-ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none; /* Touches pass through to game */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 15px;
+    box-sizing: border-box;
+  }
+
+  /* HUD Stats Styling */
+  .hud-row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    text-shadow: 1px 1px 0 #000;
+  }
+
+  .hud-stat {
+    font-family: sans-serif;
+    color: #fff;
+    text-align: center;
+  }
+
+  .hud-label {
+    display: block;
+    font-size: 0.7rem;
+    opacity: 0.8;
+    text-transform: uppercase;
+  }
+
+  .hud-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #00ffcc; /* Neon Cyan */
+  }
+
+  /* Visual Swipe Hints (Optional) */
+  .swipe-hint {
+    position: absolute;
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+}

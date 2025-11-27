@@ -205,6 +205,27 @@
           </div>
         </div>
 
+        <div id="mobile-ui-layer">
+          <div class="hud-row">
+            <div class="hud-stat">
+              <span class="hud-label">Distance</span>
+              <span class="hud-value" id="dist-display">0m</span>
+            </div>
+            <div class="hud-stat">
+              <span class="hud-label">Goals</span>
+              <span class="hud-value" id="goals-display">0</span>
+            </div>
+            <div class="hud-stat">
+              <span class="hud-label">Coins</span>
+              <span class="hud-value" id="coins-display">0</span>
+            </div>
+          </div>
+
+          <div class="swipe-hint">
+            SWIPE TO MOVE
+          </div>
+        </div>
+
         <!-- Main menu -->
         <section id="mainMenu" class="screen screen--active">
           <div class="screen-inner screen-inner--scrollable">
@@ -1226,6 +1247,73 @@
       </p>
     </div>
   </div>
+
+  <script>
+    /**
+     * Mobile Swipe Controls Patch
+     * Maps Swipes to Arrow Keys (Left, Right, Up, Down)
+     */
+    (function setupMobileSwipes() {
+      const target = document.body;
+      let touchStartX = 0;
+      let touchStartY = 0;
+
+      // Listen for touch start
+      target.addEventListener(
+        "touchstart",
+        function (e) {
+          touchStartX = e.changedTouches[0].screenX;
+          touchStartY = e.changedTouches[0].screenY;
+          e.preventDefault(); // Stop scrolling
+        },
+        { passive: false }
+      );
+
+      // Listen for touch end to determine swipe direction
+      target.addEventListener(
+        "touchend",
+        function (e) {
+          const touchEndX = e.changedTouches[0].screenX;
+          const touchEndY = e.changedTouches[0].screenY;
+          handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY);
+        },
+        { passive: false }
+      );
+
+      function handleSwipe(startX, startY, endX, endY) {
+        const diffX = endX - startX;
+        const diffY = endY - startY;
+        const absX = Math.abs(diffX);
+        const absY = Math.abs(diffY);
+        const threshold = 30; // Min distance to count as swipe
+
+        // Determine if horizontal or vertical swipe was stronger
+        if (absX > absY) {
+          // Horizontal
+          if (absX > threshold) {
+            if (diffX > 0) simulateKey("ArrowRight");
+            else simulateKey("ArrowLeft");
+          }
+        } else {
+          // Vertical
+          if (absY > threshold) {
+            if (diffY > 0) simulateKey("ArrowDown"); // Swipe Down (Slide/Tackle)
+            else simulateKey("ArrowUp"); // Swipe Up (Jump/Juke)
+          }
+        }
+      }
+
+      function simulateKey(keyName) {
+        const eventDown = new KeyboardEvent("keydown", { key: keyName, bubbles: true });
+        document.dispatchEvent(eventDown);
+
+        setTimeout(() => {
+          const eventUp = new KeyboardEvent("keyup", { key: keyName, bubbles: true });
+          document.dispatchEvent(eventUp);
+        }, 100);
+      }
+    })();
+  </script>
 
   <script type="module">
     import(bustUrl("./js/main.js"));
