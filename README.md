@@ -40,6 +40,7 @@ python -m http.server 8000
 - The production 3D build is served from `https://richducat.github.io/footy-run-3d/?embed=1`.
 - The landing page loads that URL inside an iframe and falls back to the local build after 3.5 seconds or on error/offline.
 - When the build runs inside the iframe (signaled by `?embed=1`), the nested preview is skipped and the game boots immediately, preventing infinite iframe recursion.
+- A fully self-contained Three.js prototype matching the neon "v3" vibe now lives in `v3.html`; open it directly in a modern browser to play the 3D street-runner without the UI wrapper.
 
 ## Healthy rewards & onboarding
 - A concise blueprint for generous, non-predatory rewards (coins, XP, cosmetics, training points) plus adaptive onboarding is documented in `docs/rewarding-and-onboarding.md`.
