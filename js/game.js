@@ -524,6 +524,26 @@ export class Game {
     this.sessionSpeedScalar = this.sessionConfig.speedScalar || 1;
   }
 
+  resize(width, height, pixelRatio = this.pixelRatio) {
+    if (!this.canvas || !this.ctx) return;
+
+    this.pixelRatio = pixelRatio;
+    this.width = width;
+    this.height = height;
+
+    this.canvas.width = Math.round(this.width * this.pixelRatio);
+    this.canvas.height = Math.round(this.height * this.pixelRatio);
+
+    if (this.ctx.setTransform) {
+      this.ctx.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
+    }
+
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = "high";
+
+    this.buildStaticLayers();
+  }
+
   createLayer(drawFn) {
     const layer = document.createElement("canvas");
     layer.width = this.width;
